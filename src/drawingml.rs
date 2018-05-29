@@ -1,174 +1,41 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
 
-type Percentage = f32;
-type PositivePercentage = f32; // TODO: 0 <= n < inf
-type PositiveFixedPercentage = f32; // TODO: 0 <= n <= 100000
-type FixedPercentage = f32; // TODO: -100000 <= n <= 100000
-type Color = i32;
+pub type Guid = String; // TODO: move to shared common types. pattern="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"
+pub type Percentage = f32;
+pub type PositivePercentage = f32; // TODO: 0 <= n < inf
+pub type PositiveFixedPercentage = f32; // TODO: 0 <= n <= 100000
+pub type FixedPercentage = f32; // TODO: -100000 <= n <= 100000
+pub type HexColorRGB = String;
+pub type Coordinate = i64;
+pub type PositiveCoordinate = u64;
+pub type Coordinate32 = i32;
+pub type PositiveCoordinate32 = u32;
+pub type LineWidth = Coordinate32;
+pub type DrawingElementId = u32;
+pub type Angle = i32;
+pub type FixedAngle = Angle; // TODO: -5400000 <= n <= 5400000
+pub type PositiveFixedAngle = Angle; // TODO: 21600000
+pub type GeomGuideName = String;
+pub type GeomGuideFormula = String;
+pub type StyleMatrixColumnIndex = u32;
+pub type TextColumnCount = i32; // TODO: 1 <= n <= 16
+pub type TextFontScalePercent = Percentage; // TODO: 1000 <= n <= 100000
+pub type TextSpacingPercent = Percentage; // TODO: 0 <= n <= 13200000
+pub type TextSpacingPoint = i32; // TODO: 0 <= n <= 158400
+pub type TextMargin = Coordinate32; // TODO: 0 <= n <= 51206400
+pub type TextIndent = Coordinate32; // TODO: -51206400 <= n <= 51206400
+pub type TextIndentLevelType = i32; // TODO; 0 <= n <= 8
+pub type TextBulletSizePercent = Percentage; // TODO: 0.25 <= n <= 4.0
+pub type TextFontSize = i32; // TODO: 100 <= n <= 400000
+pub type TextTypeFace = String;
+pub type Panose = String; // TODO: hex, length=10
+pub type TextBulletStartAtNum = i32; // TODO: 1 <= n <= 32767
+pub type Lang = String; 
+pub type TextNonNegativePoint = i32; // TODO: 0 <= n <= 400000
+pub type TextPoint = i32; // TODO: -400000 <= n <= 400000
+pub type ShapeId = String;
 
-
-/*
-typedef MString Guid;
-
-    typedef int Percentage;
-    typedef int PositivePercentage;
-    typedef int PositiveFixedPercentage;
-    typedef int FixedPercentage;
-    typedef int PositiveFixedAngle;
-
-    typedef MString HexColorRGB;
-
-    typedef MInt64 Coordinate;
-    typedef MInt64 PositiveCoordinate;
-
-    typedef int Coordinate32; 
-    typedef Coordinate32 LineWidth;
-    typedef Coordinate32 PositiveCoordinate32;
-
-    typedef MUInt DrawingElementId;
-
-    typedef int Angle;
-    typedef Angle FixedAngle;
-    typedef Angle PositiveFixedAngle;
-
-    typedef MString GeomGuideName;
-    typedef MString GeomGuideFormula;
-
-    typedef MUInt StyleMatrixColumnIndex;
-
-    typedef int TextColumnCount;
-    typedef Percentage TextFontScalePercent;
-    typedef Percentage TextSpacingPercent;
-    typedef int TextSpacingPoint;
-    typedef Coordinate32 TextMargin;
-    typedef Coordinate32 TextIndent;
-    typedef int TextIndentLevelType;
-    typedef Percentage TextBulletSizePercent;
-    typedef int TextFontSize;
-    typedef MString TextTypeface;
-    typedef MString Panose;
-    typedef int TextBulletStartAtNum;
-    typedef MString TextLanguageID;
-    typedef int TextNonNegativePoint;
-    typedef int TextPoint;
-
-    typedef MString ShapeID;
-
-    enum class TileFlipMode;
-    enum class RectAlignment;
-    enum class BlackWhiteMode;
-    enum class TextVerticalType;
-    enum class TextAnchoringType;
-    enum class TextHorzOverflowType;
-
-    class RelativeRect;
-    class Point2D;
-    class PositiveSize2D;
-    class Transform2D;
-
-    class AlphaModulateFixedEffect;
-    class LuminanceEffect;
-    class DuotoneEffect;
-    class EffectChoice;
-    class EffectPropertiesChoice;
-    class EffectStyleItem;
-    class Blip;
-
-    typedef MArray<std::unique_ptr<EffectStyleItem>> EffectStyleList;
-
-    class GradientStop;
-    class LinearShadeProperties;
-    class PathShadeProperties;
-    class ShadePropertiesChoice;
-
-    class TileInfoProperties;
-    class StretchInfoProperties;
-    class FillModeProperties;
-
-    class SolidColorFillProperties;
-    class GradientFillProperties;
-    class BlipFillProperties;
-    class PatternFillProperties;
-    class FillPropertiesChoice;
-    class FillProperties;
-    class LineEndProperties;
-    class LineProperties;
-
-    typedef MArray<std::unique_ptr<FillPropertiesChoice>> FillStyleList;
-    typedef MArray<std::unique_ptr<FillPropertiesChoice>> BackgroundFillStyleList;
-    typedef MArray<std::unique_ptr<LineProperties>> LineStyleList;
-
-    class ThemeableFillStyle;
-
-    class NonVisualDrawingProps;
-    class NonVisualDrawingShapeProps;
-    class NonVisualConnectorProperties;
-    class NonVisualGraphicFrameProperties;
-    class NonVisualGroupDrawingShapeProps;
-    class NonVisualPictureProperties;
-
-    class Connection;
-
-    class ShapeProperties;
-    class ShapeStyle;
-    class GroupShapeProperties;
-    class GraphicalObject;
-
-    class StyleMatrixReference;
-
-    class EmbeddedWAVAudioFile;
-    class MediaChoice;
-
-    class FontCollection;
-    class FontReference;
-    class TextFont;
-    class TextBody;
-    class TextBodyProperties;
-    class TextListStyle;
-    class TextSpacingChoice;
-    class TextBulletChoice;
-    class TextParagraphProperties;
-    class TextCharacterProperties;
-    class TextParagraph;
-    class Hyperlink;
-
-    class CustomGeometry2D;
-    class PresetGeometry2D;
-    class AdjCoordinate;
-    class AdjAngle;
-
-    class Picture;
-
-    class ColorMappingOverride;
-    class ColorMapping;
-    class ColorSchemeAndMapping;
-    class CustomColor;
-    class OfficeStyleSheet;
-
-    class Table;
-    class TableStyle;
-
-    typedef MArray<std::unique_ptr<ColorSchemeAndMapping>> ColorSchemeList;
-    typedef MArray<std::unique_ptr<CustomColor>> CustomColorList;
-
-    class AnimationGraphicalObjectBuildPropertiesChoice;
-    class AnimationElementChoice;
-
-    class DashStop;
-    typedef MArray<std::unique_ptr<DashStop>> DashStopList;
-
-    class Path2D;
-    typedef MArray<std::unique_ptr<Path2D>> Path2DList;
-
-    class ConnectionSite;
-    typedef MArray<std::unique_ptr<ConnectionSite>> ConnectionSiteList;
-
-    class GeomGuide;
-    typedef MArray<std::unique_ptr<GeomGuide>> GeomGuideList;
-
-    class TextTabStop;
-    typedef MArray<std::unique_ptr<TextTabStop>> TextTabStopList;
-*/
+pub type Color = i32;
 
 decl_oox_enum! {
     pub enum TileFlipMode {

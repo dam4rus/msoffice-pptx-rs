@@ -1,8 +1,9 @@
-extern crate xml;
+extern crate quick_xml;
 
 #[macro_use]
 mod macros;
 pub mod docprops;
+pub mod relationship;
 pub mod pml;
 pub mod drawingml;
 pub mod document;
