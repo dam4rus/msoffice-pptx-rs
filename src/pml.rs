@@ -177,6 +177,34 @@ pub struct HandoutMasterIdListEntry {
 }
 
 
+pub struct EmbeddedFontListEntry {
+    pub font: Option<drawingml::TextFont>,
+    pub regular: Option<relationship::RelationshipId>,
+    pub bold: Option<relationship::RelationshipId>,
+    pub italic: Option<relationship::RelationshipId>,
+    pub bold_italic: Option<relationship::RelationshipId>,
+}
+
+
+pub struct CustomShow {
+    pub name: Name,
+    pub id: u32,
+    pub slide_list: Vec<relationship::RelationshipId>,
+    //std::unique_ptr<ExtensionList> extLst;
+}
+
+
+pub struct PhotoAlbum {
+    pub black_and_white: Option<bool>, // false
+    pub show_captions: Option<bool>, // false
+    pub layout: Option<PhotoAlbumLayout>, // PhotoAlbumLayout::FitToSlide
+    pub frame: Option<PhotoAlbumFrameShape>, // PhotoAlbumFrameShape::FrameStyle1
+    /*
+    //std::unique_ptr<ExtensionList> extLst;
+    */
+}
+
+
 pub struct Presentation {
     pub server_zoom: Option<drawingml::Percentage>, // 50%
     pub first_slide_num: Option<i32>, // 1
@@ -195,16 +223,14 @@ pub struct Presentation {
     pub handout_master_id_list: Vec<HandoutMasterIdListEntry>, // length = 1
     pub slide_id_list: Vec<SlideIdListEntry>,
     pub slide_size: Option<SlideSize>,
+    pub notes_size: Option<drawingml::PositiveSize2D>,
+    //std::unique_ptr<SmartTags> smartTags;
+    pub embedded_font_list: Vec<EmbeddedFontListEntry>,
+    pub custom_show_list: Vec<CustomShow>,
+    pub photo_album: Option<PhotoAlbum>,
+    //std::unique_ptr<CustomerDataList> custDataLst;
+    //std::unique_ptr<Kinsoku> kinsoku;
+    pub default_text_style: Option<drawingml::TextListStyle>,
+    //std::unique_ptr<ModifyVerifier> modifyVerifier;
+    //std::unique_ptr<ExtensionList> extLst;
 }
-/*
-        std::unique_ptr<DrawingML::PositiveSize2D> notesSz;
-        //std::unique_ptr<SmartTags> smartTags;
-        EmbeddedFontList embeddedFontLst;
-        CustomShowList custShowLst;
-        std::unique_ptr<PhotoAlbum> photoAlbum;
-        //std::unique_ptr<CustomerDataList> custDataLst;
-        //std::unique_ptr<Kinsoku> kinsoku;
-        std::unique_ptr<DrawingML::TextListStyle> defaultTextStyle;
-        //std::unique_ptr<ModifyVerifier> modifyVerifier;
-        //std::unique_ptr<ExtensionList> extLst;
-*/

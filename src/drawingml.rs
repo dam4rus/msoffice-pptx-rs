@@ -430,12 +430,346 @@ decl_oox_enum! {
     }
 }
 
+decl_oox_enum! {
+    pub enum SystemColorVal {
+        ScrollBar = "scrollBar",
+        Background = "background",
+        ActiveCaption = "activeCaption",
+        InactiveCaption = "inactiveCaption",
+        Menu = "menu",
+        Window = "window",
+        WindowFrame = "windowFrame",
+        MenuText = "menuText",
+        WindowText = "windowText",
+        CaptionText = "captionText",
+        ActiveBorder = "activeBorder",
+        InactiveBorder = "inactiveBorder",
+        AppWorkspace = "appWorkspace",
+        Highlight = "highlight",
+        HighlightText = "highlightText",
+        BtnFace = "btnFace",
+        BtnShadow = "btnShadow",
+        GrayText = "grayText",
+        BtnText = "btnText",
+        InactiveCaptionText = "inactiveCaptionText",
+        BtnHighlight = "btnHighlight",
+        DkShadow3d = "3dDkShadow",
+        Light3d = "3dLight",
+        InfoText = "infoText",
+        InfoBk = "infoBk",
+        HotLight = "hotLight",
+        GradientActiveCaption = "gradientActiveCaption",
+        GradientInactiveCaption = "gradientInactiveCaption",
+        MenuHighlight = "menuHighlight",
+        MenuBar = "menubar",
+    }
+}
+
+decl_oox_enum! {
+    pub enum PresetColorVal {
+        AliceBlue = "aliceBlue",
+        AntiqueWhite = "antiqueWhite",
+        Aqua = "aqua",
+        Aquamarine = "aquamarine",
+        Azure = "azure",
+        Beige = "beige",
+        Bisque = "bisque",
+        Black = "black",
+        BlanchedAlmond = "blanchedAlmond",
+        Blue = "blue",
+        BlueViolet = "blueViolet",
+        Brown = "brown",
+        BurlyWood = "burlyWood",
+        CadetBlue = "cadetBlue",
+        Chartreuse = "chartreuse",
+        Chocolate = "chocolate",
+        Coral = "coral",
+        CornflowerBlue = "cornflowerBlue",
+        Cornsilk = "cornsilk",
+        Crimson = "crimson",
+        Cyan = "cyan",
+        DarkBlue = "darkBlue",
+        DarkCyan = "darkCyan",
+        DarkGoldenrod = "darkGoldenrod",
+        DarkGray = "darkGray",
+        DarkGrey = "darkGrey",
+        DarkGreen = "darkGreen",
+        DarkKhaki = "darkKhaki",
+        DarkMagenta = "darkMagenta",
+        DarkOliveGreen = "darkOliveGreen",
+        DarkOrange = "darkOrange",
+        DarkOrchid = "darkOrchid",
+        DarkRed = "darkRed",
+        DarkSalmon = "darkSalmon",
+        DarkSeaGreen = "darkSeaGreen",
+        DarkSlateBlue = "darkSlateBlue",
+        DarkSlateGray = "darkSlateGray",
+        DarkSlateGrey = "darkSlateGrey",
+        DarkTurqoise = "darkTurquoise",
+        DarkViolet = "darkViolet",
+    }
+}
+
+/*
+<xsd:simpleType name="ST_PresetColorVal">
+    <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="dkBlue"/>
+      <xsd:enumeration value="dkCyan"/>
+      <xsd:enumeration value="dkGoldenrod"/>
+      <xsd:enumeration value="dkGray"/>
+      <xsd:enumeration value="dkGrey"/>
+      <xsd:enumeration value="dkGreen"/>
+      <xsd:enumeration value="dkKhaki"/>
+      <xsd:enumeration value="dkMagenta"/>
+      <xsd:enumeration value="dkOliveGreen"/>
+      <xsd:enumeration value="dkOrange"/>
+      <xsd:enumeration value="dkOrchid"/>
+      <xsd:enumeration value="dkRed"/>
+      <xsd:enumeration value="dkSalmon"/>
+      <xsd:enumeration value="dkSeaGreen"/>
+      <xsd:enumeration value="dkSlateBlue"/>
+      <xsd:enumeration value="dkSlateGray"/>
+      <xsd:enumeration value="dkSlateGrey"/>
+      <xsd:enumeration value="dkTurquoise"/>
+      <xsd:enumeration value="dkViolet"/>
+      <xsd:enumeration value="deepPink"/>
+      <xsd:enumeration value="deepSkyBlue"/>
+      <xsd:enumeration value="dimGray"/>
+      <xsd:enumeration value="dimGrey"/>
+      <xsd:enumeration value="dodgerBlue"/>
+      <xsd:enumeration value="firebrick"/>
+      <xsd:enumeration value="floralWhite"/>
+      <xsd:enumeration value="forestGreen"/>
+      <xsd:enumeration value="fuchsia"/>
+      <xsd:enumeration value="gainsboro"/>
+      <xsd:enumeration value="ghostWhite"/>
+      <xsd:enumeration value="gold"/>
+      <xsd:enumeration value="goldenrod"/>
+      <xsd:enumeration value="gray"/>
+      <xsd:enumeration value="grey"/>
+      <xsd:enumeration value="green"/>
+      <xsd:enumeration value="greenYellow"/>
+      <xsd:enumeration value="honeydew"/>
+      <xsd:enumeration value="hotPink"/>
+      <xsd:enumeration value="indianRed"/>
+      <xsd:enumeration value="indigo"/>
+      <xsd:enumeration value="ivory"/>
+      <xsd:enumeration value="khaki"/>
+      <xsd:enumeration value="lavender"/>
+      <xsd:enumeration value="lavenderBlush"/>
+      <xsd:enumeration value="lawnGreen"/>
+      <xsd:enumeration value="lemonChiffon"/>
+      <xsd:enumeration value="lightBlue"/>
+      <xsd:enumeration value="lightCoral"/>
+      <xsd:enumeration value="lightCyan"/>
+      <xsd:enumeration value="lightGoldenrodYellow"/>
+      <xsd:enumeration value="lightGray"/>
+      <xsd:enumeration value="lightGrey"/>
+      <xsd:enumeration value="lightGreen"/>
+      <xsd:enumeration value="lightPink"/>
+      <xsd:enumeration value="lightSalmon"/>
+      <xsd:enumeration value="lightSeaGreen"/>
+      <xsd:enumeration value="lightSkyBlue"/>
+      <xsd:enumeration value="lightSlateGray"/>
+      <xsd:enumeration value="lightSlateGrey"/>
+      <xsd:enumeration value="lightSteelBlue"/>
+      <xsd:enumeration value="lightYellow"/>
+      <xsd:enumeration value="ltBlue"/>
+      <xsd:enumeration value="ltCoral"/>
+      <xsd:enumeration value="ltCyan"/>
+      <xsd:enumeration value="ltGoldenrodYellow"/>
+      <xsd:enumeration value="ltGray"/>
+      <xsd:enumeration value="ltGrey"/>
+      <xsd:enumeration value="ltGreen"/>
+      <xsd:enumeration value="ltPink"/>
+      <xsd:enumeration value="ltSalmon"/>
+      <xsd:enumeration value="ltSeaGreen"/>
+      <xsd:enumeration value="ltSkyBlue"/>
+      <xsd:enumeration value="ltSlateGray"/>
+      <xsd:enumeration value="ltSlateGrey"/>
+      <xsd:enumeration value="ltSteelBlue"/>
+      <xsd:enumeration value="ltYellow"/>
+      <xsd:enumeration value="lime"/>
+      <xsd:enumeration value="limeGreen"/>
+      <xsd:enumeration value="linen"/>
+      <xsd:enumeration value="magenta"/>
+      <xsd:enumeration value="maroon"/>
+      <xsd:enumeration value="medAquamarine"/>
+      <xsd:enumeration value="medBlue"/>
+      <xsd:enumeration value="medOrchid"/>
+      <xsd:enumeration value="medPurple"/>
+      <xsd:enumeration value="medSeaGreen"/>
+      <xsd:enumeration value="medSlateBlue"/>
+      <xsd:enumeration value="medSpringGreen"/>
+      <xsd:enumeration value="medTurquoise"/>
+      <xsd:enumeration value="medVioletRed"/>
+      <xsd:enumeration value="mediumAquamarine"/>
+      <xsd:enumeration value="mediumBlue"/>
+      <xsd:enumeration value="mediumOrchid"/>
+      <xsd:enumeration value="mediumPurple"/>
+      <xsd:enumeration value="mediumSeaGreen"/>
+      <xsd:enumeration value="mediumSlateBlue"/>
+      <xsd:enumeration value="mediumSpringGreen"/>
+      <xsd:enumeration value="mediumTurquoise"/>
+      <xsd:enumeration value="mediumVioletRed"/>
+      <xsd:enumeration value="midnightBlue"/>
+      <xsd:enumeration value="mintCream"/>
+      <xsd:enumeration value="mistyRose"/>
+      <xsd:enumeration value="moccasin"/>
+      <xsd:enumeration value="navajoWhite"/>
+      <xsd:enumeration value="navy"/>
+      <xsd:enumeration value="oldLace"/>
+      <xsd:enumeration value="olive"/>
+      <xsd:enumeration value="oliveDrab"/>
+      <xsd:enumeration value="orange"/>
+      <xsd:enumeration value="orangeRed"/>
+      <xsd:enumeration value="orchid"/>
+      <xsd:enumeration value="paleGoldenrod"/>
+      <xsd:enumeration value="paleGreen"/>
+      <xsd:enumeration value="paleTurquoise"/>
+      <xsd:enumeration value="paleVioletRed"/>
+      <xsd:enumeration value="papayaWhip"/>
+      <xsd:enumeration value="peachPuff"/>
+      <xsd:enumeration value="peru"/>
+      <xsd:enumeration value="pink"/>
+      <xsd:enumeration value="plum"/>
+      <xsd:enumeration value="powderBlue"/>
+      <xsd:enumeration value="purple"/>
+      <xsd:enumeration value="red"/>
+      <xsd:enumeration value="rosyBrown"/>
+      <xsd:enumeration value="royalBlue"/>
+      <xsd:enumeration value="saddleBrown"/>
+      <xsd:enumeration value="salmon"/>
+      <xsd:enumeration value="sandyBrown"/>
+      <xsd:enumeration value="seaGreen"/>
+      <xsd:enumeration value="seaShell"/>
+      <xsd:enumeration value="sienna"/>
+      <xsd:enumeration value="silver"/>
+      <xsd:enumeration value="skyBlue"/>
+      <xsd:enumeration value="slateBlue"/>
+      <xsd:enumeration value="slateGray"/>
+      <xsd:enumeration value="slateGrey"/>
+      <xsd:enumeration value="snow"/>
+      <xsd:enumeration value="springGreen"/>
+      <xsd:enumeration value="steelBlue"/>
+      <xsd:enumeration value="tan"/>
+      <xsd:enumeration value="teal"/>
+      <xsd:enumeration value="thistle"/>
+      <xsd:enumeration value="tomato"/>
+      <xsd:enumeration value="turquoise"/>
+      <xsd:enumeration value="violet"/>
+      <xsd:enumeration value="wheat"/>
+      <xsd:enumeration value="white"/>
+      <xsd:enumeration value="whiteSmoke"/>
+      <xsd:enumeration value="yellow"/>
+      <xsd:enumeration value="yellowGreen"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+*/
+
+decl_oox_enum! {
+    pub enum TextAlignType {
+        L = "l",
+        Ctr = "ctr",
+        R = "r",
+        Just = "just",
+        JustLow = "justLow",
+        Dist = "dist",
+        ThaiDist = "thaiDist",
+    }
+}
+
+decl_oox_enum! {
+    pub enum TextFontAlignType {
+        Auto = "auto",
+        T = "t",
+        Ctr = "ctr",
+        Base = "base",
+        B = "b",
+    }
+}
+
+
+pub enum ColorTransform {
+    Tint(PositiveFixedPercentage),
+    Shade(PositiveFixedPercentage),
+    Complement,
+    Inverse,
+    Grayscale,
+    Alpha(PositiveFixedPercentage),
+    AlphaOffset(FixedPercentage),
+    AlphaModulate(PositivePercentage),
+    Hue(PositiveFixedAngle),
+    HueOffset(Angle),
+    HueModulate(PositivePercentage),
+    Saturation(Percentage),
+    SaturationOffset(Percentage),
+    SaturationModulate(Percentage),
+    Luminance(Percentage),
+    LuminanceOffset(Percentage),
+    LuminanceModulate(Percentage),
+    Red(Percentage),
+    RedOffset(Percentage),
+    RedModulate(Percentage),
+    Green(Percentage),
+    GreenOffset(Percentage),
+    GreenModulate(Percentage),
+    Blue(Percentage),
+    BlueOffset(Percentage),
+    BlueModulate(Percentage),
+    Gamma,
+    InverseGamma,
+}
+
+
+pub struct ScRgbColor {
+    pub r: Percentage,
+    pub g: Percentage,
+    pub b: Percentage,
+    pub color_transforms: Option<Vec<ColorTransform>>
+}
+
+
+pub struct SRgbColor {
+    pub value: HexColorRGB,
+    pub color_transforms: Option<Vec<ColorTransform>>
+}
+
+
+pub struct HslColor {
+    pub hue: PositiveFixedAngle,
+    pub saturation: Percentage,
+    pub luminance: Percentage,
+    pub color_transforms: Option<Vec<ColorTransform>>
+}
+
+
+pub struct SystemColor {
+    pub value: SystemColorVal,
+    pub last_color: HexColorRGB,
+    pub color_transforms: Option<Vec<ColorTransform>>
+}
+
+
+pub enum ColorGroup {
+    ScRgbColor(ScRgbColor),
+    SRgbColor(SRgbColor),
+    HslColor(HslColor),
+    SystemColor(SystemColor),
+}
+
 
 pub struct RelativeRect {
     pub left: Option<Percentage>,
     pub top: Option<Percentage>,
     pub right: Option<Percentage>,
     pub bottom: Option<Percentage>,
+}
+
+
+pub struct PositiveSize2D {
+    pub width: PositiveCoordinate,
+    pub height: PositiveCoordinate,
 }
 
 
@@ -460,5 +794,96 @@ pub enum EffectGroup {
     Luminance(LuminanceEffect),
     Duotone(DuotoneEffect),
 }
+
+
+pub struct TextFont {
+    pub typeface: TextTypeFace,
+    pub panose: Option<Panose>,
+    pub pitch_family: Option<i32>, // 0
+    pub charset: Option<i32>, // 1
+}
+
+
+pub enum TextSpacingGroup {
+    SpcPct(TextSpacingPercent),
+    SpcPts(TextSpacingPoint),
+}
+
+
+pub enum TextBulletColorGroup {
+    BuClrTx,
+    BuClr,
+}
+
+
+pub struct TextParagraphProperties {
+    pub margin_left: Option<TextMargin>,
+    pub margin_right: Option<TextMargin>,
+    pub level: Option<TextIndentLevelType>,
+    pub indent: Option<TextIndent>,
+    pub align: Option<TextAlignType>,
+    pub default_tab_size: Option<Coordinate32>,
+    pub rtl: Option<bool>,
+    pub east_asian_line_break: Option<bool>,
+    pub font_align: Option<TextFontAlignType>,
+    pub latin_line_break: Option<bool>,
+    pub hanging_punctuations: Option<bool>,
+    pub line_spacing: Option<TextSpacingGroup>,
+    pub space_before: Option<TextSpacingGroup>,
+    pub space_after: Option<TextSpacingGroup>,
+
+}
 /*
+    class TextParagraphProperties
+    {
+    public:
+        Office::Optional<TextMargin> marL;
+        Office::Optional<TextMargin> marR;
+        Office::Optional<TextIndentLevelType> lvl;
+        Office::Optional<TextIndent> indent;
+        Office::Optional<TextAlignType> algn;
+        Office::Optional<Coordinate32> defTabSz;
+        Office::Optional<bool> rtl;
+        Office::Optional<bool> eaLnBrk;
+        Office::Optional<TextFontAlignType> fontAlgn;
+        Office::Optional<bool> latinLnBrk;
+        Office::Optional<bool> hangingPunct;
+        std::unique_ptr<TextSpacingChoice> lnSpc;
+        std::unique_ptr<TextSpacingChoice> spcBef;
+        std::unique_ptr<TextSpacingChoice> spcAft;
+        std::unique_ptr<TextBulletColorChoice> textBulletColor;
+        std::unique_ptr<TextBulletSizeChoice> textBulletSize;
+        std::unique_ptr<TextBulletTypefaceChoice> textBulletTypeface;
+        std::unique_ptr<TextBulletChoice> textBullet;
+        TextTabStopList tabLst;
+        std::unique_ptr<TextCharacterProperties> defRPr;
+        //std::unique_ptr<OfficeArtExtensionList> extLst;
+
+        static TextParagraphProperties* FromXmlNode(const MXmlNode2& xmlNode);
+
+        TextParagraphProperties() = default;
+        DISALLOW_COPY_AND_ASSIGN(TextParagraphProperties);
+
+        void UpdateWith(const TextParagraphProperties &textParProps);
+    };
+
+*/
+
+pub struct TextListStyle {
+    pub def_paragraph_props: Option<TextParagraphProperties>,
+}
+/*
+        std::unique_ptr<TextParagraphProperties> defPPr;
+        std::unique_ptr<TextParagraphProperties> lvl1pPr;
+        std::unique_ptr<TextParagraphProperties> lvl2pPr;
+        std::unique_ptr<TextParagraphProperties> lvl3pPr;
+        std::unique_ptr<TextParagraphProperties> lvl4pPr;
+        std::unique_ptr<TextParagraphProperties> lvl5pPr;
+        std::unique_ptr<TextParagraphProperties> lvl6pPr;
+        std::unique_ptr<TextParagraphProperties> lvl7pPr;
+        std::unique_ptr<TextParagraphProperties> lvl8pPr;
+        std::unique_ptr<TextParagraphProperties> lvl9pPr;
+        //std::unique_ptr<OfficeArtExtensionList> extLst;
+
+
 */
