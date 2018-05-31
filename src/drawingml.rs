@@ -35,8 +35,6 @@ pub type TextNonNegativePoint = i32; // TODO: 0 <= n <= 400000
 pub type TextPoint = i32; // TODO: -400000 <= n <= 400000
 pub type ShapeId = String;
 
-pub type Color = i32;
-
 decl_oox_enum! {
     pub enum TileFlipMode {
         None = "none",
@@ -507,165 +505,179 @@ decl_oox_enum! {
         DarkSlateGrey = "darkSlateGrey",
         DarkTurqoise = "darkTurquoise",
         DarkViolet = "darkViolet",
+        DkBlue = "dkBlue",
+        DkCyan = "dkCyan",
+        DkGoldenrod = "dkGoldenrod",
+        DkGray = "dkGray",
+        DkGrey = "dkGrey",
+        DkGreen = "dkGreen",
+        DkKhaki = "dkKhaki",
+        DkMagenta = "dkMagenta",
+        DkOliveGreen = "dkOliveGreen",
+        DkOrange = "dkOrange",
+        DkOrchid = "dkOrchid",
+        DkRed = "dkRed",
+        DkSalmon = "dkSalmon",
+        DkSeaGreen = "dkSeaGreen",
+        DkSlateBlue = "dkSlateBlue",
+        DkSlateGray = "dkSlateGray",
+        DkSlateGrey = "dkSlateGrey",
+        DkTurquoise = "dkTurquoise",
+        DkViolet = "dkViolet",
+        DeepPink = "deepPink",
+        DeepSkyBlue = "deepSkyBlue",
+        DimGray = "dimGray",
+        DimGrey = "dimGrey",
+        DodgerBluet = "dodgerBlue",
+        Firebrick = "firebrick",
+        FloralWhite = "floralWhite",
+        ForestGreen = "forestGreen",
+        Fuchsia = "fuchsia",
+        Gainsboro = "gainsboro",
+        GhostWhite = "ghostWhite",
+        Gold = "gold",
+        Goldenrod = "goldenrod",
+        Gray = "gray",
+        Grey = "grey",
+        Green = "green",
+        GreenYellow = "greenYellow",
+        Honeydew = "honeydew",
+        HotPink = "hotPink",
+        IndianRed = "indianRed",
+        Indigo = "indigo",
+        Ivory = "ivory",
+        Khaki = "khaki",
+        Lavender = "lavender",
+        LavenderBlush = "lavenderBlush",
+        LawnGreen = "lawnGreen",
+        LemonChiffon = "lemonChiffon",
+        LightBlue = "lightBlue",
+        LightCoral = "lightCoral",
+        LightCyan = "lightCyan",
+        LightGoldenrodYellow = "lightGoldenrodYellow",
+        LightGray = "lightGray",
+        LightGrey = "lightGrey",
+        LightGreen = "lightGreen",
+        LightPink = "lightPink",
+        LightSalmon = "lightSalmon",
+        LightSeaGreen = "lightSeaGreen",
+        LightSkyBlue = "lightSkyBlue",
+        LightSlateGray = "lightSlateGray",
+        LightSlateGrey = "lightSlateGrey",
+        LightSteelBlue = "lightSteelBlue",
+        LightYellow = "lightYellow",
+        LtBlue = "ltBlue",
+        LtCoral = "ltCoral",
+        LtCyan = "ltCyan",
+        LtGoldenrodYellow = "ltGoldenrodYellow",
+        LtGray = "ltGray",
+        LtGrey = "ltGrey",
+        LtGreen = "ltGreen",
+        LtPink = "ltPink",
+        LtSalmon = "ltSalmon",
+        LtSeaGreen = "ltSeaGreen",
+        LtSkyBlue = "ltSkyBlue",
+        LtSlateGray = "ltSlateGray",
+        LtSlateGrey = "ltSlateGrey",
+        LtSteelBlue = "ltSteelBlue",
+        LtYellow = "ltYellow",
+        Lime = "lime",
+        LimeGreen = "limeGreen",
+        Linen = "linen",
+        Magenta = "magenta",
+        Maroon = "maroon",
+        MedAquamarine = "medAquamarine",
+        MedBlue = "medBlue",
+        MedOrchid = "medOrchid",
+        MedPurple = "medPurple",
+        MedSeaGreen = "medSeaGreen",
+        MedSlateBlue = "medSlateBlue",
+        MedSpringGreen = "medSpringGreen",
+        MedTurquoise = "medTurquoise",
+        MedVioletRed = "medVioletRed",
+        MediumAquamarine = "mediumAquamarine",
+        MediumBlue = "mediumBlue",
+        MediumOrchid = "mediumOrchid",
+        MediumPurple = "mediumPurple",
+        MediumSeaGreen = "mediumSeaGreen",
+        MediumSlateBlue = "mediumSlateBlue",
+        MediumSpringGreen = "mediumSpringGreen",
+        MediumTurquoise = "mediumTurquoise",
+        MediumVioletRed = "mediumVioletRed",
+        MidnightBlue = "midnightBlue",
+        MintCream = "mintCream",
+        MistyRose = "mistyRose",
+        Moccasin = "moccasin",
+        NavajoWhite = "navajoWhite",
+        Navy = "navy",
+        OldLace = "oldLace",
+        Olive = "olive",
+        OliveDrab = "oliveDrab",
+        Orange = "orange",
+        OrangeRed = "orangeRed",
+        Orchid = "orchid",
+        PaleGoldenrod = "paleGoldenrod",
+        PaleGreen = "paleGreen",
+        PaleTurquoise = "paleTurquoise",
+        PaleVioletRed = "paleVioletRed",
+        PapayaWhip = "papayaWhip",
+        PeachPuff = "peachPuff",
+        Peru = "peru",
+        Pink = "pink",
+        Plum = "plum",
+        PowderBlue = "powderBlue",
+        Purple = "purple",
+        Red = "red",
+        RosyBrown = "rosyBrown",
+        RoyalBlue = "royalBlue",
+        SaddleBrown = "saddleBrown",
+        Salmon = "salmon",
+        SandyBrown = "sandyBrown",
+        SeaGreen = "seaGreen",
+        SeaShell = "seaShell",
+        Sienna = "sienna",
+        Silver = "silver",
+        SkyBlue = "skyBlue",
+        SlateBlue = "slateBlue",
+        SlateGray = "slateGray",
+        SlateGrey = "slateGrey",
+        Snow = "snow",
+        SpringGreen = "springGreen",
+        SteelBlue = "steelBlue",
+        Tan = "tan",
+        Teal = "teal",
+        Thistle = "thistle",
+        Tomato = "tomato",
+        Turquoise = "turquoise",
+        Violet = "violet",
+        Wheat = "wheat",
+        White = "white",
+        WhiteSmoke = "whiteSmoke",
+        Yellow = "yellow",
+        YellowGreen = "yellowGreen",
     }
 }
 
-/*
-<xsd:simpleType name="ST_PresetColorVal">
-    <xsd:restriction base="xsd:token">
-      <xsd:enumeration value="dkBlue"/>
-      <xsd:enumeration value="dkCyan"/>
-      <xsd:enumeration value="dkGoldenrod"/>
-      <xsd:enumeration value="dkGray"/>
-      <xsd:enumeration value="dkGrey"/>
-      <xsd:enumeration value="dkGreen"/>
-      <xsd:enumeration value="dkKhaki"/>
-      <xsd:enumeration value="dkMagenta"/>
-      <xsd:enumeration value="dkOliveGreen"/>
-      <xsd:enumeration value="dkOrange"/>
-      <xsd:enumeration value="dkOrchid"/>
-      <xsd:enumeration value="dkRed"/>
-      <xsd:enumeration value="dkSalmon"/>
-      <xsd:enumeration value="dkSeaGreen"/>
-      <xsd:enumeration value="dkSlateBlue"/>
-      <xsd:enumeration value="dkSlateGray"/>
-      <xsd:enumeration value="dkSlateGrey"/>
-      <xsd:enumeration value="dkTurquoise"/>
-      <xsd:enumeration value="dkViolet"/>
-      <xsd:enumeration value="deepPink"/>
-      <xsd:enumeration value="deepSkyBlue"/>
-      <xsd:enumeration value="dimGray"/>
-      <xsd:enumeration value="dimGrey"/>
-      <xsd:enumeration value="dodgerBlue"/>
-      <xsd:enumeration value="firebrick"/>
-      <xsd:enumeration value="floralWhite"/>
-      <xsd:enumeration value="forestGreen"/>
-      <xsd:enumeration value="fuchsia"/>
-      <xsd:enumeration value="gainsboro"/>
-      <xsd:enumeration value="ghostWhite"/>
-      <xsd:enumeration value="gold"/>
-      <xsd:enumeration value="goldenrod"/>
-      <xsd:enumeration value="gray"/>
-      <xsd:enumeration value="grey"/>
-      <xsd:enumeration value="green"/>
-      <xsd:enumeration value="greenYellow"/>
-      <xsd:enumeration value="honeydew"/>
-      <xsd:enumeration value="hotPink"/>
-      <xsd:enumeration value="indianRed"/>
-      <xsd:enumeration value="indigo"/>
-      <xsd:enumeration value="ivory"/>
-      <xsd:enumeration value="khaki"/>
-      <xsd:enumeration value="lavender"/>
-      <xsd:enumeration value="lavenderBlush"/>
-      <xsd:enumeration value="lawnGreen"/>
-      <xsd:enumeration value="lemonChiffon"/>
-      <xsd:enumeration value="lightBlue"/>
-      <xsd:enumeration value="lightCoral"/>
-      <xsd:enumeration value="lightCyan"/>
-      <xsd:enumeration value="lightGoldenrodYellow"/>
-      <xsd:enumeration value="lightGray"/>
-      <xsd:enumeration value="lightGrey"/>
-      <xsd:enumeration value="lightGreen"/>
-      <xsd:enumeration value="lightPink"/>
-      <xsd:enumeration value="lightSalmon"/>
-      <xsd:enumeration value="lightSeaGreen"/>
-      <xsd:enumeration value="lightSkyBlue"/>
-      <xsd:enumeration value="lightSlateGray"/>
-      <xsd:enumeration value="lightSlateGrey"/>
-      <xsd:enumeration value="lightSteelBlue"/>
-      <xsd:enumeration value="lightYellow"/>
-      <xsd:enumeration value="ltBlue"/>
-      <xsd:enumeration value="ltCoral"/>
-      <xsd:enumeration value="ltCyan"/>
-      <xsd:enumeration value="ltGoldenrodYellow"/>
-      <xsd:enumeration value="ltGray"/>
-      <xsd:enumeration value="ltGrey"/>
-      <xsd:enumeration value="ltGreen"/>
-      <xsd:enumeration value="ltPink"/>
-      <xsd:enumeration value="ltSalmon"/>
-      <xsd:enumeration value="ltSeaGreen"/>
-      <xsd:enumeration value="ltSkyBlue"/>
-      <xsd:enumeration value="ltSlateGray"/>
-      <xsd:enumeration value="ltSlateGrey"/>
-      <xsd:enumeration value="ltSteelBlue"/>
-      <xsd:enumeration value="ltYellow"/>
-      <xsd:enumeration value="lime"/>
-      <xsd:enumeration value="limeGreen"/>
-      <xsd:enumeration value="linen"/>
-      <xsd:enumeration value="magenta"/>
-      <xsd:enumeration value="maroon"/>
-      <xsd:enumeration value="medAquamarine"/>
-      <xsd:enumeration value="medBlue"/>
-      <xsd:enumeration value="medOrchid"/>
-      <xsd:enumeration value="medPurple"/>
-      <xsd:enumeration value="medSeaGreen"/>
-      <xsd:enumeration value="medSlateBlue"/>
-      <xsd:enumeration value="medSpringGreen"/>
-      <xsd:enumeration value="medTurquoise"/>
-      <xsd:enumeration value="medVioletRed"/>
-      <xsd:enumeration value="mediumAquamarine"/>
-      <xsd:enumeration value="mediumBlue"/>
-      <xsd:enumeration value="mediumOrchid"/>
-      <xsd:enumeration value="mediumPurple"/>
-      <xsd:enumeration value="mediumSeaGreen"/>
-      <xsd:enumeration value="mediumSlateBlue"/>
-      <xsd:enumeration value="mediumSpringGreen"/>
-      <xsd:enumeration value="mediumTurquoise"/>
-      <xsd:enumeration value="mediumVioletRed"/>
-      <xsd:enumeration value="midnightBlue"/>
-      <xsd:enumeration value="mintCream"/>
-      <xsd:enumeration value="mistyRose"/>
-      <xsd:enumeration value="moccasin"/>
-      <xsd:enumeration value="navajoWhite"/>
-      <xsd:enumeration value="navy"/>
-      <xsd:enumeration value="oldLace"/>
-      <xsd:enumeration value="olive"/>
-      <xsd:enumeration value="oliveDrab"/>
-      <xsd:enumeration value="orange"/>
-      <xsd:enumeration value="orangeRed"/>
-      <xsd:enumeration value="orchid"/>
-      <xsd:enumeration value="paleGoldenrod"/>
-      <xsd:enumeration value="paleGreen"/>
-      <xsd:enumeration value="paleTurquoise"/>
-      <xsd:enumeration value="paleVioletRed"/>
-      <xsd:enumeration value="papayaWhip"/>
-      <xsd:enumeration value="peachPuff"/>
-      <xsd:enumeration value="peru"/>
-      <xsd:enumeration value="pink"/>
-      <xsd:enumeration value="plum"/>
-      <xsd:enumeration value="powderBlue"/>
-      <xsd:enumeration value="purple"/>
-      <xsd:enumeration value="red"/>
-      <xsd:enumeration value="rosyBrown"/>
-      <xsd:enumeration value="royalBlue"/>
-      <xsd:enumeration value="saddleBrown"/>
-      <xsd:enumeration value="salmon"/>
-      <xsd:enumeration value="sandyBrown"/>
-      <xsd:enumeration value="seaGreen"/>
-      <xsd:enumeration value="seaShell"/>
-      <xsd:enumeration value="sienna"/>
-      <xsd:enumeration value="silver"/>
-      <xsd:enumeration value="skyBlue"/>
-      <xsd:enumeration value="slateBlue"/>
-      <xsd:enumeration value="slateGray"/>
-      <xsd:enumeration value="slateGrey"/>
-      <xsd:enumeration value="snow"/>
-      <xsd:enumeration value="springGreen"/>
-      <xsd:enumeration value="steelBlue"/>
-      <xsd:enumeration value="tan"/>
-      <xsd:enumeration value="teal"/>
-      <xsd:enumeration value="thistle"/>
-      <xsd:enumeration value="tomato"/>
-      <xsd:enumeration value="turquoise"/>
-      <xsd:enumeration value="violet"/>
-      <xsd:enumeration value="wheat"/>
-      <xsd:enumeration value="white"/>
-      <xsd:enumeration value="whiteSmoke"/>
-      <xsd:enumeration value="yellow"/>
-      <xsd:enumeration value="yellowGreen"/>
-    </xsd:restriction>
-  </xsd:simpleType>
-*/
+decl_oox_enum! {
+    pub enum SchemeColorVal {
+        Bg1 = "bg1",
+        Tx1 = "tx1",
+        Bg2 = "bg2",
+        Tx2 = "tx2",
+        Accent1 = "accent1",
+        Accent2 = "accent2",
+        Accent3 = "accent3",
+        Accent4 = "accent4",
+        Accent5 = "accent5",
+        Hlink = "hlink",
+        FolHlink = "folHlink",
+        PhClr = "phClr",
+        Dk1 = "dk1",
+        Lt1 = "lt1",
+        Dk2 = "dk2",
+        Lt2 = "lt2",
+    }
+}
 
 decl_oox_enum! {
     pub enum TextAlignType {
@@ -688,7 +700,6 @@ decl_oox_enum! {
         B = "b",
     }
 }
-
 
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
@@ -721,7 +732,6 @@ pub enum ColorTransform {
     InverseGamma,
 }
 
-
 pub struct ScRgbColor {
     pub r: Percentage,
     pub g: Percentage,
@@ -729,12 +739,10 @@ pub struct ScRgbColor {
     pub color_transforms: Option<Vec<ColorTransform>>
 }
 
-
 pub struct SRgbColor {
     pub value: HexColorRGB,
     pub color_transforms: Option<Vec<ColorTransform>>
 }
-
 
 pub struct HslColor {
     pub hue: PositiveFixedAngle,
@@ -743,21 +751,30 @@ pub struct HslColor {
     pub color_transforms: Option<Vec<ColorTransform>>
 }
 
-
 pub struct SystemColor {
     pub value: SystemColorVal,
     pub last_color: HexColorRGB,
     pub color_transforms: Option<Vec<ColorTransform>>
 }
 
+pub struct PresetColor {
+    pub value: PresetColorVal,
+    pub color_transforms: Option<Vec<ColorTransform>>,
+}
+
+pub struct SchemeColor {
+    pub value: SchemeColorVal,
+    pub color_transforms: Option<Vec<ColorTransform>>
+}
 
 pub enum ColorGroup {
     ScRgbColor(ScRgbColor),
     SRgbColor(SRgbColor),
     HslColor(HslColor),
     SystemColor(SystemColor),
+    SchemeColor(SchemeColor),
+    PresetColor(PresetColor),
 }
-
 
 pub struct RelativeRect {
     pub left: Option<Percentage>,
@@ -766,35 +783,29 @@ pub struct RelativeRect {
     pub bottom: Option<Percentage>,
 }
 
-
 pub struct PositiveSize2D {
     pub width: PositiveCoordinate,
     pub height: PositiveCoordinate,
 }
 
-
 pub struct AlphaModulateFixedEffect {
     pub amount: Option<PositivePercentage>
 }
-
 
 pub struct LuminanceEffect {
     pub bright: Option<FixedPercentage>,
     pub contrast: Option<FixedPercentage>,
 }
 
-
 pub struct DuotoneEffect {
-    pub colors: [Color; 2],
+    pub colors: [ColorGroup; 2],
 }
-
 
 pub enum EffectGroup {
     AlphaModFixed(AlphaModulateFixedEffect),
     Luminance(LuminanceEffect),
     Duotone(DuotoneEffect),
 }
-
 
 pub struct TextFont {
     pub typeface: TextTypeFace,
@@ -803,18 +814,26 @@ pub struct TextFont {
     pub charset: Option<i32>, // 1
 }
 
-
 pub enum TextSpacingGroup {
     SpcPct(TextSpacingPercent),
     SpcPts(TextSpacingPoint),
 }
 
-
 pub enum TextBulletColorGroup {
     BuClrTx,
-    BuClr,
+    BuClr(ColorGroup),
 }
 
+pub enum TextBulletSizeGroup {
+    BuSzTx,
+    BuSzPct(TextBulletSizePercent),
+    BuSzPts(TextFontSize),
+}
+
+pub enum TextBulletTypefaceGroup {
+    BuFontTx,
+    BuFont(TextFont),
+}
 
 pub struct TextParagraphProperties {
     pub margin_left: Option<TextMargin>,
@@ -831,29 +850,14 @@ pub struct TextParagraphProperties {
     pub line_spacing: Option<TextSpacingGroup>,
     pub space_before: Option<TextSpacingGroup>,
     pub space_after: Option<TextSpacingGroup>,
-
+    pub text_bullet_color: Option<TextBulletColorGroup>,
+    pub text_bullet_size: Option<TextBulletSizeGroup>,
+    pub text_bullet_typeface: Option<TextBulletTypefaceGroup>,
 }
 /*
     class TextParagraphProperties
     {
     public:
-        Office::Optional<TextMargin> marL;
-        Office::Optional<TextMargin> marR;
-        Office::Optional<TextIndentLevelType> lvl;
-        Office::Optional<TextIndent> indent;
-        Office::Optional<TextAlignType> algn;
-        Office::Optional<Coordinate32> defTabSz;
-        Office::Optional<bool> rtl;
-        Office::Optional<bool> eaLnBrk;
-        Office::Optional<TextFontAlignType> fontAlgn;
-        Office::Optional<bool> latinLnBrk;
-        Office::Optional<bool> hangingPunct;
-        std::unique_ptr<TextSpacingChoice> lnSpc;
-        std::unique_ptr<TextSpacingChoice> spcBef;
-        std::unique_ptr<TextSpacingChoice> spcAft;
-        std::unique_ptr<TextBulletColorChoice> textBulletColor;
-        std::unique_ptr<TextBulletSizeChoice> textBulletSize;
-        std::unique_ptr<TextBulletTypefaceChoice> textBulletTypeface;
         std::unique_ptr<TextBulletChoice> textBullet;
         TextTabStopList tabLst;
         std::unique_ptr<TextCharacterProperties> defRPr;

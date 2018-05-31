@@ -7,8 +7,8 @@ macro_rules! decl_oox_enum {
         }
 
         impl $name {
-            pub fn from_string(s: &String) -> $name {
-                match s.as_str() {
+            pub fn from_string(s: &str) -> $name {
+                match s {
                     $($str_value => $name::$variant),*,
                     _ => panic!("Cannot convert string to enum type $name"),
                 }
