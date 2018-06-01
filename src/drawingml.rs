@@ -1,4 +1,5 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
+use relationship;
 
 pub type Guid = String; // TODO: move to shared common types. pattern="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"
 pub type Percentage = f32;
@@ -701,6 +702,52 @@ decl_oox_enum! {
     }
 }
 
+decl_oox_enum! {
+    pub enum TextAutonumberScheme {
+        AlphaLcParenBoth = "alphaLcParenBoth",
+        AlphaUcParenBoth = "alphaUcParenBoth",
+        AlphaLcParenR = "alphaLcParenR",
+        AlphaUcParenR = "alphaUcParenR",
+        AlphaLcPeriod = "alphaLcPeriod",
+        AlphaUcPeriod = "alphaUcPeriod",
+        ArabicParenBoth = "arabicParenBoth",
+        ArabicParenR = "arabicParenR",
+        ArabicPeriod = "arabicPeriod",
+        ArabicPlain = "arabicPlain",
+        RomanLcParenBoth = "romanLcParenBoth",
+        RomanUcParenBoth = "romanUcParenBoth",
+        RomanLcParenR = "romanLcParenR",
+        RomanUcParenR = "romanUcParenR",
+        RomanLcPeriod = "romanLcPeriod",
+        RomanUcPeriod = "romanUcPeriod",
+        CircleNumDbPlain = "circleNumDbPlain",
+        CircleNumWdBlackPlain = "circleNumWdBlackPlain",
+        CircleNumWdWhitePlain = "circleNumWdWhitePlain",
+        ArabicDbPeriod = "arabicDbPeriod",
+        ArabicDbPlain = "arabicDbPlain",
+        Ea1ChsPeriod = "ea1ChsPeriod",
+        Ea1ChsPlain = "ea1ChsPlain",
+        Ea1ChtPeriod = "ea1ChtPeriod",
+        Ea1ChtPlain = "ea1ChtPlain",
+        Ea1JpnChsDbPeriod = "ea1JpnChsDbPeriod",
+        Ea1JpnKorPlain = "ea1JpnKorPlain",
+        Ea1JpnKorPeriod = "ea1JpnKorPeriod",
+        Arabic1Minus = "arabic1Minus",
+        Arabic2Minus = "arabic2Minus",
+        Hebrew2Minus = "hebrew2Minus",
+        ThaiAlphaPeriod = "thaiAlphaPeriod",
+        ThaiAlphaParenR = "thaiAlphaParenR",
+        ThaiAlphaParenBoth = "thaiAlphaParenBoth",
+        ThaiNumPeriod = "thaiNumPeriod",
+        ThaiNumParenR = "thaiNumParenR",
+        ThaiNumParenBoth = "thaiNumParenBoth",
+        HindiAlphaPeriod = "hindiAlphaPeriod",
+        HindiNumPeriod = "hindiNumPeriod",
+        HindiNumParenR = "hindiNumParenR",
+        HindiAlpha1Period = "hindiAlpha1Period",
+    }
+}
+
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
     Shade(PositiveFixedPercentage),
@@ -736,35 +783,35 @@ pub struct ScRgbColor {
     pub r: Percentage,
     pub g: Percentage,
     pub b: Percentage,
-    pub color_transforms: Option<Vec<ColorTransform>>
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub struct SRgbColor {
     pub value: HexColorRGB,
-    pub color_transforms: Option<Vec<ColorTransform>>
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub struct HslColor {
     pub hue: PositiveFixedAngle,
     pub saturation: Percentage,
     pub luminance: Percentage,
-    pub color_transforms: Option<Vec<ColorTransform>>
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub struct SystemColor {
     pub value: SystemColorVal,
     pub last_color: HexColorRGB,
-    pub color_transforms: Option<Vec<ColorTransform>>
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub struct PresetColor {
     pub value: PresetColorVal,
-    pub color_transforms: Option<Vec<ColorTransform>>,
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub struct SchemeColor {
     pub value: SchemeColorVal,
-    pub color_transforms: Option<Vec<ColorTransform>>
+    pub color_transforms: Vec<ColorTransform>,
 }
 
 pub enum ColorGroup {
@@ -802,9 +849,42 @@ pub struct DuotoneEffect {
 }
 
 pub enum EffectGroup {
-    AlphaModFixed(AlphaModulateFixedEffect),
-    Luminance(LuminanceEffect),
+    Cont(EffectContainer),
+    Effect(EffectReference),
+    AlphaBiLevel(AlphaBiLevelEffect),
+    AlphaCeiling(AlphaCeilingEffect),
+    ALphaFloor(AlphaFloorEffect),
+    AlphaInv(AlphaInverseEffect),
+    AlphaMod(AlphaModulateEffect),
+    AlphaModFix(AlphaModulateFixedEffect),
+    AlphaOutset(AlphaOutsetEffect),
+    AlphaRepl(AlphaReplaceEffect),
+    BiLevel(BiLevelEffect),
+    Blend(BlendEffect),
+    Blur(BlurEffect),
+    ClrChange(ColorChangeEffect),
+    ClrRepl(ColorReplaceEffect),
     Duotone(DuotoneEffect),
+    Fill(FillEffect),
+    FillOverlay(FillOverlayEffect),
+    Glow(GlowEffect),
+    Grayscl(GrayscaleEffect),
+    Hsl(HslEffect),
+    InnerShdw(InnerShadowEffect),
+    Lum(LuminanceEffect),
+    OuterShdw(OuterShadowEffect),
+    PrstShadow(PresetShadowEffect),
+    Reflection(ReflectionEffect),
+    RelOff(RelativeOffsetEffect),
+    SoftEdge(SoftEdgesEffect),
+    Tint(TintEffect),
+    Xfrm(TransformEffect),
+}
+
+pub struct Blip {
+    pub effect: Vec<EffectGroup>,
+    pub embed_rel_id: Option<relationship::RelationshipId>,
+    pub linked_rel_id: Option<relationship::RelationshipId>,
 }
 
 pub struct TextFont {
@@ -835,6 +915,18 @@ pub enum TextBulletTypefaceGroup {
     BuFont(TextFont),
 }
 
+pub struct TextAutonumberedBullet {
+    pub scheme: TextAutonumberScheme,
+    pub start_t: Option<TextBulletStartAtNum>,
+}
+
+pub enum TextBulletGroup {
+    BuNone,
+    BuAutoNum(TextAutonumberedBullet),
+    BuChar(String),
+    BuBlip(Blip),
+}
+
 pub struct TextParagraphProperties {
     pub margin_left: Option<TextMargin>,
     pub margin_right: Option<TextMargin>,
@@ -853,6 +945,7 @@ pub struct TextParagraphProperties {
     pub text_bullet_color: Option<TextBulletColorGroup>,
     pub text_bullet_size: Option<TextBulletSizeGroup>,
     pub text_bullet_typeface: Option<TextBulletTypefaceGroup>,
+    pub text_bullet: Option<TextBulletGroup>
 }
 /*
     class TextParagraphProperties
