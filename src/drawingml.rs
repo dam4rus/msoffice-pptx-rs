@@ -748,6 +748,21 @@ decl_oox_enum! {
     }
 }
 
+decl_oox_enum! {
+    pub enum EffectContainerType {
+        Sib = "sib",
+        Tree = "tree",
+    }
+}
+
+decl_oox_enum! {
+    pub enum PathShadeType {
+        Shape = "shape",
+        Circle = "circle",
+        Rect = "rect",
+    }
+}
+
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
     Shade(PositiveFixedPercentage),
@@ -823,6 +838,69 @@ pub enum ColorGroup {
     PresetColor(PresetColor),
 }
 
+pub struct GradientStop {
+    pub color: ColorGroup,
+    pub position: PositiveFixedPercentage,
+}
+
+pub struct LinearShadeProperties {
+    pub angle: Option<PositiveFixedAngle>,
+    pub scaled: Option<bool>,
+}
+
+pub struct PathShadeProperties {
+    pub fill_to_rect: Option<RelativeRect>,
+    pub path: Option<PathShadeType>,
+}
+
+pub enum ShadePropertiesGroup {
+    Linear(LinearShadeProperties),
+    Path(PathShadeProperties),
+}
+
+pub struct GradientFillProperties {
+    pub gradient_stop_list: Vec<GradientStop>, // length: 2 <= n <= inf
+    pub shade_properties: Option<ShadePropertiesGroup>,
+    pub tile_rect: Option<RelativeRect>,
+    pub flip: Option<TileFlipMode>,
+    pub rotate_with_shape: Option<bool>,
+}
+
+pub struct TileInfoProperties {
+    pub translate_x: Option<Coordinate>,
+    pub translate_y: Option<Coordinate>,
+    pub scale_x: Option<Percentage>,
+    pub scale_y: Option<Percentage>,
+    pub flip_mode: Option<TileFlipMode>,
+    pub alignment: Option<RectAlignment>,
+}
+
+pub struct StretchInfoProperties {
+    pub fill_rect: Option<RelativeRect>,
+}
+
+pub enum FillModePropertiesGroup {
+    Tile(TileInfoProperties),
+    Stretch(StretchInfoProperties),
+}
+
+pub struct BlipFillProperties {
+    pub blip: Option<Blip>,
+    pub source_rect: Option<RelativeRect>,
+    pub fill_mode_properties: Option<FillModePropertiesGroup>,
+    pub dpi: Option<u32>,
+    pub rotate_with_shape: Option<bool>,
+}
+
+pub enum FillPropertiesGroup {
+    NoFill,
+    SolidFill(ColorGroup),
+    GradientFill(GradientFillProperties),
+    BlipFill(BlipFillProperties),
+    PatternFill(PatternFillProperties),
+    GroupFill(GroupFillProperties),
+}
+
 pub struct RelativeRect {
     pub left: Option<Percentage>,
     pub top: Option<Percentage>,
@@ -835,9 +913,60 @@ pub struct PositiveSize2D {
     pub height: PositiveCoordinate,
 }
 
-pub struct AlphaModulateFixedEffect {
-    pub amount: Option<PositivePercentage>
+pub struct EffectContainer {
+    pub effects: Vec<EffectGroup>,
+    pub container_type: Option<EffectContainerType>,
+    pub name: Option<String>,
 }
+
+pub struct AlphaBiLevelEffect {
+    pub treshold: PositiveFixedPercentage,
+}
+
+pub struct AlphaInverseEffect {
+    pub color: Option<ColorGroup>,
+}
+
+pub struct AlphaModulateEffect {
+    pub container: EffectContainer,
+}
+
+pub struct AlphaModulateFixedEffect {
+    pub amount: PositivePercentage,
+}
+
+pub struct AlphaOutsetEffect {
+    pub radius: Coordinate,
+}
+
+pub struct AlphaReplaceEffect {
+    pub alpha: PositiveFixedPercentage,
+}
+
+pub struct BiLevelEffect {
+    pub treshold: PositiveFixedPercentage,
+}
+
+pub struct BlendEffect {
+    pub container: EffectContainer,
+    pub blend: BlendMode,
+}
+
+pub struct BlurEffect {
+    pub radius: PositiveCoordinate, // 0
+    pub grow: bool, // true
+}
+
+pub struct ColorChangeEffect {
+    pub color_from: ColorGroup,
+    pub color_to: ColorGroup,
+    pub use_alpha: bool, // true
+}
+
+pub struct ColorReplaceEffect {
+    pub color: ColorGroup,
+}
+
 
 pub struct LuminanceEffect {
     pub bright: Option<FixedPercentage>,
@@ -848,12 +977,16 @@ pub struct DuotoneEffect {
     pub colors: [ColorGroup; 2],
 }
 
+pub struct FillEffect {
+    pub fill: FillPropertiesGroup,
+}
+
 pub enum EffectGroup {
     Cont(EffectContainer),
-    Effect(EffectReference),
+    EffectRefernce(String),
     AlphaBiLevel(AlphaBiLevelEffect),
-    AlphaCeiling(AlphaCeilingEffect),
-    ALphaFloor(AlphaFloorEffect),
+    AlphaCeiling,
+    ALphaFloor,
     AlphaInv(AlphaInverseEffect),
     AlphaMod(AlphaModulateEffect),
     AlphaModFix(AlphaModulateFixedEffect),
