@@ -1,4 +1,4 @@
-macro_rules! decl_oox_enum {
+macro_rules! decl_simple_type_enum {
     (pub enum $name:ident {
         $($variant:ident = $str_value:expr),*,
     }) => {

@@ -10,14 +10,14 @@ pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
 pub type SlideSizeCoordinate = drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
 pub type Name = String;
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum ConformanceClass {
         Strict = "strict",
         Transitional = "transitional",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum SlideLayoutType {
         Title = "title",
         Tx = "tx",
@@ -58,7 +58,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PlaceholderType {
         Title = "title",
         Body = "body",
@@ -79,14 +79,14 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum Direction {
         Horz = "horz",
         Vert = "vert",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PlaceholderSize {
         Full = "full",
         Half = "half",
@@ -94,7 +94,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum SlideSizeType {
         Screen4x3 = "screen4x3",
         Letter = "letter",
@@ -115,7 +115,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PhotoAlbumLayout {
         FitToSlide = "fitToSlide",
         Pic1 = "pic1",
@@ -127,7 +127,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PhotoAlbumFrameShape {
         FrameStyle1 = "frameStyle1",
         FrameStyle2 = "frameStyle2",
@@ -139,7 +139,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum OleObjectFollowColorScheme {
         None = "none",
         Full = "full",

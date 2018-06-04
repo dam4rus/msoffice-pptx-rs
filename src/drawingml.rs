@@ -36,7 +36,7 @@ pub type TextNonNegativePoint = i32; // TODO: 0 <= n <= 400000
 pub type TextPoint = i32; // TODO: -400000 <= n <= 400000
 pub type ShapeId = String;
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum TileFlipMode {
         None = "none",
         X = "x",
@@ -45,7 +45,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum RectAlignment {
         L = "l",
         T = "t",
@@ -59,7 +59,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PathFillMode {
         None = "none",
         Norm = "norm",
@@ -70,7 +70,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum ShapeType {
         Line = "line",
         LineInv = "lineInv",
@@ -262,7 +262,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum LineCap {
         Rnd = "rnd",
         Sq = "sq",
@@ -270,7 +270,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum CompoundLine {
         Sng = "sng",
         Dbl = "dbl",
@@ -280,14 +280,14 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PenAlignment {
         Ctr = "ctr",
         In = "in",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PresetLineDashVal {
         Solid = "solid",
         Dot = "dot",
@@ -303,7 +303,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum LineEndType {
         None = "none",
         Triangle = "triangle",
@@ -314,7 +314,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum LineEndWidth {
         Sm = "sm",
         Med = "med",
@@ -322,7 +322,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum LineEndLength {
         Sm = "sm",
         Med = "med",
@@ -330,17 +330,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
-    pub enum BlendMode {
-        Over = "over",
-        Mult = "mult",
-        Screen = "screen",
-        Darken = "darken",
-        Lighten = "lighten",
-    }
-}
-
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PresetShadowVal {
         Shdw1 = "shdw1",
         Shdw2 = "shdw2",
@@ -365,14 +355,14 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum EffectContainerType {
         Sib = "sib",
         Tree = "tree",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum FontCollectionIndex {
         Major = "major",
         Minor = "minor",
@@ -380,13 +370,13 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum AnimationBuildType {
         AllAtOnce = "allAtOnce",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum AnimationDgmOnlyBuildType {
         One = "one",
         LvlOne = "lvlOne",
@@ -394,7 +384,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum AnimationChartOnlyBuildType {
         Series = "series",
         Category = "category",
@@ -403,14 +393,14 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum DgmBuildStep {
         Sp = "sp",
         Bg = "bg",
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum ChartBuildStep {
         Category = "category",
         PtInCategory = "ptInCategory",
@@ -421,7 +411,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum OnOffStyleType {
         On = "on",
         Off = "off",
@@ -429,7 +419,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum SystemColorVal {
         ScrollBar = "scrollBar",
         Background = "background",
@@ -464,7 +454,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PresetColorVal {
         AliceBlue = "aliceBlue",
         AntiqueWhite = "antiqueWhite",
@@ -659,7 +649,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum SchemeColorVal {
         Bg1 = "bg1",
         Tx1 = "tx1",
@@ -680,7 +670,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum TextAlignType {
         L = "l",
         Ctr = "ctr",
@@ -692,7 +682,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum TextFontAlignType {
         Auto = "auto",
         T = "t",
@@ -702,7 +692,7 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum TextAutonumberScheme {
         AlphaLcParenBoth = "alphaLcParenBoth",
         AlphaUcParenBoth = "alphaUcParenBoth",
@@ -748,18 +738,80 @@ decl_oox_enum! {
     }
 }
 
-decl_oox_enum! {
-    pub enum EffectContainerType {
-        Sib = "sib",
-        Tree = "tree",
-    }
-}
-
-decl_oox_enum! {
+decl_simple_type_enum! {
     pub enum PathShadeType {
         Shape = "shape",
         Circle = "circle",
         Rect = "rect",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum PresetPatternVal {
+        Percent5 = "pct5",
+        Percent10 = "pct10",
+        Percent20 = "pct20",
+        Percent25 = "pct25",
+        Percent30 = "pct30",
+        Percent40 = "pct40",
+        Percent50 = "pct50",
+        Percent60 = "pct60",
+        Percent70 = "pct70",
+        Percent75 = "pct75",
+        Percent80 = "pct80",
+        Percent90 = "pct90",
+        Horizontal = "horz",
+        Vertical = "vert",
+        LightHorizontal = "ltHorz",
+        LightVertical = "ltVert",
+        DarkHorizontal = "dkHorz",
+        DarkVertical = "dkVert",
+        NarrowHorizontal = "narHorz",
+        NarrowVertical = "narVert",
+        DashedHorizontal = "dashHorz",
+        DashedVertical = "dashVert",
+        Cross = "cross",
+        DownwardDiagonal = "dnDiag",
+        UpwardDiagonal = "upDiag",
+        LightDownwardDiagonal = "ltDnDiag",
+        LightUpwardDiagonal = "ltUpDiag",
+        DarkDownwardDiagonal = "dkDnDiag",
+        DarkUpwardDiagonal = "dkUpDiag",
+        WideDownwardDiagonal = "wdDnDiag",
+        WideUpwardDiagonal = "wdUpDiag",
+        DashedDownwardDiagonal = "dashDnDiag",
+        DashedUpwardDiagonal = "dashUpDiag",
+        DiagonalCross = "diagCross",
+        SmallCheckerBoard = "smCheck",
+        LargeCheckerBoard = "lgCheck",
+        SmallGrid = "smGrid",
+        LargeGrid = "lgGrid",
+        DottedGrid = "dotGrid",
+        SmallConfetti = "smConfetti",
+        LargeConfetti = "lgConfetti",
+        HorizontalBrick = "horzBrick",
+        DiagonalBrick = "diagBrick",
+        SolidDiamond = "solidDmnd",
+        OpenDiamond = "openDmnd",
+        DottedDiamond = "dotDmnd",
+        Plaid = "plaid",
+        Sphere = "sphere",
+        Weave = "weave",
+        Divot = "divot",
+        Shingle = "shingle",
+        Wave = "wave",
+        Trellis = "trellis",
+        ZigZag = "zigzag",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum BlendMode {
+        Overlay = "over",
+        Multiply = "mult",
+        Screen = "screen",
+        Lighten = "lighten",
+        Darken = "darken",
     }
 }
 
@@ -892,13 +944,19 @@ pub struct BlipFillProperties {
     pub rotate_with_shape: Option<bool>,
 }
 
+pub struct PatternFillProperties {
+    pub fg_color: Option<ColorGroup>,
+    pub bg_color: Option<ColorGroup>,
+    pub preset: Option<PresetPatternVal>,
+}
+
 pub enum FillPropertiesGroup {
     NoFill,
     SolidFill(ColorGroup),
     GradientFill(GradientFillProperties),
     BlipFill(BlipFillProperties),
     PatternFill(PatternFillProperties),
-    GroupFill(GroupFillProperties),
+    GroupFill
 }
 
 pub struct RelativeRect {
@@ -981,9 +1039,92 @@ pub struct FillEffect {
     pub fill: FillPropertiesGroup,
 }
 
+pub struct FillOverlayEffect {
+    pub fill: FillPropertiesGroup,
+    pub blend_mode: BlendMode,
+}
+
+pub struct GlowEffect {
+    pub color: ColorGroup,
+    pub radius: Option<PositiveCoordinate>, // 0
+}
+
+pub struct HslEffect {
+    pub hue: Option<PositiveFixedAngle>, // 0
+    pub saturation: Option<FixedPercentage>, // 0%
+    pub luminance: Option<FixedPercentage>, // 0%
+}
+
+pub struct InnerShadowEffect {
+    pub color: ColorGroup,
+    pub blur_radius: Option<PositiveCoordinate>, // 0
+    pub distance: Option<PositiveCoordinate>, // 0
+    pub direction: Option<PositiveFixedAngle>, // 0
+}
+
+pub struct OuterShadowEffect {
+    pub color: ColorGroup,
+    pub blur_radius: Option<PositiveCoordinate>, // 0
+    pub distance: Option<PositiveCoordinate>, // 0
+    pub direction: Option<PositiveFixedAngle>, // 0
+    pub scale_x: Option<Percentage>, // 100000
+    pub scale_y: Option<Percentage>, // 100000
+    pub skew_x: Option<FixedAngle>, // 0
+    pub skew_y: Option<FixedAngle>, // 0
+    pub alignment: Option<RectAlignment>, // b
+    pub rotate_with_shape: Option<bool>, // true
+}
+
+pub struct PresetShadowEffect {
+    pub color: ColorGroup,
+    pub preset: PresetShadowVal,
+    pub distance: Option<PositiveCoordinate>, // 0
+    pub direction: Option<PositiveFixedAngle>, // 0
+}
+
+pub struct ReflectionEffect {
+    pub blur_radius: Option<PositiveCoordinate>, // 0
+    pub start_opacity: Option<PositiveFixedPercentage>, // 100000
+    pub start_position: Option<PositiveFixedPercentage>, // 0
+    pub end_opacity: Option<PositiveFixedPercentage>, // 0
+    pub end_position: Option<PositiveFixedPercentage>, // 100000
+    pub distance: Option<PositiveCoordinate>, // 0
+    pub direction: Option<PositiveFixedAngle>, // 0
+    pub fade_direction: Option<PositiveFixedAngle>, // 5400000
+    pub scale_x: Option<Percentage>, // 100000
+    pub scale_y: Option<Percentage>, // 100000
+    pub skew_x: Option<FixedAngle>, // 0
+    pub skew_y: Option<FixedAngle>, // 0
+    pub alignment: Option<RectAlignment>, // b
+    pub rotate_with_shape: Option<bool>, // true
+}
+
+pub struct RelativeOffsetEffect {
+    pub translate_x: Option<Percentage>, // 0
+    pub translate_y: Option<Percentage>, // 0
+}
+
+pub struct SoftEdgesEffect {
+    pub radius: PositiveCoordinate,
+}
+
+pub struct TintEffect {
+    pub hue: Option<PositiveFixedAngle>, // 0
+    pub amount: Option<FixedPercentage>, // 0
+}
+
+pub struct TransformEffect {
+    pub scale_x: Option<Percentage>, // 100000
+    pub scale_y: Option<Percentage>, // 100000
+    pub translate_x: Option<Coordinate>, // 0
+    pub translate_y: Option<Coordinate>, // 0
+    pub skew_x: Option<FixedAngle>, // 0
+    pub skew_y: Option<FixedAngle>, // 0
+}
+
 pub enum EffectGroup {
     Cont(EffectContainer),
-    EffectRefernce(String),
+    EffectReference(String),
     AlphaBiLevel(AlphaBiLevelEffect),
     AlphaCeiling,
     ALphaFloor,
@@ -1001,7 +1142,7 @@ pub enum EffectGroup {
     Fill(FillEffect),
     FillOverlay(FillOverlayEffect),
     Glow(GlowEffect),
-    Grayscl(GrayscaleEffect),
+    Grayscl,
     Hsl(HslEffect),
     InnerShdw(InnerShadowEffect),
     Lum(LuminanceEffect),
@@ -1078,13 +1219,12 @@ pub struct TextParagraphProperties {
     pub text_bullet_color: Option<TextBulletColorGroup>,
     pub text_bullet_size: Option<TextBulletSizeGroup>,
     pub text_bullet_typeface: Option<TextBulletTypefaceGroup>,
-    pub text_bullet: Option<TextBulletGroup>
+    pub text_bullet: Option<TextBulletGroup>,
 }
 /*
     class TextParagraphProperties
     {
     public:
-        std::unique_ptr<TextBulletChoice> textBullet;
         TextTabStopList tabLst;
         std::unique_ptr<TextCharacterProperties> defRPr;
         //std::unique_ptr<OfficeArtExtensionList> extLst;
