@@ -147,6 +147,59 @@ decl_simple_type_enum! {
     }
 }
 
+pub struct BackgroundProperties {
+    pub fill: drawingml::FillPropertiesGroup,
+    pub effect: Option<drawingml::EffectPropertiesGroup>,
+    pub shade_to_title: Option<bool>, // false
+}
+
+pub enum BackgroundGroup {
+    Properties(BackgroundProperties),
+    Reference(drawingml::StyleMatrixReference),
+}
+
+pub struct Background {
+    pub background: BackgroundGroup,
+    pub black_and_white_mode: Option<drawingml::BlackWhiteMode>, // white
+}
+
+pub struct ApplicationNonVisualDrawingProps {
+    pub is_photo: Option<bool>, // false
+    pub is_user_drawn: Option<bool>, // false
+    pub placeholder: Option<Placeholder>,
+    pub media: Option<MediaGroup>,
+    //pub customer_data_list: Option<CustomerDataList>,
+
+}
+
+pub enum ShapeGroup {
+    Shape(Shape),
+    GroupShape(GroupShape),
+    GraphicFrame(GraphicalObjectFrame),
+    Connector(Connector),
+    Picture(Picture),
+    ContentPart(relationship::RelationshipId),
+}
+
+pub struct GroupShapeNonVisual {
+    pub drawing_props: drawingml::NonVisualDrawingProps,
+    pub group_drawing_props: drawingml::NonVisualGroupDrawingShapeProps,
+    pub app_props: ApplicationNonVisualDrawingProps,
+}
+
+pub struct GroupShape {
+    pub non_visual_properties: GroupShapeNonVisual,
+    pub properties: drawingml::GroupShapeProperties,
+    pub shape_array: Vec<ShapeGroup>,
+}
+
+pub struct CommonSlideData {
+    pub name: Option<String>,
+    pub background: Option<Background>,
+    pub shape_tree: GroupShape,
+    //pub customer_data_list: Option<CustomerDataList>,
+    //pub controls: Option<ControlList>,
+}
 
 pub struct SlideSize {
     pub width: SlideSizeCoordinate,
@@ -154,28 +207,58 @@ pub struct SlideSize {
     pub size_type: Option<SlideSizeType>,
 }
 
-
 pub struct SlideIdListEntry {
     pub id: Option<SlideId>,
     pub relationship_id: relationship::RelationshipId,
 }
 
+pub struct SlideLayoutIdListEntry {
+    pub id: Option<SlideLayoutId>,
+    pub relationship_id: relationship::RelationshipId,
+}
 
 pub struct SlideMasterIdListEntry {
     pub id: Option<SlideMasterId>,
     pub relationship_id: relationship::RelationshipId,
 }
 
-
 pub struct NotesMasterIdListEntry {
     pub relationship_id: relationship::RelationshipId,
 }
-
 
 pub struct HandoutMasterIdListEntry {
     pub relationship_id: relationship::RelationshipId,
 }
 
+pub struct SlideMasterTextStyles {
+    pub title_styles: Option<drawingml::TextListStyle>,
+    pub body_styles: Option<drawingml::TextListStyle>,
+    pub other_styles: Option<drawingml::TextListStyle>,
+}
+
+pub struct SlideMaster {
+    pub preserve: Option<bool>, // false
+    pub common_slide_data: CommonSlideData,
+    pub top_level_slide: TopLevelSlide,
+    pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
+    pub transition: Option<SlideTransition>,
+    pub timing: Option<SlideTiming>,
+    pub header_footer: Option<HeaderFooter>,
+    pub text_styles: Option<SlideMasterTextStyles>,
+    /*
+    		Office::Optional<bool> preserve;// = false;
+		std::unique_ptr<CommonSlideData> cSld;
+		std::unique_ptr<GrpTopLevelSlide> topLevelSlide;
+		SlideLayoutIdList sldLayoutIdLst;
+		//std::unique_ptr<SlideTransition> transition;
+		std::unique_ptr<SlideTiming> timing;
+		//std::unique_ptr<HeaderFooter> hf;
+		std::unique_ptr<SlideMasterTextStyles> txStyles;
+		//std::unique_ptr<ExtensionListModify> extLst;
+		Office::RelationshipArray relations;
+
+    */
+}
 
 pub struct EmbeddedFontListEntry {
     pub font: Option<drawingml::TextFont>,
@@ -185,14 +268,12 @@ pub struct EmbeddedFontListEntry {
     pub bold_italic: Option<relationship::RelationshipId>,
 }
 
-
 pub struct CustomShow {
     pub name: Name,
     pub id: u32,
     pub slide_list: Vec<relationship::RelationshipId>,
     //std::unique_ptr<ExtensionList> extLst;
 }
-
 
 pub struct PhotoAlbum {
     pub black_and_white: Option<bool>, // false
@@ -203,7 +284,6 @@ pub struct PhotoAlbum {
     //std::unique_ptr<ExtensionList> extLst;
     */
 }
-
 
 pub struct Presentation {
     pub server_zoom: Option<drawingml::Percentage>, // 50%

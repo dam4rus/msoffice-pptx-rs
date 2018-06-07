@@ -29,6 +29,7 @@ pub type TextIndentLevelType = i32; // TODO; 0 <= n <= 8
 pub type TextBulletSizePercent = Percentage; // TODO: 0.25 <= n <= 4.0
 pub type TextFontSize = i32; // TODO: 100 <= n <= 400000
 pub type TextTypeFace = String;
+pub type TextLanguageID = String;
 pub type Panose = String; // TODO: hex, length=10
 pub type TextBulletStartAtNum = i32; // TODO: 1 <= n <= 32767
 pub type Lang = String; 
@@ -815,6 +816,70 @@ decl_simple_type_enum! {
     }
 }
 
+decl_simple_type_enum! {
+    pub enum TextTabAlignType {
+        Left = "l",
+        Center = "ctr",
+        Right = "r",
+        Decimal = "dec",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextUnderlineType {
+        None = "none",
+        Words = "words",
+        Single = "sng",
+        Double = "dbl",
+        Heavy = "heavy",
+        Dotted = "dotted",
+        DottedHeavy = "dottedHeavy",
+        Dash = "dash",
+        DashHeavy = "dashHeavy",
+        DashLong = "dashLong",
+        DashLongHeavy = "dashLongHeavy",
+        DotDash = "dotDash",
+        DotDashHeavy = "dotDashHeavy",
+        DotDotDash = "dotDotDash",
+        DotDotDashHeavy = "dotDotDashHeavy",
+        Wavy = "wavy",
+        WavyHeavy = "wavyHeavy",
+        WavyDouble = "wavyDbl",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextStrikeType {
+        NoStrike = "noStrike",
+        SingleStrike = "sngStrike",
+        DoubleStrike = "dblStrike",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextCapsType {
+        None = "none",
+        Small = "small",
+        All = "all",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum BlackWhiteMode {
+        Color = "clr",
+        Auto = "auto",
+        Gray = "gray",
+        LightGray = "ltGray",
+        InverseGray = "invGray",
+        GrayWhite = "grayWhite",
+        BlackGray = "blackGray",
+        BlackWhite = "blackWhite",
+        Black = "black",
+        White = "white",
+        Hidden = "hidden",
+    }
+}
+
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
     Shade(PositiveFixedPercentage),
@@ -959,6 +1024,54 @@ pub enum FillPropertiesGroup {
     GroupFill
 }
 
+pub enum LineFillPropertiesGroup {
+    NoFill,
+    SolidFill(ColorGroup),
+    GradientFill(GradientFillProperties),
+    PatternFill(PatternFillProperties),
+}
+
+pub struct DashStop {
+    pub dash_length: PositivePercentage,
+    pub space_length: PositivePercentage,
+}
+
+pub enum LineDashPropertiesGroup {
+    PresetDash(PresetLineDashVal),
+    CustomDash(Vec<DashStop>)
+}
+
+pub struct LineJoinMiterProperties {
+    pub limit: Option<PositivePercentage>,
+}
+
+pub enum LineJoinPropertiesGroup {
+    Round,
+    Bevel,
+    Miter(LineJoinMiterProperties),
+}
+
+pub struct LineEndProperties {
+    pub end_type: Option<LineEndType>,
+    pub width: Option<LineEndWidth>,
+    pub length: Option<LineEndLength>,
+}
+
+pub struct LineProperties {
+    pub width: Option<LineWidth>,
+    pub cap: Option<LineCap>,
+    pub compound: Option<CompoundLine>,
+    pub pen_alignment: Option<PenAlignment>,
+    pub fill_properties: Option<LineFillPropertiesGroup>,
+    pub dash_properties: Option<LineDashPropertiesGroup>,
+    pub join_properties: Option<LineJoinPropertiesGroup>,
+    pub head_end: Option<LineEndProperties>,
+    pub tail_end: Option<LineEndProperties>,
+    /*
+		//std::unique_ptr<OfficeArtExtensionList> extLst;
+    */
+}
+
 pub struct RelativeRect {
     pub left: Option<Percentage>,
     pub top: Option<Percentage>,
@@ -969,6 +1082,11 @@ pub struct RelativeRect {
 pub struct PositiveSize2D {
     pub width: PositiveCoordinate,
     pub height: PositiveCoordinate,
+}
+
+pub struct StyleMatrixReference {
+    pub index: StyleMatrixColumnIndex,
+    pub color: Option<ColorGroup>,
 }
 
 pub struct EffectContainer {
@@ -1155,6 +1273,22 @@ pub enum EffectGroup {
     Xfrm(TransformEffect),
 }
 
+pub struct EffectList {
+    pub blur: Option<BlurEffect>,
+    pub fill_overlay: Option<FillOverlayEffect>,
+    pub glow: Option<GlowEffect>,
+    pub inner_shadow: Option<InnerShadowEffect>,
+    pub outer_shadow: Option<OuterShadowEffect>,
+    pub preset_shadow: Option<PresetShadowEffect>,
+    pub reflection: Option<ReflectionEffect>,
+    pub soft_edges: Option<SoftEdgesEffect>,
+}
+
+pub enum EffectPropertiesGroup {
+    EffectList(EffectList),
+    EffectContainer(EffectContainer),
+}
+
 pub struct Blip {
     pub effect: Vec<EffectGroup>,
     pub embed_rel_id: Option<relationship::RelationshipId>,
@@ -1174,19 +1308,19 @@ pub enum TextSpacingGroup {
 }
 
 pub enum TextBulletColorGroup {
-    BuClrTx,
-    BuClr(ColorGroup),
+    FollowText,
+    Color(ColorGroup),
 }
 
 pub enum TextBulletSizeGroup {
-    BuSzTx,
-    BuSzPct(TextBulletSizePercent),
-    BuSzPts(TextFontSize),
+    FollowText,
+    Percent(TextBulletSizePercent),
+    Point(TextFontSize),
 }
 
 pub enum TextBulletTypefaceGroup {
-    BuFontTx,
-    BuFont(TextFont),
+    FollowText,
+    Font(TextFont),
 }
 
 pub struct TextAutonumberedBullet {
@@ -1195,10 +1329,79 @@ pub struct TextAutonumberedBullet {
 }
 
 pub enum TextBulletGroup {
-    BuNone,
-    BuAutoNum(TextAutonumberedBullet),
-    BuChar(String),
-    BuBlip(Blip),
+    None,
+    AutoNumbered(TextAutonumberedBullet),
+    Character(String),
+    Picture(Blip),
+}
+
+pub struct TextTabStop {
+    pub position: Option<Coordinate32>,
+    pub alignment: Option<TextTabAlignType>,
+}
+
+pub enum TextUnderlineLineGroup {
+    FollowText,
+    Line(Option<LineProperties>),
+}
+
+pub enum TextUnderlineFillGroup {
+    FollowText,
+    Fill(FillPropertiesGroup),
+}
+
+pub struct EmbeddedWAVAudioFile {
+    pub embed_rel_id: relationship::RelationshipId,
+    pub name: Option<String>,
+    pub built_in: Option<bool>, // false
+}
+
+pub struct Hyperlink {
+    pub relationship_id: Option<relationship::RelationshipId>,
+    pub invalid_url: Option<String>,
+    pub action: Option<String>,
+    pub target_frame: Option<String>,
+    pub tooltip: Option<String>,
+    pub history: Option<bool>, // true
+    pub highlight_click: Option<bool>, // false
+    pub end_sound: Option<bool>, // false
+    pub sound: Option<EmbeddedWAVAudioFile>,
+		//std::unique_ptr<OfficeArtExtensionList> extLst;
+    
+}
+
+pub struct TextCharacterProperties {
+    pub kumimoji: Option<bool>,
+    pub language: Option<TextLanguageID>,
+    pub alternative_language: Option<TextLanguageID>,
+    pub font_size: Option<TextFontSize>,
+    pub bold: Option<bool>,
+    pub italic: Option<bool>,
+    pub underline: Option<TextUnderlineType>,
+    pub strikethrough: Option<TextStrikeType>,
+    pub kerning: Option<TextNonNegativePoint>,
+    pub caps_type: Option<TextCapsType>,
+    pub spacing: Option<TextPoint>,
+    pub normalize_heights: Option<bool>,
+    pub baseline: Option<Percentage>,
+    pub no_proofing: Option<bool>,
+    pub dirty: Option<bool>, // true
+    pub spelling_error: Option<bool>, // false
+    pub smarttag_clean: Option<bool>, // true
+    pub smarttag_id: Option<u32>, // 0
+    pub bookmark_link_target: Option<String>,
+    pub line_properties: Option<LineProperties>,
+    pub fill_properties: Option<FillPropertiesGroup>,
+    pub effect_properties: Option<EffectPropertiesGroup>,
+    pub highlight_color: Option<ColorGroup>,
+    pub text_underline_line: Option<TextUnderlineLineGroup>,
+    pub text_underline_fill: Option<TextUnderlineFillGroup>,
+    pub latin_font: Option<TextFont>,
+    pub east_asian_font: Option<TextFont>,
+    pub complex_script_font: Option<TextFont>,
+    pub symbol_font: Option<TextFont>,
+    pub hyperlink_click: Option<Hyperlink>,
+    pub hyperlink_mouse_over: Option<Hyperlink>,
 }
 
 pub struct TextParagraphProperties {
@@ -1216,44 +1419,40 @@ pub struct TextParagraphProperties {
     pub line_spacing: Option<TextSpacingGroup>,
     pub space_before: Option<TextSpacingGroup>,
     pub space_after: Option<TextSpacingGroup>,
-    pub text_bullet_color: Option<TextBulletColorGroup>,
-    pub text_bullet_size: Option<TextBulletSizeGroup>,
-    pub text_bullet_typeface: Option<TextBulletTypefaceGroup>,
-    pub text_bullet: Option<TextBulletGroup>,
+    pub bullet_color: Option<TextBulletColorGroup>,
+    pub bullet_size: Option<TextBulletSizeGroup>,
+    pub bullet_typeface: Option<TextBulletTypefaceGroup>,
+    pub bullet: Option<TextBulletGroup>,
+    pub tab_stop_list: Vec<TextTabStop>,
+    pub default_run_properties: Option<TextCharacterProperties>,
 }
-/*
-    class TextParagraphProperties
-    {
-    public:
-        TextTabStopList tabLst;
-        std::unique_ptr<TextCharacterProperties> defRPr;
-        //std::unique_ptr<OfficeArtExtensionList> extLst;
-
-        static TextParagraphProperties* FromXmlNode(const MXmlNode2& xmlNode);
-
-        TextParagraphProperties() = default;
-        DISALLOW_COPY_AND_ASSIGN(TextParagraphProperties);
-
-        void UpdateWith(const TextParagraphProperties &textParProps);
-    };
-
-*/
 
 pub struct TextListStyle {
     pub def_paragraph_props: Option<TextParagraphProperties>,
-}
-/*
-        std::unique_ptr<TextParagraphProperties> defPPr;
-        std::unique_ptr<TextParagraphProperties> lvl1pPr;
-        std::unique_ptr<TextParagraphProperties> lvl2pPr;
-        std::unique_ptr<TextParagraphProperties> lvl3pPr;
-        std::unique_ptr<TextParagraphProperties> lvl4pPr;
-        std::unique_ptr<TextParagraphProperties> lvl5pPr;
-        std::unique_ptr<TextParagraphProperties> lvl6pPr;
-        std::unique_ptr<TextParagraphProperties> lvl7pPr;
-        std::unique_ptr<TextParagraphProperties> lvl8pPr;
-        std::unique_ptr<TextParagraphProperties> lvl9pPr;
+    pub paragraph_level_props_array: [Option<TextParagraphProperties>; 9],
         //std::unique_ptr<OfficeArtExtensionList> extLst;
+    
+}
 
+pub struct NonVisualDrawingProps {
+    pub id: DrawingElementId,
+    pub name: String,
+    pub description: Option<String>,
+    pub hidden: Option<bool>, // false
+    pub hyperlink_click: Option<Hyperlink>,
+    pub hyperlink_hover: Option<Hyperlink>,
+}
 
-*/
+pub struct GroupLocking {
+    pub no_grouping: Option<bool>, // false
+    pub no_ungrouping: Option<bool>, // false
+    pub no_select: Option<bool>, // false
+    pub no_rotate: Option<bool>, // false
+    pub no_change_aspect_ratio: Option<bool>, // false
+    pub no_move: Option<bool>, // false
+    pub no_resize: Option<bool>, // false
+}
+
+pub struct NonVisualGroupDrawingShapeProps {
+    pub locks: Option<GroupLocking>,
+}
