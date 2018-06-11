@@ -147,6 +147,44 @@ decl_simple_type_enum! {
     }
 }
 
+decl_simple_type_enum! {
+    pub enum TransitionSideDirectionType {
+        Left = "l",
+        Up = "u",
+        Right = "r",
+        Down = "d",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TransitionCornerDirectionType {
+        LeftUp = "lu",
+        RightUp = "ru",
+        LeftDown = "ld",
+        RightDown = "rd",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TransitionEightDirectionType {
+        Left = "l",
+        Up = "u",
+        Right = "r",
+        Down = "d",
+        LeftUp = "lu",
+        RightUp = "ru",
+        LeftDown = "ld",
+        RightDown = "rd",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TransitionInOutDirectionType {
+        In = "in",
+        Out = "out",
+    }
+}
+
 pub struct BackgroundProperties {
     pub fill: drawingml::FillPropertiesGroup,
     pub effect: Option<drawingml::EffectPropertiesGroup>,
@@ -163,11 +201,19 @@ pub struct Background {
     pub black_and_white_mode: Option<drawingml::BlackWhiteMode>, // white
 }
 
+pub struct Placeholder {
+    pub placeholder_type: Option<PlaceholderType>, // obj
+    pub orientation: Option<Direction>, // horz
+    pub size: Option<PlaceholderSize>, // full
+    pub index: Option<u32>, // 0
+    pub has_custom_prompt: Option<bool>, // false
+}
+
 pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
-    pub media: Option<MediaGroup>,
+    pub media: Option<drawingml::MediaGroup>,
     //pub customer_data_list: Option<CustomerDataList>,
 
 }
@@ -234,6 +280,75 @@ pub struct SlideMasterTextStyles {
     pub title_styles: Option<drawingml::TextListStyle>,
     pub body_styles: Option<drawingml::TextListStyle>,
     pub other_styles: Option<drawingml::TextListStyle>,
+}
+
+pub struct OrientationTransition {
+    pub direction: Option<Direction>, // horz
+}
+
+pub struct EightDirectionTransition {
+    pub direction: Option<TransitionEightDirectionType>, // l
+}
+
+pub struct OptionalBlackTransition {
+    pub through_black: Option<bool>, // false
+}
+
+pub struct SideDirectionTransition {
+    pub direction: Option<TransitionSideDirectionType>, // l
+}
+
+pub struct SplitTransition {
+    pub orientation: Option<Direction>, // horz
+    pub direction: Option<TransitionInOutDirectionType>, // out
+}
+
+pub struct CornerDirectionTransition {
+    pub direction: Option<TransitionCornerDirectionType>, // lu
+}
+
+pub struct WheelTransition {
+    pub spokes: Option<u32>, // 4
+}
+
+pub struct InOutTransition {
+    pub direction: Option<TransitionInOutDirectionType>, // out
+}
+
+pub enum SlideTransitionGroup {
+    Blinds(OrientationTransition),
+    Checker(OrientationTransition),
+    Circle,
+    Dissolve,
+    Comb(OrientationTransition),
+    Cover(EightDirectionTransition),
+    Cut(OptionalBlackTransition),
+    Diamond,
+    Fade(OptionalBlackTransition),
+    Newsflash,
+    Plus,
+    Pull(EightDirectionTransition),
+    Push(SideDirectionTransition),
+    Random,
+    RandomBar(OrientationTransition),
+    Split(SplitTransition),
+    Strips(CornerDirectionTransition),
+    Wedge,
+    Wheel(WheelTransition),
+    Wipe(SideDirectionTransition),
+    Zoom(InOutTransition),
+}
+
+pub struct SlideTransition {
+    pub transition_type: Option<SlideTransitionGroup>,
+    pub sound_action: Option<TransitionSoundAction>,
+    pub speed: Option<TransitionSpeed>, // fast
+    pub advance_on_click: Option<bool>, // true
+    pub advance_on_time: Option<u32>,
+}
+
+pub struct TopLevelSlide {
+    pub color_mapping: drawingml::ColorMapping,
 }
 
 pub struct SlideMaster {

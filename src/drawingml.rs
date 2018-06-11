@@ -15,7 +15,7 @@ pub type LineWidth = Coordinate32;
 pub type DrawingElementId = u32;
 pub type Angle = i32;
 pub type FixedAngle = Angle; // TODO: -5400000 <= n <= 5400000
-pub type PositiveFixedAngle = Angle; // TODO: 21600000
+pub type PositiveFixedAngle = Angle; // TODO: 0 <= n <= 21600000
 pub type GeomGuideName = String;
 pub type GeomGuideFormula = String;
 pub type StyleMatrixColumnIndex = u32;
@@ -672,6 +672,23 @@ decl_simple_type_enum! {
 }
 
 decl_simple_type_enum! {
+    pub enum ColorSchemeIndex {
+        Dark1 = "dk1",
+        Light1 = "lt1",
+        Dark2 = "dk2",
+        Light2 = "lt2",
+        Accent1 = "accent1",
+        Accent2 = "accent2",
+        Accent3 = "accent3",
+        Accent4 = "accent4",
+        Accent5 = "accent5",
+        Accent6 = "accent6",
+        Hyperlink = "hlink",
+        FollowedHyperlink = "folHlink",
+    }
+}
+
+decl_simple_type_enum! {
     pub enum TextAlignType {
         L = "l",
         Ctr = "ctr",
@@ -953,6 +970,21 @@ pub enum ColorGroup {
     SystemColor(SystemColor),
     SchemeColor(SchemeColor),
     PresetColor(PresetColor),
+}
+
+pub struct ColorMapping {
+    pub background1: ColorSchemeIndex,
+    pub text1: ColorSchemeIndex,
+    pub background2: ColorSchemeIndex,
+    pub text2: ColorSchemeIndex,
+    pub accent1: ColorSchemeIndex,
+    pub accent2: ColorSchemeIndex,
+    pub accent3: ColorSchemeIndex,
+    pub accent4: ColorSchemeIndex,
+    pub accent5: ColorSchemeIndex,
+    pub accent6: ColorSchemeIndex,
+    pub hyperlink: ColorSchemeIndex,
+    pub followed_hyperlink: ColorSchemeIndex,
 }
 
 pub struct GradientStop {
@@ -1350,12 +1382,6 @@ pub enum TextUnderlineFillGroup {
     Fill(FillPropertiesGroup),
 }
 
-pub struct EmbeddedWAVAudioFile {
-    pub embed_rel_id: relationship::RelationshipId,
-    pub name: Option<String>,
-    pub built_in: Option<bool>, // false
-}
-
 pub struct Hyperlink {
     pub relationship_id: Option<relationship::RelationshipId>,
     pub invalid_url: Option<String>,
@@ -1430,8 +1456,6 @@ pub struct TextParagraphProperties {
 pub struct TextListStyle {
     pub def_paragraph_props: Option<TextParagraphProperties>,
     pub paragraph_level_props_array: [Option<TextParagraphProperties>; 9],
-        //std::unique_ptr<OfficeArtExtensionList> extLst;
-    
 }
 
 pub struct NonVisualDrawingProps {
@@ -1455,4 +1479,42 @@ pub struct GroupLocking {
 
 pub struct NonVisualGroupDrawingShapeProps {
     pub locks: Option<GroupLocking>,
+}
+
+pub struct EmbeddedWAVAudioFile {
+    pub embed_rel_id: relationship::RelationshipId,
+    pub name: Option<String>,
+    pub built_in: Option<bool>, // false
+}
+
+pub struct AudioCDTime {
+    pub track: u8,
+    pub time: Option<u32>, // 0
+}
+
+pub struct AudioCD {
+    pub start_time: AudioCDTime,
+    pub end_time: AudioCDTime,
+}
+
+pub struct AudioFile {
+    pub link: relationship::RelationshipId,
+    pub content_type: Option<String>,
+}
+
+pub struct VideoFile {
+    pub link: relationship::RelationshipId,
+    pub content_type: Option<String>,
+}
+
+pub struct QuickTimeFile {
+    pub link: relationship::RelationshipId,
+}
+
+pub enum MediaGroup {
+    AudioCd(AudioCD),
+    WavAudioFile(EmbeddedWAVAudioFile),
+    AudioFile(AudioFile),
+    VideoFile(VideoFile),
+    QuickTimeFile(QuickTimeFile),
 }

@@ -7,10 +7,10 @@ macro_rules! decl_simple_type_enum {
         }
 
         impl $name {
-            pub fn from_string(s: &str) -> Result<$name, &'static str> {
+            pub fn from_string(s: &str) -> Result<$name, String> {
                 match s {
                     $($str_value => Ok($name::$variant)),*,
-                    _ => Err("Cannot convert string to enum type $name"),
+                    _ => Err(format!("Cannot convert string to {}", stringify!($name))),
                 }
             }
         }
