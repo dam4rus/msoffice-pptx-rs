@@ -882,6 +882,96 @@ decl_simple_type_enum! {
 }
 
 decl_simple_type_enum! {
+    pub enum TextShapeType {
+        NoShape = "textNoShape",
+        Plain = "textPlain",
+        Stop = "textStop",
+        Triangle = "textTriangle",
+        TriangleInverted = "textTriangleInverted",
+        Chevron = "textChevron",
+        ChevronInverted = "textChevronInverted",
+        RingInside = "textRingInside",
+        RingOutside = "textRingOutside",
+        ArchUp = "textArchUp",
+        ArchDown = "textArchDown",
+        Circle = "textCircle",
+        Button = "textButton",
+        ArchUpPour = "textArchUpPour",
+        ArchDownPour = "textArchDownPour",
+        CirclePour = "textCirclePour",
+        ButtonPour = "textButtonPour",
+        CurveUp = "textCurveUp",
+        CurveDown = "textCurveDown",
+        CanUp = "textCanUp",
+        CanDown = "textCanDown",
+        Wave1 = "textWave1",
+        Wave2 = "textWave2",
+        Wave4 = "textWave4",
+        DoubleWave1 = "textDoubleWave1",
+        Inflate = "textInflate",
+        Deflate = "textDeflate",
+        InflateBottom = "textInflateBottom",
+        DeflateBottom = "textDeflateBottom",
+        InflateTop = "textInflateTop",
+        DeflateTop = "textDeflateTop",
+        DeflateInflate = "textDeflateInflate",
+        DeflateInflateDeflate = "textDeflateInflateDeflate",
+        FadeLeft = "textFadeLeft",
+        FadeUp = "textFadeUp",
+        FadeRight = "textFadeRight",
+        FadeDown = "textFadeDown",
+        SlantUp = "textSlantUp",
+        SlantDown = "textSlantDown",
+        CascadeUp = "textCascadeUp",
+        CascadeDown = "textCascadeDown",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextVertOverflowType {
+        Overflow = "overflow",
+        Ellipsis = "ellipsis",
+        Clip = "clip",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextHorzOverflowType {
+        Overflow = "overflow",
+        Clip = "clip",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextVerticalType {
+        Horizontal = "horz",
+        Vertical = "vert",
+        Vertical270 = "vert270",
+        WordArtVertical = "wordArtVert",
+        EastAsianVertical = "eaVert",
+        MongolianVertical = "mongolianVert",
+        WordArtVerticalRtl = "wordArtVertRtl",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextWrappingType {
+        None = "none",
+        Square = "square",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum TextAnchoringType {
+        Top = "t",
+        Center = "ctr",
+        Bottom = "b",
+        Justified = "just",
+        Distributed = "dist",
+    }
+}
+
+decl_simple_type_enum! {
     pub enum BlackWhiteMode {
         Color = "clr",
         Auto = "auto",
@@ -1109,6 +1199,11 @@ pub struct RelativeRect {
     pub top: Option<Percentage>,
     pub right: Option<Percentage>,
     pub bottom: Option<Percentage>,
+}
+
+pub struct Point2D {
+    pub x: Coordinate,
+    pub y: Coordinate,
 }
 
 pub struct PositiveSize2D {
@@ -1453,9 +1548,86 @@ pub struct TextParagraphProperties {
     pub default_run_properties: Option<TextCharacterProperties>,
 }
 
+pub struct TextParagraph {
+    pub properties: Option<TextParagraphProperties>,
+    pub text_run_list: Vec<TextRunGroup>,
+    pub end_paragraph_char_properties: Option<TextCharacterProperties>,
+}
+
+pub enum TextRunGroup {
+    RegularTextRun(RegularTextRun),
+    LineBreak(TextLineBreak),
+    TextField(TextField),
+}
+
+pub struct RegularTextRun {
+    pub char_properties: Option<TextCharacterProperties>,
+    pub text: String,
+}
+
+pub struct TextLineBreak {
+    pub char_properties: Option<TextCharacterProperties>,
+}
+
+pub struct TextField {
+    pub char_properties: Option<TextCharacterProperties>,
+    pub paragraph_properties: Option<TextParagraph>,
+    pub text: String,
+    pub id: Guid,
+    pub field_type: Option<String>,
+}
+
 pub struct TextListStyle {
     pub def_paragraph_props: Option<TextParagraphProperties>,
     pub paragraph_level_props_array: [Option<TextParagraphProperties>; 9],
+}
+
+pub struct TextBody {
+    pub body_properties: TextBodyProperties,
+    pub list_style: Option<TextListStyle>,
+    pub paragraph_array: Vec<TextParagraph>,
+}
+
+pub struct TextBodyProperties {
+    pub preset_text_warp: Option<PresetTextShape>,
+    pub auto_fit_type: Option<TextAutoFitGroup>,
+    //pub scene_3d: Option<Scene3D>,
+    //pub text_3d: Option<Text3D>,
+    pub rotate_angle: Option<Angle>,
+    pub paragraph_spacing: Option<bool>,
+    pub vertical_overflow: Option<TextVertOverflowType>,
+    pub horizontal_overflow: Option<TextHorzOverflowType>,
+    pub vertical_type: Option<TextVerticalType>,
+    pub wrap_type: Option<TextWrappingType>,
+    pub left_inset: Option<Coordinate32>,
+    pub top_inset: Option<Coordinate32>,
+    pub right_inset: Option<Coordinate32>,
+    pub bottom_inset: Option<Coordinate32>,
+    pub column_count: Option<TextColumnCount>,
+    pub space_between_columns: Option<PositiveCoordinate32>,
+    pub rtl_columns: Option<bool>,
+    pub is_from_word_art: Option<bool>,
+    pub anchor: Option<TextAnchoringType>,
+    pub anchor_center: Option<bool>,
+    pub force_antialias: Option<bool>,
+    pub upright: Option<bool>,
+    pub compatible_line_spacing: Option<bool>,
+}
+
+pub enum TextAutoFitGroup {
+    NoAutoFit,
+    NormalAutoFit(TextNormalAutoFit),
+    ShapeAutoFit,
+}
+
+pub struct TextNormalAutoFit {
+    pub font_scale: Option<TextFontScalePercent>, // 100000
+    pub line_spacing_reduction: Option<TextSpacingPercent>, // 0
+}
+
+pub struct PresetTextShape {
+    pub adjust_value_list: Vec<GeomGuide>,
+    pub preset: TextShapeType,
 }
 
 pub struct NonVisualDrawingProps {
@@ -1467,6 +1639,24 @@ pub struct NonVisualDrawingProps {
     pub hyperlink_hover: Option<Hyperlink>,
 }
 
+pub struct LockingGroup {
+    pub no_grouping: Option<bool>, // false
+    pub no_select: Option<bool>, // false
+    pub no_rotate: Option<bool>, // false
+    pub no_change_aspect_ratio: Option<bool>, // false
+    pub no_move: Option<bool>, // false
+    pub no_resize: Option<bool>, // false
+    pub no_edit_points: Option<bool>, // false
+    pub no_adjust_handles: Option<bool>, // false
+    pub no_change_arrowheads: Option<bool>, // false
+    pub no_change_shape_type: Option<bool>, // false
+}
+
+pub struct ShapeLocking {
+    pub locking: LockingGroup,
+    pub no_text_edit: Option<bool>, // false
+}
+
 pub struct GroupLocking {
     pub no_grouping: Option<bool>, // false
     pub no_ungrouping: Option<bool>, // false
@@ -1475,6 +1665,11 @@ pub struct GroupLocking {
     pub no_change_aspect_ratio: Option<bool>, // false
     pub no_move: Option<bool>, // false
     pub no_resize: Option<bool>, // false
+}
+
+pub struct NonVisualDrawingShapeProps {
+    pub shape_locks: Option<ShapeLocking>,
+    pub is_text_box: Option<bool>, // false
 }
 
 pub struct NonVisualGroupDrawingShapeProps {
@@ -1517,4 +1712,154 @@ pub enum MediaGroup {
     AudioFile(AudioFile),
     VideoFile(VideoFile),
     QuickTimeFile(QuickTimeFile),
+}
+
+pub struct Transform2D {
+    pub offset: Option<Point2D>,
+    pub extents:  Option<PositiveSize2D>,
+    pub rotate_angle: Option<Angle>, // 0
+    pub flip_horizontal: Option<bool>, // false
+    pub flip_vertical: Option<bool>, // false
+}
+
+pub struct GroupTransform2D {
+    pub offset: Option<Point2D>,
+    pub extents:  Option<PositiveSize2D>,
+    pub child_offset: Option<Point2D>,
+    pub child_extents: Option<PositiveSize2D>,
+    pub rotate_angle: Option<Angle>, // 0
+    pub flip_horizontal: Option<bool>, // false
+    pub flip_vertical: Option<bool>, // false
+}
+
+pub struct GroupShapeProperties {
+    pub transform: Option<GroupTransform2D>,
+    pub fill_properties: Option<FillPropertiesGroup>,
+    pub effect_properties: Option<EffectPropertiesGroup>,
+    //pub scene_3d: Option<Scene3D>,
+    pub black_and_white_mode: Option<BlackWhiteMode>,
+}
+
+pub enum GeometryGroup {
+    Custom(CustomGeometry2D),
+    Preset(PresetGeometry2D),
+}
+
+pub struct GeomGuide {
+    pub name: GeomGuideName,
+    pub formula: GeomGuideFormula,
+}
+
+pub enum AdjustHandle {
+    XY(XYAdjustHandle),
+    Polar(PolarAdjustHandle),
+}
+
+pub enum AdjCoordinate {
+    Coordinate(Coordinate),
+    GeomGuideName(GeomGuideName),
+}
+
+pub enum AdjAngle {
+    Angle(Angle),
+    GeomGuideName(GeomGuideName),
+}
+
+pub struct AdjPoint2D {
+    pub x: AdjCoordinate,
+    pub y: AdjCoordinate,
+}
+
+pub struct GeomRect {
+    pub left: AdjCoordinate,
+    pub top: AdjCoordinate,
+    pub right: AdjCoordinate,
+    pub bottom: AdjCoordinate,
+}
+
+pub struct XYAdjustHandle {
+    pub position: AdjPoint2D,
+    pub guide_reference_x: Option<GeomGuideName>,
+    pub guide_reference_y: Option<GeomGuideName>,
+    pub min_x: Option<AdjCoordinate>,
+    pub max_x: Option<AdjCoordinate>,
+    pub min_y: Option<AdjCoordinate>,
+    pub max_y: Option<AdjCoordinate>,
+}
+
+pub struct PolarAdjustHandle {
+    pub position: AdjPoint2D,
+    pub guide_reference_radial: Option<GeomGuideName>,
+    pub guide_reference_angle: Option<GeomGuideName>,
+    pub min_radial: Option<AdjCoordinate>,
+    pub max_radial: Option<AdjCoordinate>,
+    pub min_angle: Option<AdjAngle>,
+    pub max_angle: Option<AdjAngle>,
+}
+
+pub struct ConnectionSite {
+    pub position: AdjPoint2D,
+    pub angle: AdjAngle,
+}
+
+pub enum Path2DCommand {
+    Close,
+    MoveTo(AdjPoint2D),
+    LineTo(AdjPoint2D),
+    ArcTo(Path2DArcTo),
+    QuadBezierTo(AdjPoint2D, AdjPoint2D),
+    CubicBezTo(AdjPoint2D, AdjPoint2D, AdjPoint2D),
+}
+
+pub struct Path2DArcTo {
+    pub width_radius: AdjCoordinate,
+    pub height_radius: AdjCoordinate,
+    pub start_angle: AdjAngle,
+    pub swing_angle: AdjAngle,
+}
+
+pub struct Path2D {
+    pub commands: Vec<Path2DCommand>,
+    pub width: Option<PositiveCoordinate>, // 0
+    pub height: Option<PositiveCoordinate>, // 0
+    pub fill_mode: Option<PathFillMode>, // norm
+    pub stroke: Option<bool>, // true
+    pub extrusion_ok: Option<bool>, // true
+}
+
+pub struct CustomGeometry2D {
+    pub adjust_value_list: Vec<GeomGuide>,
+    pub guide_list: Vec<GeomGuide>,
+    pub adjust_handle_list: Vec<AdjustHandle>,
+    pub connection_site_list: Vec<ConnectionSite>,
+    pub rect: Option<GeomRect>,
+    pub path_list: Vec<Path2D>,
+}
+
+pub struct PresetGeometry2D {
+    pub adjust_value_list: Vec<GeomGuide>,
+    pub preset: ShapeType,
+}
+
+pub struct ShapeProperties {
+    pub transform: Option<Transform2D>,
+    pub geometry: Option<GeometryGroup>,
+    pub fill_properties: Option<FillPropertiesGroup>,
+    pub line_properties: Option<LineProperties>,
+    pub effect_properties: Option<EffectPropertiesGroup>,
+    //pub scene_3d: Option<Scene3D>,
+    //pub shape_3d: Option<Shape3D>,
+    pub black_and_white_mode: Option<BlackWhiteMode>,
+}
+
+pub struct ShapeStyle {
+    pub line_reference: StyleMatrixReference,
+    pub fill_reference: StyleMatrixReference,
+    pub effect_reference: StyleMatrixReference,
+    pub font_reference: FontReference,
+}
+
+pub struct FontReference {
+    pub color: Option<ColorGroup>,
+    pub index: FontCollectionIndex,
 }

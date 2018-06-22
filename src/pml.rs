@@ -227,9 +227,17 @@ pub enum ShapeGroup {
     ContentPart(relationship::RelationshipId),
 }
 
-pub struct GroupShapeNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub group_drawing_props: drawingml::NonVisualGroupDrawingShapeProps,
+pub struct Shape {
+    pub non_visual_properties: ShapeNonVisual,
+    pub properties: drawingml::ShapeProperties,
+    pub style: Option<drawingml::ShapeStyle>,
+    pub text_body: Option<drawingml::TextBody>,
+    pub use_bg_fill: Option<bool>, // false
+}
+
+pub struct ShapeNonVisual {
+    pub drawing_properties: drawingml::NonVisualDrawingProps,
+    pub shape_drawing_props: drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -237,6 +245,12 @@ pub struct GroupShape {
     pub non_visual_properties: GroupShapeNonVisual,
     pub properties: drawingml::GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
+}
+
+pub struct GroupShapeNonVisual {
+    pub drawing_props: drawingml::NonVisualDrawingProps,
+    pub group_drawing_props: drawingml::NonVisualGroupDrawingShapeProps,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct CommonSlideData {
@@ -360,19 +374,6 @@ pub struct SlideMaster {
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
     pub text_styles: Option<SlideMasterTextStyles>,
-    /*
-    		Office::Optional<bool> preserve;// = false;
-		std::unique_ptr<CommonSlideData> cSld;
-		std::unique_ptr<GrpTopLevelSlide> topLevelSlide;
-		SlideLayoutIdList sldLayoutIdLst;
-		//std::unique_ptr<SlideTransition> transition;
-		std::unique_ptr<SlideTiming> timing;
-		//std::unique_ptr<HeaderFooter> hf;
-		std::unique_ptr<SlideMasterTextStyles> txStyles;
-		//std::unique_ptr<ExtensionListModify> extLst;
-		Office::RelationshipArray relations;
-
-    */
 }
 
 pub struct EmbeddedFontListEntry {
