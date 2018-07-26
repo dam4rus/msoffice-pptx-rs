@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["kalmar"]
 
 [dependencies]
-#quick-xml = "0.12.0"
+quick-xml = "0.12.0"
+zip = "0.4.2"

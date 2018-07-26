@@ -372,29 +372,6 @@ decl_simple_type_enum! {
 }
 
 decl_simple_type_enum! {
-    pub enum AnimationBuildType {
-        AllAtOnce = "allAtOnce",
-    }
-}
-
-decl_simple_type_enum! {
-    pub enum AnimationDgmOnlyBuildType {
-        One = "one",
-        LvlOne = "lvlOne",
-        LvlAtOnce = "lvlAtOnce",
-    }
-}
-
-decl_simple_type_enum! {
-    pub enum AnimationChartOnlyBuildType {
-        Series = "series",
-        Category = "category",
-        SeriesEl = "seriesEl",
-        CategoryEl = "categoryEl",
-    }
-}
-
-decl_simple_type_enum! {
     pub enum DgmBuildStep {
         Sp = "sp",
         Bg = "bg",
@@ -987,6 +964,48 @@ decl_simple_type_enum! {
     }
 }
 
+decl_simple_type_enum! {
+    pub enum AnimationBuildType {
+        AllAtOnce = "allAtOnce",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum AnimationDgmOnlyBuildType {
+        One = "one",
+        LvlOne = "lvlOne",
+        LvlAtOnce = "lvlAtOnce",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum AnimationDgmBuildType {
+        AllAtOnce = "allAtOnce",
+        One = "one",
+        LvlOne = "lvlOne",
+        LvlAtOnce = "lvlAtOnce",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum AnimationChartOnlyBuildType {
+        Series = "series",
+        Category = "category",
+        SeriesElement = "seriesElement",
+        CategoryElement = "categoryElement",
+    }
+}
+
+decl_simple_type_enum! {
+    pub enum AnimationChartBuildType {
+        AllAtOnce = "allAtOnce",
+        Series = "series",
+        Category = "category",
+        SeriesElement = "seriesElement",
+        CategoryElement = "categoryElement",
+    }
+}
+
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
     Shade(PositiveFixedPercentage),
@@ -1053,13 +1072,18 @@ pub struct SchemeColor {
     pub color_transforms: Vec<ColorTransform>,
 }
 
-pub enum ColorGroup {
+pub enum Color {
     ScRgbColor(ScRgbColor),
     SRgbColor(SRgbColor),
     HslColor(HslColor),
     SystemColor(SystemColor),
     SchemeColor(SchemeColor),
     PresetColor(PresetColor),
+}
+
+pub struct CustomColor {
+    pub color: Color,
+    pub name: Option<String>,
 }
 
 pub struct ColorMapping {
@@ -1077,8 +1101,34 @@ pub struct ColorMapping {
     pub followed_hyperlink: ColorSchemeIndex,
 }
 
+pub struct ColorScheme {
+    pub dark1: Color,
+    pub light1: Color,
+    pub dark2: Color,
+    pub light2: Color,
+    pub accent1: Color,
+    pub accent2: Color,
+    pub accent3: Color,
+    pub accent4: Color,
+    pub accent5: Color,
+    pub accent6: Color,
+    pub hyperlink: Color,
+    pub followed_hyperlink: Color,
+    pub name: String,
+}
+
+pub enum ColorMappingOverride {
+    UseMasterColorMapping,
+    OverrideColorMapping(ColorMapping),
+}
+
+pub struct ColorSchemeAndMapping {
+    pub color_scheme: ColorScheme,
+    pub color_mapping: Option<ColorMapping>,
+}
+
 pub struct GradientStop {
-    pub color: ColorGroup,
+    pub color: Color,
     pub position: PositiveFixedPercentage,
 }
 
@@ -1092,14 +1142,14 @@ pub struct PathShadeProperties {
     pub path: Option<PathShadeType>,
 }
 
-pub enum ShadePropertiesGroup {
+pub enum ShadeProperties {
     Linear(LinearShadeProperties),
     Path(PathShadeProperties),
 }
 
 pub struct GradientFillProperties {
     pub gradient_stop_list: Vec<GradientStop>, // length: 2 <= n <= inf
-    pub shade_properties: Option<ShadePropertiesGroup>,
+    pub shade_properties: Option<ShadeProperties>,
     pub tile_rect: Option<RelativeRect>,
     pub flip: Option<TileFlipMode>,
     pub rotate_with_shape: Option<bool>,
@@ -1118,7 +1168,7 @@ pub struct StretchInfoProperties {
     pub fill_rect: Option<RelativeRect>,
 }
 
-pub enum FillModePropertiesGroup {
+pub enum FillModeProperties {
     Tile(TileInfoProperties),
     Stretch(StretchInfoProperties),
 }
@@ -1126,29 +1176,29 @@ pub enum FillModePropertiesGroup {
 pub struct BlipFillProperties {
     pub blip: Option<Blip>,
     pub source_rect: Option<RelativeRect>,
-    pub fill_mode_properties: Option<FillModePropertiesGroup>,
+    pub fill_mode_properties: Option<FillModeProperties>,
     pub dpi: Option<u32>,
     pub rotate_with_shape: Option<bool>,
 }
 
 pub struct PatternFillProperties {
-    pub fg_color: Option<ColorGroup>,
-    pub bg_color: Option<ColorGroup>,
+    pub fg_color: Option<Color>,
+    pub bg_color: Option<Color>,
     pub preset: Option<PresetPatternVal>,
 }
 
-pub enum FillPropertiesGroup {
+pub enum FillProperties {
     NoFill,
-    SolidFill(ColorGroup),
+    SolidFill(Color),
     GradientFill(GradientFillProperties),
     BlipFill(BlipFillProperties),
     PatternFill(PatternFillProperties),
     GroupFill
 }
 
-pub enum LineFillPropertiesGroup {
+pub enum LineFillProperties {
     NoFill,
-    SolidFill(ColorGroup),
+    SolidFill(Color),
     GradientFill(GradientFillProperties),
     PatternFill(PatternFillProperties),
 }
@@ -1158,7 +1208,7 @@ pub struct DashStop {
     pub space_length: PositivePercentage,
 }
 
-pub enum LineDashPropertiesGroup {
+pub enum LineDashProperties {
     PresetDash(PresetLineDashVal),
     CustomDash(Vec<DashStop>)
 }
@@ -1167,7 +1217,7 @@ pub struct LineJoinMiterProperties {
     pub limit: Option<PositivePercentage>,
 }
 
-pub enum LineJoinPropertiesGroup {
+pub enum LineJoinProperties {
     Round,
     Bevel,
     Miter(LineJoinMiterProperties),
@@ -1184,14 +1234,11 @@ pub struct LineProperties {
     pub cap: Option<LineCap>,
     pub compound: Option<CompoundLine>,
     pub pen_alignment: Option<PenAlignment>,
-    pub fill_properties: Option<LineFillPropertiesGroup>,
-    pub dash_properties: Option<LineDashPropertiesGroup>,
-    pub join_properties: Option<LineJoinPropertiesGroup>,
+    pub fill_properties: Option<LineFillProperties>,
+    pub dash_properties: Option<LineDashProperties>,
+    pub join_properties: Option<LineJoinProperties>,
     pub head_end: Option<LineEndProperties>,
     pub tail_end: Option<LineEndProperties>,
-    /*
-		//std::unique_ptr<OfficeArtExtensionList> extLst;
-    */
 }
 
 pub struct RelativeRect {
@@ -1213,11 +1260,11 @@ pub struct PositiveSize2D {
 
 pub struct StyleMatrixReference {
     pub index: StyleMatrixColumnIndex,
-    pub color: Option<ColorGroup>,
+    pub color: Option<Color>,
 }
 
 pub struct EffectContainer {
-    pub effects: Vec<EffectGroup>,
+    pub effects: Vec<Effect>,
     pub container_type: Option<EffectContainerType>,
     pub name: Option<String>,
 }
@@ -1227,7 +1274,7 @@ pub struct AlphaBiLevelEffect {
 }
 
 pub struct AlphaInverseEffect {
-    pub color: Option<ColorGroup>,
+    pub color: Option<Color>,
 }
 
 pub struct AlphaModulateEffect {
@@ -1261,13 +1308,13 @@ pub struct BlurEffect {
 }
 
 pub struct ColorChangeEffect {
-    pub color_from: ColorGroup,
-    pub color_to: ColorGroup,
+    pub color_from: Color,
+    pub color_to: Color,
     pub use_alpha: bool, // true
 }
 
 pub struct ColorReplaceEffect {
-    pub color: ColorGroup,
+    pub color: Color,
 }
 
 
@@ -1277,20 +1324,20 @@ pub struct LuminanceEffect {
 }
 
 pub struct DuotoneEffect {
-    pub colors: [ColorGroup; 2],
+    pub colors: [Color; 2],
 }
 
 pub struct FillEffect {
-    pub fill: FillPropertiesGroup,
+    pub fill: FillProperties,
 }
 
 pub struct FillOverlayEffect {
-    pub fill: FillPropertiesGroup,
+    pub fill: FillProperties,
     pub blend_mode: BlendMode,
 }
 
 pub struct GlowEffect {
-    pub color: ColorGroup,
+    pub color: Color,
     pub radius: Option<PositiveCoordinate>, // 0
 }
 
@@ -1301,14 +1348,14 @@ pub struct HslEffect {
 }
 
 pub struct InnerShadowEffect {
-    pub color: ColorGroup,
+    pub color: Color,
     pub blur_radius: Option<PositiveCoordinate>, // 0
     pub distance: Option<PositiveCoordinate>, // 0
     pub direction: Option<PositiveFixedAngle>, // 0
 }
 
 pub struct OuterShadowEffect {
-    pub color: ColorGroup,
+    pub color: Color,
     pub blur_radius: Option<PositiveCoordinate>, // 0
     pub distance: Option<PositiveCoordinate>, // 0
     pub direction: Option<PositiveFixedAngle>, // 0
@@ -1321,7 +1368,7 @@ pub struct OuterShadowEffect {
 }
 
 pub struct PresetShadowEffect {
-    pub color: ColorGroup,
+    pub color: Color,
     pub preset: PresetShadowVal,
     pub distance: Option<PositiveCoordinate>, // 0
     pub direction: Option<PositiveFixedAngle>, // 0
@@ -1367,7 +1414,7 @@ pub struct TransformEffect {
     pub skew_y: Option<FixedAngle>, // 0
 }
 
-pub enum EffectGroup {
+pub enum Effect {
     Cont(EffectContainer),
     EffectReference(String),
     AlphaBiLevel(AlphaBiLevelEffect),
@@ -1411,13 +1458,19 @@ pub struct EffectList {
     pub soft_edges: Option<SoftEdgesEffect>,
 }
 
-pub enum EffectPropertiesGroup {
+pub enum EffectProperties {
     EffectList(EffectList),
     EffectContainer(EffectContainer),
 }
 
+pub struct EffectStyleItem {
+    pub effect_props: EffectProperties,
+    //pub scene_3d: Option<Scene3D>,
+    //pub shape_3d: Option<Shape3D>,
+}
+
 pub struct Blip {
-    pub effect: Vec<EffectGroup>,
+    pub effect: Vec<Effect>,
     pub embed_rel_id: Option<relationship::RelationshipId>,
     pub linked_rel_id: Option<relationship::RelationshipId>,
 }
@@ -1429,23 +1482,28 @@ pub struct TextFont {
     pub charset: Option<i32>, // 1
 }
 
-pub enum TextSpacingGroup {
+pub struct SupplementalFont {
+    pub script: String,
+    pub typeface: TextTypeFace,
+}
+
+pub enum TextSpacing {
     SpcPct(TextSpacingPercent),
     SpcPts(TextSpacingPoint),
 }
 
-pub enum TextBulletColorGroup {
+pub enum TextBulletColor {
     FollowText,
-    Color(ColorGroup),
+    Color(Color),
 }
 
-pub enum TextBulletSizeGroup {
+pub enum TextBulletSize {
     FollowText,
     Percent(TextBulletSizePercent),
     Point(TextFontSize),
 }
 
-pub enum TextBulletTypefaceGroup {
+pub enum TextBulletTypeface {
     FollowText,
     Font(TextFont),
 }
@@ -1455,7 +1513,7 @@ pub struct TextAutonumberedBullet {
     pub start_t: Option<TextBulletStartAtNum>,
 }
 
-pub enum TextBulletGroup {
+pub enum TextBullet {
     None,
     AutoNumbered(TextAutonumberedBullet),
     Character(String),
@@ -1467,14 +1525,14 @@ pub struct TextTabStop {
     pub alignment: Option<TextTabAlignType>,
 }
 
-pub enum TextUnderlineLineGroup {
+pub enum TextUnderlineLine {
     FollowText,
     Line(Option<LineProperties>),
 }
 
-pub enum TextUnderlineFillGroup {
+pub enum TextUnderlineFill {
     FollowText,
-    Fill(FillPropertiesGroup),
+    Fill(FillProperties),
 }
 
 pub struct Hyperlink {
@@ -1512,11 +1570,11 @@ pub struct TextCharacterProperties {
     pub smarttag_id: Option<u32>, // 0
     pub bookmark_link_target: Option<String>,
     pub line_properties: Option<LineProperties>,
-    pub fill_properties: Option<FillPropertiesGroup>,
-    pub effect_properties: Option<EffectPropertiesGroup>,
-    pub highlight_color: Option<ColorGroup>,
-    pub text_underline_line: Option<TextUnderlineLineGroup>,
-    pub text_underline_fill: Option<TextUnderlineFillGroup>,
+    pub fill_properties: Option<FillProperties>,
+    pub effect_properties: Option<EffectProperties>,
+    pub highlight_color: Option<Color>,
+    pub text_underline_line: Option<TextUnderlineLine>,
+    pub text_underline_fill: Option<TextUnderlineFill>,
     pub latin_font: Option<TextFont>,
     pub east_asian_font: Option<TextFont>,
     pub complex_script_font: Option<TextFont>,
@@ -1537,24 +1595,24 @@ pub struct TextParagraphProperties {
     pub font_align: Option<TextFontAlignType>,
     pub latin_line_break: Option<bool>,
     pub hanging_punctuations: Option<bool>,
-    pub line_spacing: Option<TextSpacingGroup>,
-    pub space_before: Option<TextSpacingGroup>,
-    pub space_after: Option<TextSpacingGroup>,
-    pub bullet_color: Option<TextBulletColorGroup>,
-    pub bullet_size: Option<TextBulletSizeGroup>,
-    pub bullet_typeface: Option<TextBulletTypefaceGroup>,
-    pub bullet: Option<TextBulletGroup>,
+    pub line_spacing: Option<TextSpacing>,
+    pub space_before: Option<TextSpacing>,
+    pub space_after: Option<TextSpacing>,
+    pub bullet_color: Option<TextBulletColor>,
+    pub bullet_size: Option<TextBulletSize>,
+    pub bullet_typeface: Option<TextBulletTypeface>,
+    pub bullet: Option<TextBullet>,
     pub tab_stop_list: Vec<TextTabStop>,
     pub default_run_properties: Option<TextCharacterProperties>,
 }
 
 pub struct TextParagraph {
     pub properties: Option<TextParagraphProperties>,
-    pub text_run_list: Vec<TextRunGroup>,
+    pub text_run_list: Vec<TextRun>,
     pub end_paragraph_char_properties: Option<TextCharacterProperties>,
 }
 
-pub enum TextRunGroup {
+pub enum TextRun {
     RegularTextRun(RegularTextRun),
     LineBreak(TextLineBreak),
     TextField(TextField),
@@ -1590,7 +1648,7 @@ pub struct TextBody {
 
 pub struct TextBodyProperties {
     pub preset_text_warp: Option<PresetTextShape>,
-    pub auto_fit_type: Option<TextAutoFitGroup>,
+    pub auto_fit_type: Option<TextAutoFit>,
     //pub scene_3d: Option<Scene3D>,
     //pub text_3d: Option<Text3D>,
     pub rotate_angle: Option<Angle>,
@@ -1614,7 +1672,7 @@ pub struct TextBodyProperties {
     pub compatible_line_spacing: Option<bool>,
 }
 
-pub enum TextAutoFitGroup {
+pub enum TextAutoFit {
     NoAutoFit,
     NormalAutoFit(TextNormalAutoFit),
     ShapeAutoFit,
@@ -1630,6 +1688,19 @@ pub struct PresetTextShape {
     pub preset: TextShapeType,
 }
 
+pub struct FontScheme {
+    pub major_font: FontCollection,
+    pub minor_font: FontCollection,
+    pub name: String,
+}
+
+pub struct FontCollection {
+    pub latin: TextFont,
+    pub east_asian: TextFont,
+    pub complex_script: TextFont,
+    pub supplemental_font_list: Vec<SupplementalFont>,
+}
+
 pub struct NonVisualDrawingProps {
     pub id: DrawingElementId,
     pub name: String,
@@ -1639,7 +1710,7 @@ pub struct NonVisualDrawingProps {
     pub hyperlink_hover: Option<Hyperlink>,
 }
 
-pub struct LockingGroup {
+pub struct Locking {
     pub no_grouping: Option<bool>, // false
     pub no_select: Option<bool>, // false
     pub no_rotate: Option<bool>, // false
@@ -1653,7 +1724,7 @@ pub struct LockingGroup {
 }
 
 pub struct ShapeLocking {
-    pub locking: LockingGroup,
+    pub locking: Locking,
     pub no_text_edit: Option<bool>, // false
 }
 
@@ -1667,6 +1738,24 @@ pub struct GroupLocking {
     pub no_resize: Option<bool>, // false
 }
 
+pub struct GraphicalObjectFrameLocking {
+    pub no_grouping: Option<bool>, // false
+    pub no_drilldown: Option<bool>, // false
+    pub no_select: Option<bool>, // false
+    pub no_change_aspect: Option<bool>, // false
+    pub no_move: Option<bool>, // false
+    pub no_resize: Option<bool>, // false
+}
+
+pub struct ConnectorLocking {
+    pub locking: Locking,
+}
+
+pub struct PictureLocking {
+    pub locking: Locking,
+    pub no_crop: Option<bool>, // false
+}
+
 pub struct NonVisualDrawingShapeProps {
     pub shape_locks: Option<ShapeLocking>,
     pub is_text_box: Option<bool>, // false
@@ -1674,6 +1763,26 @@ pub struct NonVisualDrawingShapeProps {
 
 pub struct NonVisualGroupDrawingShapeProps {
     pub locks: Option<GroupLocking>,
+}
+
+pub struct NonVisualGraphicFrameProperties {
+    pub graphic_frame_locks: Option<GraphicalObjectFrameLocking>,
+}
+
+pub struct NonVisualConnectorProperties {
+    pub connector_locks: Option<ConnectorLocking>,
+    pub start_connection: Option<Connection>,
+    pub end_connection: Option<Connection>,
+}
+
+pub struct NonVisualPictureProperties {
+    pub picture_locks: Option<PictureLocking>,
+    pub prefer_relative_resize: Option<bool>, // true
+}
+
+pub struct Connection {
+    pub id: DrawingElementId,
+    pub shape_index: u32,
 }
 
 pub struct EmbeddedWAVAudioFile {
@@ -1706,7 +1815,7 @@ pub struct QuickTimeFile {
     pub link: relationship::RelationshipId,
 }
 
-pub enum MediaGroup {
+pub enum Media {
     AudioCd(AudioCD),
     WavAudioFile(EmbeddedWAVAudioFile),
     AudioFile(AudioFile),
@@ -1734,13 +1843,13 @@ pub struct GroupTransform2D {
 
 pub struct GroupShapeProperties {
     pub transform: Option<GroupTransform2D>,
-    pub fill_properties: Option<FillPropertiesGroup>,
-    pub effect_properties: Option<EffectPropertiesGroup>,
+    pub fill_properties: Option<FillProperties>,
+    pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
     pub black_and_white_mode: Option<BlackWhiteMode>,
 }
 
-pub enum GeometryGroup {
+pub enum Geometry {
     Custom(CustomGeometry2D),
     Preset(PresetGeometry2D),
 }
@@ -1843,10 +1952,10 @@ pub struct PresetGeometry2D {
 
 pub struct ShapeProperties {
     pub transform: Option<Transform2D>,
-    pub geometry: Option<GeometryGroup>,
-    pub fill_properties: Option<FillPropertiesGroup>,
+    pub geometry: Option<Geometry>,
+    pub fill_properties: Option<FillProperties>,
     pub line_properties: Option<LineProperties>,
-    pub effect_properties: Option<EffectPropertiesGroup>,
+    pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
     //pub shape_3d: Option<Shape3D>,
     pub black_and_white_mode: Option<BlackWhiteMode>,
@@ -1860,6 +1969,82 @@ pub struct ShapeStyle {
 }
 
 pub struct FontReference {
-    pub color: Option<ColorGroup>,
+    pub color: Option<Color>,
     pub index: FontCollectionIndex,
+}
+
+pub struct GraphicalObject {
+    pub graphic_data: GraphicalObjectData,
+}
+
+pub struct GraphicalObjectData {
+    //pub graphic_object: Vec<Any>,
+    pub uri: String,
+}
+
+pub enum AnimationElementChoice {
+    Diagram(AnimationDgmElement),
+    Chart(AnimationChartElement),
+}
+
+pub struct AnimationDgmElement {
+    pub id: Option<Guid>, // {00000000-0000-0000-0000-000000000000}
+    pub build_step: Option<DgmBuildStep>, // sp
+}
+
+pub struct AnimationChartElement {
+    pub series_index: Option<i32>, // -1
+    pub category_index: Option<i32>, // -1
+    pub build_step: ChartBuildStep,
+}
+
+pub enum AnimationGraphicalObjectBuildProperties {
+    BuildDiagram(AnimationDgmBuildProperties),
+    BuildChart(AnimationChartBuildProperties),
+}
+
+
+pub struct AnimationDgmBuildProperties {
+    pub build_type: Option<AnimationDgmBuildType>, // allAtOnce
+    pub reverse: Option<bool>, // false
+}
+
+pub struct AnimationChartBuildProperties {
+    pub build_type: Option<AnimationChartBuildType>, // allAtOnce
+    pub animate_bg: Option<bool>, // true
+}
+
+pub struct OfficeStyleSheet {
+    pub theme_elements: BaseStyles,
+    pub object_defaults: Option<ObjectStyleDefaults>,
+    pub extra_color_scheme_list: Vec<ColorSchemeAndMapping>,
+    pub custom_color_list: Vec<CustomColor>,
+    pub name: Option<String>, // ""
+}
+
+pub struct BaseStyles {
+    pub color_scheme: ColorScheme,
+    pub font_scheme: FontScheme,
+    pub format_scheme: StyleMatrix,
+}
+
+pub struct StyleMatrix {
+    pub fill_style_list: Vec<FillProperties>, // minOccurs: 3
+    pub line_style_list: Vec<LineProperties>, // minOccurs: 3
+    pub effect_style_list: Vec<EffectStyleItem>, // minOccurs: 3
+    pub bg_fill_style_list: Vec<FillProperties>, // minOccurs: 3
+    pub name: Option<String>, // ""
+}
+
+pub struct ObjectStyleDefaults {
+    pub shape_definition: Option<DefaultShapeDefinition>,
+    pub line_definition: Option<DefaultShapeDefinition>,
+    pub text_definition: Option<DefaultShapeDefinition>,
+}
+
+pub struct DefaultShapeDefinition {
+    pub shape_properties: ShapeProperties,
+    pub text_body_properties: TextBodyProperties,
+    pub text_list_style: TextListStyle,
+    pub shape_style: Option<ShapeStyle>,
 }
