@@ -56,7 +56,7 @@ impl Document {
 
         document.app = AppInfo::from_zip(&mut zipper);
         document.core = Core::from_zip(&mut zipper);
-        document.presentation = pml::Presentation;
+        document.presentation = pml::Presentation::from_zip(&mut zipper);
 
         Ok(document)
     }

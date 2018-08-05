@@ -3,6 +3,8 @@ extern crate zip;
 
 #[macro_use]
 mod macros;
+mod helpers;
+pub mod errors;
 pub mod docprops;
 pub mod relationship;
 pub mod pml;

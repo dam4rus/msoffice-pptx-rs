@@ -1,5 +1,6 @@
 use std::io::{ Read, Seek };
 use std::str;
+use helpers::{ parse_xml_attribute, parse_optional_xml_attribute, parse_xml_element_attribute };
 
 use drawingml;
 use relationship;
@@ -565,9 +566,40 @@ pub struct CommonSlideData {
     pub name: Option<String>,
 }
 
+/// CustomerDataList
 pub struct CustomerDataList {
     pub customer_data_list: Vec<relationship::RelationshipId>,
     pub tags: Option<relationship::RelationshipId>,
+}
+
+impl CustomerDataList {
+    fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<CustomerDataList, String> {
+        let mut instance = CustomerDataList {
+            customer_data_list: Vec::new(),
+            tags: None,
+        };
+
+        let mut buffer = Vec::new();
+        loop {
+            match xml_reader.read_event(&mut buffer) {
+                Ok(quick_xml::events::Event::Start(ref element)) => {
+                    match element.local_name() {
+                        b"custData" => instance.customer_data_list.push(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        b"tags" => instance.tags = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        _ => (),
+                    }
+                }
+                Ok(quick_xml::events::Event::End(ref element)) => {
+                    if element.local_name() == xml_element.local_name() {
+                        break;
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
 }
 
 pub struct Control {
@@ -591,7 +623,7 @@ pub struct SlideSize {
 }
 
 pub struct SlideIdListEntry {
-    pub id: Option<SlideId>,
+    pub id: SlideId,
     pub relationship_id: relationship::RelationshipId,
 }
 
@@ -1045,18 +1077,116 @@ pub struct Slide {
     pub show: Option<bool>, // true
 }
 
+/// EmbeddedFontListEntry
 pub struct EmbeddedFontListEntry {
-    pub font: Option<drawingml::TextFont>,
+    pub font: drawingml::TextFont,
     pub regular: Option<relationship::RelationshipId>,
     pub bold: Option<relationship::RelationshipId>,
     pub italic: Option<relationship::RelationshipId>,
     pub bold_italic: Option<relationship::RelationshipId>,
 }
 
+impl EmbeddedFontListEntry {
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<EmbeddedFontListEntry, String> {
+        let mut opt_font = None;
+        let mut opt_regular = None;
+        let mut opt_bold = None;
+        let mut opt_italic = None;
+        let mut opt_bold_italic = None;
+
+        let mut buffer = Vec::new();
+        loop {
+            match xml_reader.read_event(&mut buffer) {
+                Ok(quick_xml::events::Event::Start(ref element)) => {
+                    match element.local_name() {
+                        b"font" => opt_font = Some(drawingml::TextFont::from_xml_element(element).unwrap()),
+                        b"regular" => opt_regular = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        b"bold" => opt_bold = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        b"italic" => opt_italic = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        b"boldItalic" => opt_bold_italic = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        _ => (),
+                    }
+                }
+                Ok(quick_xml::events::Event::End(ref element)) => {
+                    if element.local_name() == xml_element.local_name() {
+                        break;
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        if let Some(font) = opt_font {
+            Ok(EmbeddedFontListEntry {
+                font: font,
+                regular: opt_regular,
+                bold: opt_bold,
+                italic: opt_italic,
+                bold_italic: opt_bold_italic,
+            })
+        } else {
+            Err(String::from("Failed to create EmbeddedFontListEntry from xml element"))
+        }
+    }
+}
+
+/// CustomShow
 pub struct CustomShow {
     pub name: Name,
     pub id: u32,
     pub slide_list: Vec<relationship::RelationshipId>,
+}
+
+impl CustomShow {
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<CustomShow, String> {
+        let mut opt_name = None;
+        let mut opt_id = None;
+
+        for attr in xml_element.attributes() {
+            if let Ok(a) = attr {
+                match a.key {
+                    b"name" => opt_name = Some(parse_xml_attribute(&a.value).unwrap()),
+                    b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
+                    _ => (),
+                }
+            }
+        }
+
+        if opt_name.is_none() {
+            return Err(String::from("CustomShow missing required attribute: name"));
+        }
+
+        if opt_id.is_none() {
+            return Err(String::from("CustomShow missing required attribute: id"));
+        }
+
+        let mut instance = CustomShow {
+            name: opt_name.unwrap(),
+            id: opt_id.unwrap(),
+            slide_list: Vec::new(),
+        };
+
+        let mut buffer = Vec::new();
+        loop {
+            match xml_reader.read_event(&mut buffer) {
+                Ok(quick_xml::events::Event::Start(ref element)) => {
+                    match element.local_name() {
+                        b"sldLst" => (),
+                        b"sld" => instance.slide_list.push(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        _ => (),
+                    }
+                }
+                Ok(quick_xml::events::Event::End(ref element)) => {
+                    if element.local_name() == xml_element.local_name() {
+                        break;
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
 }
 
 pub struct PhotoAlbum {
@@ -1148,7 +1278,10 @@ impl Presentation {
         }
     }
 
-    pub fn from_xml<R>(zipper: &mut zip::ZipArchive<R>) -> Option<Presentation> where R: Read + Seek {
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Option<Presentation>
+    where
+        R: Read + Seek
+    {
         let mut presentation_file = match zipper.by_name("ppt/presentation.xml") {
             Ok(f) => f,
             Err(_) => return None,
@@ -1164,129 +1297,9 @@ impl Presentation {
                 loop {
                     match xml_reader.read_event(&mut buffer) {
                         Ok(quick_xml::events::Event::Start(ref element)) => {
-                            /*
-                            Presentation *instance = new Presentation();
-		for (const std::unique_ptr<MXmlAttribute2> &attr : xmlNode.attributes)
-		{
-			if (attr->name == mT("serverZoom"))
-				instance->serverZoom.SetSome(attr->value.ToInt(50000));
-			else if (attr->name == mT("firstSlideNum"))
-				instance->firstSlideNum.SetSome(attr->value.ToInt(1));
-			else if (attr->name == mT("showSpecialPlsOnTitleSld"))
-				instance->showSpecialPlsOnTitleSld.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("rtl"))
-				instance->rtl.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("removePersonalInfoOnSave"))
-				instance->removePersonalInfoOnSave.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("compatMode"))
-				instance->compatMode.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("strictFirstAndLastChars"))
-				instance->strictFirstAndLastChars.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("embedTrueTypeFonts"))
-				instance->embedTrueTypeFonts.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("saveSubsetFonts"))
-				instance->saveSubsetFonts.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("autoCompressPictures"))
-				instance->autoCompressPictures.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("bookmarkIdSeed"))
-				instance->bookmarkIdSeed.SetSome(attr->value.ToUInt(1));
-			else if (attr->name == mT("conformance"))
-				instance->conformance = attr->value;
-		}
-
-		for (const MXmlNode2 &childNode : xmlNode)
-		{
-			if (childNode.name == mT("sldMasterIdLst"))
-			{
-				for (const MXmlNode2 &sldMasterIdNode : childNode)
-					instance->sldMasterIdLst.Emplace(SlideMasterIdListEntry::FromXmlNode(sldMasterIdNode));
-			}
-			else if (childNode.name == mT("notesMasterIdLst"))
-			{
-				for (const MXmlNode2 &notesMasterIdNode : childNode)
-					instance->notesMasterIdLst.Emplace(NotesMasterIdListEntry::FromXmlNode(notesMasterIdNode));
-			}
-			else if (childNode.name == mT("handoutMasterIdLst"))
-			{
-				for (const MXmlNode2 &handoutMasterIdNode : childNode)
-					instance->handoutMasterIdLst.Emplace(HandoutMasterIdListEntry::FromXmlNode(handoutMasterIdNode));
-			}
-			else if (childNode.name == mT("sldIdLst"))
-			{
-				for (const MXmlNode2 &sldIdNode : childNode)
-					instance->sldIdLst.Emplace(SlideIdListEntry::FromXmlNode(sldIdNode));
-			}
-			else if (childNode.name == mT("sldSz"))
-				instance->sldSz.reset(SlideSize::FromXmlNode(childNode));
-			else if (childNode.name == mT("notesSz"))
-				instance->notesSz.reset(DrawingML::PositiveSize2D::FromXmlNode(childNode));
-			//else if (childNode.name == mT("smartTags"))
-			//	instance->smartTags.reset(SmartTags::FromXmlNode(childNode));
-			else if (childNode.name == mT("embeddedFontLst"))
-			{
-				for (const MXmlNode2 &embeddedFontNode : childNode)
-					instance->embeddedFontLst.Emplace(EmbeddedFontListEntry::FromXmlNode(embeddedFontNode));
-			}
-			else if (childNode.name == mT("custShowLst"))
-			{
-				for (const MXmlNode2 &custShowNode : childNode)
-					instance->custShowLst.Emplace(CustomShow::FromXmlNode(custShowNode));
-			}
-			else if (childNode.name == mT("photoAlbum"))
-				instance->photoAlbum.reset(PhotoAlbum::FromXmlNode(childNode));
-			//else if (childNode.name == mT("custDataLst"))
-			//	instance->custDataLst.reset(CustomerDataList::FromXmlNode(childNode));
-			//else if (childNode.name == mT("kinsoku"))
-			//	instance->kinsoku.reset(Kinsoku::FromXmlNode(childNode));
-			else if (childNode.name == mT("defaultTextStyle"))
-				instance->defaultTextStyle.reset(DrawingML::TextListStyle::FromXmlNode(childNode));
-			//else if (childNode.name == mT("modifyVerifier"))
-			//	instance->modifyVerifier.reset(ModifyVerifier::FromXmlNode(childNode));
-			//else if (childNode.name == mT("extLst"))
-			//	instance->extLst.reset(ExtensionList::FromXmlNode(childNode));
-		}
-                            */
-
-
                             match element.local_name() {
-                                b"presentation" => {
-                                    for attr in element.attributes() {
-                                        if let Ok(a) = attr {
-                                            match a.key {
-                                                b"serverZoom" => presentation.server_zoom = Some(str::from_utf8(&a.value).unwrap().parse::<i32>().unwrap() as f32 / 100_000.0),
-                                                _ => (),
-
-                                            }
-                                        }
-
-                                            /*
-                                            			if (attr->name == mT("serverZoom"))
-				instance->serverZoom.SetSome(attr->value.ToInt(50000));
-			else if (attr->name == mT("firstSlideNum"))
-				instance->firstSlideNum.SetSome(attr->value.ToInt(1));
-			else if (attr->name == mT("showSpecialPlsOnTitleSld"))
-				instance->showSpecialPlsOnTitleSld.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("rtl"))
-				instance->rtl.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("removePersonalInfoOnSave"))
-				instance->removePersonalInfoOnSave.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("compatMode"))
-				instance->compatMode.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("strictFirstAndLastChars"))
-				instance->strictFirstAndLastChars.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("embedTrueTypeFonts"))
-				instance->embedTrueTypeFonts.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("saveSubsetFonts"))
-				instance->saveSubsetFonts.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("autoCompressPictures"))
-				instance->autoCompressPictures.SetSome(attr->value.ToBool());
-			else if (attr->name == mT("bookmarkIdSeed"))
-				instance->bookmarkIdSeed.SetSome(attr->value.ToUInt(1));
-			else if (attr->name == mT("conformance"))
-				instance->conformance = attr->value;
-                                            */
-                                    }
-                                }
+                                b"presentation" => presentation.parse_presentation_element(element, &mut xml_reader),
+                                _ => ()
                             }
                         },
                         Ok(quick_xml::events::Event::Eof) => break,
@@ -1300,5 +1313,205 @@ impl Presentation {
         }
 
         Some(presentation)
+    }
+
+    fn parse_presentation_element(&mut self, presentation_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) {
+
+        for attr in presentation_element.attributes() {
+            if let Ok(a) = attr {
+                match a.key {
+                    b"serverZoom" => self.server_zoom = Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
+                    b"firstSlideNum" => self.first_slide_num = Some(parse_optional_xml_attribute(&a.value, 1)),
+                    b"showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = Some(parse_optional_xml_attribute(&a.value, true)),
+                    b"rtl" => self.rtl = Some(parse_optional_xml_attribute(&a.value, false)),
+                    b"removePersonalInfoOnSave" => self.remove_personal_info_on_save = Some(parse_optional_xml_attribute(&a.value, false)),
+                    b"compatMode" => self.compatibility_mode = Some(parse_optional_xml_attribute(&a.value, false)),
+                    b"strictFirstAndLastChars" => self.strict_first_and_last_chars = Some(parse_optional_xml_attribute(&a.value, true)),
+                    b"embedTrueTypeFonts" => self.embed_true_type_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
+                    b"saveSubsetFonts" => self.save_subset_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
+                    b"autoCompressPictures" => self.auto_compress_pictures = Some(parse_optional_xml_attribute(&a.value, true)),
+                    b"bookmarkIdSeed" => self.bookmark_id_seed = Some(parse_optional_xml_attribute(&a.value, 1)),
+                    b"conformance" => self.conformance = Some(parse_xml_attribute(&a.value).unwrap()),
+                    _ => (),
+
+                }
+            }
+        }
+
+        let mut buffer = Vec::new();
+        loop {
+            match xml_reader.read_event(&mut buffer) {
+/*
+		for (const MXmlNode2 &childNode : xmlNode)
+		{
+			else if (childNode.name == mT("defaultTextStyle"))
+				instance->defaultTextStyle.reset(DrawingML::TextListStyle::FromXmlNode(childNode));
+			//else if (childNode.name == mT("modifyVerifier"))
+			//	instance->modifyVerifier.reset(ModifyVerifier::FromXmlNode(childNode));
+			//else if (childNode.name == mT("extLst"))
+			//	instance->extLst.reset(ExtensionList::FromXmlNode(childNode));
+		}
+                            */
+                Ok(quick_xml::events::Event::Start(ref element)) => {
+                    match element.local_name() {
+                        b"sldMasterIdLst" => (),
+                        b"sldMasterId" => {
+                            let mut opt_id = None;
+                            let mut opt_r_id = None;
+
+                            for attr in element.attributes() {
+                                if let Ok(a) = attr {
+                                    match a.key {
+                                        b"id" => opt_id = Some(parse_optional_xml_attribute(&a.value, 0)),
+                                        b"r:id" => opt_r_id = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        _ => (),
+                                    }
+                                }
+                            }
+
+                            // r:id attribute is required
+                            if let Some(r_id) = opt_r_id {
+                                self.slide_master_id_list.push(SlideMasterIdListEntry {
+                                    id: opt_id,
+                                    relationship_id: r_id,
+                                })
+                            }
+                        }
+                        b"notesMasterIdLst" => (),
+                        b"notesMasterId" => {
+                            self.notes_master_id_list.push(NotesMasterIdListEntry {
+                                relationship_id: parse_xml_element_attribute(element, b"r:id").unwrap(),
+                            })
+                        }
+                        b"handoutMasterIdLst" => (),
+                        b"handoutMasterId" => {
+                            self.handout_master_id_list.push(HandoutMasterIdListEntry{
+                                relationship_id: parse_xml_element_attribute(element, b"r:id").unwrap(),
+                            })
+                        }
+                        b"sldIdLst" => (),
+                        b"sldId" => {
+                            let mut opt_id = None;
+                            let mut opt_r_id = None;
+
+                            for attr in element.attributes() {
+                                if let Ok(a) = attr {
+                                    match a.key {
+                                        b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        b"r:id" => opt_r_id = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        _ => (),
+                                    }
+                                }
+                            }
+
+                            if let (Some(id), Some(r_id)) = (opt_id, opt_r_id) {
+                                self.slide_id_list.push(SlideIdListEntry {
+                                    id: id,
+                                    relationship_id: r_id,
+                                });
+                            }
+                        }
+                        b"sldSz" => {
+                            let mut opt_width = None;
+                            let mut opt_height = None;
+                            let mut opt_size_type = None;
+
+                            for attr in element.attributes() {
+                                if let Ok(a) = attr {
+                                    match a.key {
+                                        b"cx" => opt_width = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        b"cy" => opt_height = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        b"type" => opt_size_type = Some(parse_optional_xml_attribute(&a.value, SlideSizeType::Custom)),
+                                        _ => (),
+                                    }
+                                }
+                            }
+
+                            if let (Some(w), Some(h)) = (opt_width, opt_height) {
+                                self.slide_size = Some(SlideSize {
+                                    width: w,
+                                    height: h,
+                                    size_type: opt_size_type,
+                                })
+                            }
+                        }
+                        b"notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(element).unwrap()),
+                        b"smartTags" => self.smart_tags = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
+                        b"embeddedFontLst" => (),
+                        b"embeddedFont" => {
+                            match EmbeddedFontListEntry::from_xml_element(element, xml_reader) {
+                                Ok(entry) => self.embedded_font_list.push(entry),
+                                Err(err) => println!("{}", err),
+                            }
+                        }
+                        b"custShowLst" => (),
+                        b"custShow" => {
+                            match CustomShow::from_xml_element(element, xml_reader) {
+                                Ok(custom_show) => self.custom_show_list.push(custom_show),
+                                Err(err) => println!("{}", err),
+                            }
+                        }
+                        b"photoAlbum" => {
+                            let mut photo_album = PhotoAlbum {
+                                black_and_white: None,
+                                frame: None,
+                                layout: None,
+                                show_captions: None,
+                            };
+
+                            for attr in element.attributes() {
+                                if let Ok(a) = attr {
+                                    match a.key {
+                                        b"bw" => photo_album.black_and_white = Some(parse_optional_xml_attribute(&a.value, false)),
+                                        b"showCaptions" => photo_album.show_captions = Some(parse_optional_xml_attribute(&a.value, false)),
+                                        b"layout" => photo_album.layout = Some(parse_optional_xml_attribute(&a.value, PhotoAlbumLayout::FitToSlide)),
+                                        b"frame" => photo_album.frame = Some(parse_optional_xml_attribute(&a.value, PhotoAlbumFrameShape::FrameStyle1)),
+                                        _ => (),
+                                    }
+                                }
+                            }
+
+                            self.photo_album = Some(photo_album);
+                        }
+                        b"custDataLst" => self.customer_data_list = Some(CustomerDataList::from_xml_element(element, xml_reader).unwrap()),
+                        b"kinsoku" => {
+                            let mut opt_lang = None;
+                            let mut opt_invalid_st_chars = None;
+                            let mut opt_invalid_end_chars = None;
+
+                            for attr in element.attributes() {
+                                if let Ok(a) = attr {
+                                    match a.key {
+                                        b"lang" => opt_lang = Some(parse_optional_xml_attribute(&a.value, String::new())),
+                                        b"invalStChars" => opt_invalid_st_chars = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        b"invalEndChars" => opt_invalid_end_chars = Some(parse_xml_attribute(&a.value).unwrap()),
+                                        _ => (),
+                                    }
+                                }
+                            }
+
+                            if let (Some(invalid_st_chars), Some(invalid_end_chars)) = (opt_invalid_st_chars, opt_invalid_end_chars) {
+                                self.kinsoku = Some(Kinsoku {
+                                    language: opt_lang,
+                                    invalid_start_chars: invalid_st_chars,
+                                    invalid_end_chars: invalid_end_chars,
+                                });
+                            }
+                        }
+                        b"defaultTextStyle" => {
+
+                        }
+                        _ => (),
+                    }
+
+                }
+                Ok(quick_xml::events::Event::End(ref element)) => {
+                    if element.local_name() == b"presentation" {
+                        break;
+                    }
+                }
+                _ => (),
+            }
+        }
     }
 }
