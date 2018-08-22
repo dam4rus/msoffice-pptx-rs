@@ -1,6 +1,7 @@
 use std::io::{ Read, Seek };
 use std::str;
 use helpers::{ parse_xml_attribute, parse_optional_xml_attribute, parse_xml_element_attribute };
+use xml::*;
 
 use drawingml;
 use relationship;
@@ -1292,6 +1293,8 @@ impl Presentation {
 
         match presentation_file.read_to_string(&mut xml_string) {
             Ok(_) => {
+                let root_node = XmlNode::from_str(xml_string.as_str());
+
                 let mut buffer = Vec::new();
                 let mut xml_reader = quick_xml::Reader::from_str(xml_string.as_str());
                 loop {
@@ -1315,26 +1318,23 @@ impl Presentation {
         Some(presentation)
     }
 
-    fn parse_presentation_element(&mut self, presentation_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) {
+    fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
 
-        for attr in presentation_element.attributes() {
-            if let Ok(a) = attr {
-                match a.key {
-                    b"serverZoom" => self.server_zoom = Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
-                    b"firstSlideNum" => self.first_slide_num = Some(parse_optional_xml_attribute(&a.value, 1)),
-                    b"showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = Some(parse_optional_xml_attribute(&a.value, true)),
-                    b"rtl" => self.rtl = Some(parse_optional_xml_attribute(&a.value, false)),
-                    b"removePersonalInfoOnSave" => self.remove_personal_info_on_save = Some(parse_optional_xml_attribute(&a.value, false)),
-                    b"compatMode" => self.compatibility_mode = Some(parse_optional_xml_attribute(&a.value, false)),
-                    b"strictFirstAndLastChars" => self.strict_first_and_last_chars = Some(parse_optional_xml_attribute(&a.value, true)),
-                    b"embedTrueTypeFonts" => self.embed_true_type_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
-                    b"saveSubsetFonts" => self.save_subset_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
-                    b"autoCompressPictures" => self.auto_compress_pictures = Some(parse_optional_xml_attribute(&a.value, true)),
-                    b"bookmarkIdSeed" => self.bookmark_id_seed = Some(parse_optional_xml_attribute(&a.value, 1)),
-                    b"conformance" => self.conformance = Some(parse_xml_attribute(&a.value).unwrap()),
-                    _ => (),
-
-                }
+        for (attr, value) in presentation_node.get_attributes() {
+            match attr {
+                "serverZoom" => self.server_zoom = Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
+                "firstSlideNum" => self.first_slide_num = Some(parse_optional_xml_attribute(&a.value, 1)),
+                "showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = Some(parse_optional_xml_attribute(&a.value, true)),
+                "rtl" => self.rtl = Some(parse_optional_xml_attribute(&a.value, false)),
+                "removePersonalInfoOnSave" => self.remove_personal_info_on_save = Some(parse_optional_xml_attribute(&a.value, false)),
+                "compatMode" => self.compatibility_mode = Some(parse_optional_xml_attribute(&a.value, false)),
+                "strictFirstAndLastChars" => self.strict_first_and_last_chars = Some(parse_optional_xml_attribute(&a.value, true)),
+                "embedTrueTypeFonts" => self.embed_true_type_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
+                "saveSubsetFonts" => self.save_subset_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
+                "autoCompressPictures" => self.auto_compress_pictures = Some(parse_optional_xml_attribute(&a.value, true)),
+                "bookmarkIdSeed" => self.bookmark_id_seed = Some(parse_optional_xml_attribute(&a.value, 1)),
+                "conformance" => self.conformance = Some(parse_xml_attribute(&a.value).unwrap()),
+                _ => (),
             }
         }
 

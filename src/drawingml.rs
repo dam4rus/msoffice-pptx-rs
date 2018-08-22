@@ -321,17 +321,17 @@ decl_simple_type_enum! {
 
 decl_simple_type_enum! {
     pub enum LineEndWidth {
-        Sm = "sm",
-        Med = "med",
-        Lg = "lg",
+        Small = "sm",
+        Medium = "med",
+        Large = "lg",
     }
 }
 
 decl_simple_type_enum! {
     pub enum LineEndLength {
-        Sm = "sm",
-        Med = "med",
-        Lg = "lg",
+        Small = "sm",
+        Medium = "med",
+        Large = "lg",
     }
 }
 
@@ -1147,7 +1147,7 @@ impl ScRgbColor {
             (_, _, None) => return Err(MissingAttributeError { attr: "b" }),
         };
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(element).unwrap());
             }
@@ -1181,7 +1181,7 @@ impl SRgbColor {
             Err(_) => return Err(MissingAttributeError { attr: "val" }),
         };
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(element).unwrap());
             }
@@ -1240,7 +1240,7 @@ impl HslColor {
             (_, _, None) => return Err(MissingAttributeError { attr: "lum" }),
         };
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(element).unwrap());
             }
@@ -1291,7 +1291,7 @@ impl SystemColor {
 
         instance.last_color = opt_last_color;
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(element).unwrap());
             }
@@ -1325,7 +1325,7 @@ impl PresetColor {
             Err(_) => return Err(MissingAttributeError { attr: "val" }),
         };
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(xml_element).unwrap());
             }
@@ -1359,7 +1359,7 @@ impl SchemeColor {
             Err(_) => return Err(MissingAttributeError { attr: "val" }),
         };
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
             if ColorTransform::is_choice_member(element.local_name()) {
                 instance.color_transforms.push(ColorTransform::from_xml_element(element).unwrap());
             }
@@ -1450,9 +1450,38 @@ pub struct ColorSchemeAndMapping {
     pub color_mapping: Option<ColorMapping>,
 }
 
+/// GradientStop
 pub struct GradientStop {
     pub color: Color,
     pub position: PositiveFixedPercentage,
+}
+
+impl GradientStop {
+    pub fn from_xml_element(
+        xml_element: &quick_xml::events::BytesStart,
+        xml_reader: &mut quick_xml::Reader<&[u8]>
+    ) -> Result<GradientStop, MissingAttributeError> {
+        let pos = match parse_xml_element_attribute(xml_element, b"pos") {
+            Ok(val) => val,
+            Err(_) => return Err(MissingAttributeError { attr: "pos" }),
+        };
+        let mut opt_color = None;
+
+        iterate_xml_element_childs(xml_element, xml_reader, |element, reader| {
+            if Color::is_choice_member(element.local_name()) {
+                if let Ok(clr) = Color::from_xml_element(xml_element, reader) {
+                    opt_color = Some(clr);
+                };
+                return true;
+            }
+            false
+        });
+
+        match opt_color {
+            Some(clr) => Ok(GradientStop { color: clr, position: pos }),
+            None => Err(MissingAttributeError { attr: "ColorChoice"} ),
+        }
+    }
 }
 
 pub struct LinearShadeProperties {
@@ -1506,9 +1535,9 @@ impl GradientFillProperties {
             }
         }
 
-        iterate_xml_element_childs(xml_element, xml_reader, |element| {
+        iterate_xml_element_childs(xml_element, xml_reader, |element, reader| {
             match element.local_name() {
-                b"gs" => instance.gradient_stop_list.push(GradientStop::from_xml_element(element, xml_reader)),
+                b"gs" => instance.gradient_stop_list.push(GradientStop::from_xml_element(element, reader).unwrap()),
                 b"tileRect" => instance.tile_rect = Some(RelativeRect::from_xml_element(element)),
                 _ => (),
             }
@@ -1583,7 +1612,8 @@ impl LineFillProperties {
         match xml_element.local_name() {
             b"noFill" => Ok(LineFillProperties::NoFill),
             b"solidFill" => Ok(LineFillProperties::SolidFill(LineFillProperties::parse_solid_fill_element(xml_element, xml_reader).unwrap())),
-            b"gradFill" => Ok(LineFillProperties::GradientFill()),
+            b"gradFill" => Ok(LineFillProperties::GradientFill(GradientFillProperties::from_xml_element(xml_element, xml_reader))),
+            // TODO: implement pattFill
             _ => Err(NotGroupMemberError { group: "EG_LineFillProperties" }),
         }
     }
@@ -1614,30 +1644,137 @@ impl LineFillProperties {
     }
 }
 
+/// DashStop
 pub struct DashStop {
     pub dash_length: PositivePercentage,
     pub space_length: PositivePercentage,
 }
 
+impl DashStop {
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<DashStop, MissingAttributeError> {
+        let mut opt_dash_length = None;
+        let mut opt_space_length = None;
+
+        for attr in xml_element.attributes() {
+            if let Ok(a) = attr {
+                match a.key {
+                    b"d" => opt_dash_length = Some(parse_xml_attribute(&a.value).unwrap()),
+                    b"sp" => opt_space_length = Some(parse_xml_attribute(&a.value).unwrap()),
+                    _ => (),
+                }
+            }
+        }
+
+        match (opt_dash_length, opt_space_length) {
+            (Some(dash), Some(space)) => Ok(DashStop { dash_length: dash, space_length: space }),
+            (None, _) => Err(MissingAttributeError { attr: "d"} ),
+            (_, None) => Err(MissingAttributeError { attr: "sp"} ),
+        }
+    }
+}
+
+/// LineDashProperties
 pub enum LineDashProperties {
     PresetDash(PresetLineDashVal),
     CustomDash(Vec<DashStop>)
 }
 
-pub struct LineJoinMiterProperties {
-    pub limit: Option<PositivePercentage>,
+impl LineDashProperties {
+    pub fn is_choice_member(name: &[u8]) -> bool {
+        match name {
+            b"prstDash" | b"custDash" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(
+        xml_element: &quick_xml::events::BytesStart,
+        xml_reader: &mut quick_xml::Reader<&[u8]>
+    ) -> Result<LineDashProperties, NotGroupMemberError> {
+        match xml_element.local_name() {
+            b"prstDash" => Ok(LineDashProperties::PresetDash(parse_xml_element_attribute(xml_element, b"val").unwrap())),
+            b"custDash" => Ok(LineDashProperties::CustomDash(LineDashProperties::parse_custom_dash_element(xml_element, xml_reader))),
+            _ => Err(NotGroupMemberError { group: "EG_LineDashProperties" }),
+        }
+    }
+
+    fn parse_custom_dash_element(
+        xml_element: &quick_xml::events::BytesStart,
+        xml_reader: &mut quick_xml::Reader<&[u8]>
+    ) -> Vec<DashStop> {
+        let mut dash_vec = Vec::new();
+
+        iterate_xml_element_childs(xml_element, xml_reader, |element, _| {
+            if element.local_name() == b"ds" {
+                match DashStop::from_xml_element(element) {
+                    Ok(val) => dash_vec.push(val),
+                    Err(err) => println!("Failed to parse 'ds' element: {}", err),
+                };
+            }
+            false
+        });
+
+        dash_vec
+    }
 }
 
+/// LineJoinProperties
 pub enum LineJoinProperties {
     Round,
     Bevel,
-    Miter(LineJoinMiterProperties),
+    Miter(Option<PositivePercentage>),
 }
 
+impl LineJoinProperties {
+    pub fn is_choice_member(name: &[u8]) -> bool {
+        match name {
+            b"round" | b"bevel" | b"miter" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<LineJoinProperties, NotGroupMemberError> {
+        match xml_element.local_name() {
+            b"round" => Ok(LineJoinProperties::Round),
+            b"bevel" => Ok(LineJoinProperties::Bevel),
+            b"miter" => Ok(LineJoinProperties::Miter(parse_optional_xml_element_attribute(xml_element, b"lim", 0.0))),
+            _ => Err(NotGroupMemberError { group: "EG_LineJoinProperties" }),
+        }
+    }
+}
+
+/// LineEndProperties
 pub struct LineEndProperties {
     pub end_type: Option<LineEndType>,
     pub width: Option<LineEndWidth>,
     pub length: Option<LineEndLength>,
+}
+
+impl LineEndProperties {
+    fn new() -> LineEndProperties {
+        LineEndProperties {
+            end_type: None,
+            width: None,
+            length: None,
+        }
+    }
+
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> LineEndProperties {
+        let mut instance = LineEndProperties::new();
+
+        for attr in xml_element.attributes() {
+            if let Ok(a) = attr {
+                match a.key {
+                    b"type" => instance.end_type = Some(parse_optional_xml_attribute(&a.value, LineEndType::None)),
+                    b"width" => instance.width = Some(parse_optional_xml_attribute(&a.value, LineEndWidth::Medium)),
+                    b"length" => instance.length = Some(parse_optional_xml_attribute(&a.value, LineEndLength::Medium)),
+                    _ => (),
+                }
+            }
+        }
+
+        instance
+    }
 }
 
 /// LineProperties
@@ -1686,36 +1823,28 @@ impl LineProperties {
             }
         }
 
-        let mut buffer = Vec::new();
-        loop {
-            use quick_xml::events::Event;
-            match xml_reader.read_event(&mut buffer) {
-                Ok(Event::Start(ref element)) => {
-                    match element.local_name() {
-                        
-    //                      <xsd:sequence>
-    //   <xsd:group ref="EG_LineFillProperties" minOccurs="0" maxOccurs="1"/>
-    //   <xsd:group ref="EG_LineDashProperties" minOccurs="0" maxOccurs="1"/>
-    //   <xsd:group ref="EG_LineJoinProperties" minOccurs="0" maxOccurs="1"/>
-    //   <xsd:element name="headEnd" type="CT_LineEndProperties" minOccurs="0" maxOccurs="1"/>
-    //   <xsd:element name="tailEnd" type="CT_LineEndProperties" minOccurs="0" maxOccurs="1"/>
-    //   <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
-    // </xsd:sequence>
-                    }
+        iterate_xml_element_childs(xml_element, xml_reader, |element, reader| {
+            if LineFillProperties::is_choice_member(element.local_name()) {
+                instance.fill_properties = Some(LineFillProperties::from_xml_element(element, reader).unwrap());
+            } else if LineDashProperties::is_choice_member(element.local_name()) {
+                instance.dash_properties = Some(LineDashProperties::from_xml_element(element, reader).unwrap());
+            } else if LineJoinProperties::is_choice_member(element.local_name()) {
+                instance.join_properties = Some(LineJoinProperties::from_xml_element(element).unwrap());
+            } else {
+                match element.local_name() {
+                    b"headEnd" => instance.head_end = Some(LineEndProperties::from_xml_element(element)),
+                    b"tailEnd" => instance.tail_end = Some(LineEndProperties::from_xml_element(element)),
+                    _ => (),
                 }
-                Ok(Event::End(ref element)) => {
-                    if element.local_name() == xml_element.local_name() {
-                        break;
-                    }
-                }
-                _ => (),
             }
-        }
+            false
+        });
 
         instance
     }
 }
 
+/// RelativeRect
 pub struct RelativeRect {
     pub left: Option<Percentage>,
     pub top: Option<Percentage>,
@@ -1723,8 +1852,37 @@ pub struct RelativeRect {
     pub bottom: Option<Percentage>,
 }
 
+impl RelativeRect {
+    pub fn new() -> RelativeRect {
+        RelativeRect {
+            left: None,
+            top: None,
+            right: None,
+            bottom: None,
+        }
+    }
+
+    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> RelativeRect {
+        let mut instance = RelativeRect::new();
+
+        for attr in xml_element.attributes() {
+            if let Ok(a) = attr {
+                match a.key {
+                    b"l" => instance.left = Some(parse_optional_xml_attribute(&a.value, 0.0)),
+                    b"t" => instance.top = Some(parse_optional_xml_attribute(&a.value, 0.0)),
+                    b"r" => instance.right = Some(parse_optional_xml_attribute(&a.value, 0.0)),
+                    b"b" => instance.bottom = Some(parse_optional_xml_attribute(&a.value, 0.0)),
+                    _ => (),
+                }
+            }
+        }
+
+        instance
+    }
+}
+
 pub struct Point2D {
-    pub x: Coordinate,
+    pub x: Coordinate,  
     pub y: Coordinate,
 }
 

@@ -2,8 +2,6 @@ use quick_xml;
 use std::error::Error;
 use std::fmt;
 use std::str;
-use std::vec;
-use std::marker;
 
 /// XmlAttributeParseError
 #[derive(Debug)]
@@ -106,7 +104,7 @@ where
     }
 }
 
-/// Parse a single attribute in an xml element
+/// Parse a single attribute of an xml element
 pub fn parse_xml_element_attribute<T>(
     xml_element: &quick_xml::events::BytesStart,
     attr_name: &[u8],
@@ -129,21 +127,40 @@ where
     Err(SimpleElementParseError::MissingAttribute)
 }
 
+/// Parses a single attribute of an xml element, returning None if the element has no such attribute
+pub fn parse_optional_xml_element_attribute<T>(
+    xml_element: &quick_xml::events::BytesStart,
+    attr_name: &[u8],
+    default: T,
+) -> Option<T>
+where
+    T: str::FromStr,
+{
+    if let Some(attr) = xml_element.attributes().next() {
+        if let Ok(a) = attr {
+            if a.key == attr_name {
+                return Some(parse_optional_xml_attribute(&a.value, default));
+            }
+        }
+    }
+
+    None
+}
+
 /// Iterate through child elements of an xml element, stoping if `callback` returns true
 pub fn iterate_xml_element_childs<F>(
     xml_element: &quick_xml::events::BytesStart,
     xml_reader: &mut quick_xml::Reader<&[u8]>,
-    callback: F,
-)
-where
-    F: Fn(&quick_xml::events::BytesStart) -> bool
+    mut callback: F,
+) where
+    F: FnMut(&quick_xml::events::BytesStart, &mut quick_xml::Reader<&[u8]>) -> bool,
 {
     let mut buffer = Vec::new();
     loop {
         use quick_xml::events::Event;
         match xml_reader.read_event(&mut buffer) {
             Ok(Event::Start(ref element)) => {
-                if callback(element) {
+                if callback(element, xml_reader) {
                     break;
                 }
             }
