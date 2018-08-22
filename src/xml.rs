@@ -119,18 +119,18 @@ impl XmlNode {
     // }
 }
 
-/// Parse an xml attribute. On success returns the parsed value, on failure returns the provided default value
-pub fn parse_optional_xml_attribute<T>(attr: &[u8], default: T) -> T
+/// Parse an xml attribute.
+/// On success it returns `Some` with the parsed value, on failure it prints the error and returns `None`
+pub fn parse_optional_xml_attribute<T>(attr: &str) -> Option<T>
 where
     T: std::str::FromStr,
+    T::Err: std::fmt::Debug + std::fmt::Display,
 {
-    let attr_str = match std::str::from_utf8(&attr) {
-        Ok(s) => s,
-        Err(_) => return default,
-    };
-
-    match attr_str.parse::<T>() {
-        Ok(value) => value,
-        Err(_) => default,
+    match attr.parse::<T>() {
+        Ok(value) => Some(value),
+        Err(err) => {
+            println!("{}", err);
+            None
+        }
     }
 }
