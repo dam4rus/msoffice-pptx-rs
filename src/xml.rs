@@ -41,6 +41,25 @@ impl XmlNode {
         root_node
     }
 
+    pub fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
+
+    pub fn get_local_name(&self) -> &str {
+        match self.name.find(':') {
+            Some(idx) => self.name.split_at(idx).1,
+            None => self.name.as_str(),
+        }
+    }
+
+    pub fn get_attributes<'a>(&self) -> impl Iterator<Item = (&'a str, &'a str)>{
+        self.attributes.into_iter().map(|(key, value)| (key.as_str(), value.as_str()))
+    }
+
+    pub fn get_attribute(&self, attr_name: &str) -> &str {
+        self.attributes[attr_name].as_str()
+    }
+
     fn from_quick_xml_element(xml_element: &BytesStart) -> Option<XmlNode> {
         let name_str = match std::str::from_utf8(xml_element.name()) {
             Ok(s) => s,
@@ -101,22 +120,6 @@ impl XmlNode {
 
         child_nodes
     }
-
-    pub fn get_name(&self) -> &str {
-        self.name.as_str()
-    }
-
-    pub fn get_attributes<'a>(&self) -> impl Iterator<Item = (&'a str, &'a str)>{
-        self.attributes.into_iter().map(|(key, value)| (key.as_str(), value.as_str()))
-    }
-
-    pub fn get_attribute(&self, attr_name: &str) -> &str {
-        self.attributes[attr_name].as_str()
-    }
-
-    // pub fn get_attributes<'a>(&self) -> Box<Iterator<Item=(&'a str, &'a str)>> {
-    //     Box::new(self.attributes.into_iter().map(|(key, value)| (key.as_str(), value.as_str())))
-    // }
 }
 
 /// Parse an xml attribute. On success returns the parsed value, on failure returns the provided default value
