@@ -1,13 +1,13 @@
 use std::io::{ Read, Seek };
 use std::str;
-use helpers::{ parse_xml_attribute, parse_optional_xml_attribute, parse_xml_element_attribute };
+//use helpers::{ parse_xml_attribute, parse_optional_xml_attribute, parse_xml_element_attribute };
 use xml::*;
+use errors::*;
 
 use drawingml;
 use relationship;
 
 use zip;
-use quick_xml;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -574,27 +574,16 @@ pub struct CustomerDataList {
 }
 
 impl CustomerDataList {
-    fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<CustomerDataList, String> {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<CustomerDataList, String> {
         let mut instance = CustomerDataList {
             customer_data_list: Vec::new(),
             tags: None,
         };
 
-        let mut buffer = Vec::new();
-        loop {
-            match xml_reader.read_event(&mut buffer) {
-                Ok(quick_xml::events::Event::Start(ref element)) => {
-                    match element.local_name() {
-                        b"custData" => instance.customer_data_list.push(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        b"tags" => instance.tags = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        _ => (),
-                    }
-                }
-                Ok(quick_xml::events::Event::End(ref element)) => {
-                    if element.local_name() == xml_element.local_name() {
-                        break;
-                    }
-                }
+        for child_node in &xml_node.child_nodes {
+            match child_node.get_name() {
+                "custData" => instance.customer_data_list.push(child_node.get_attribute("r:id").parse().unwrap()),
+                "tags" => instance.tags = Some(child_node.get_attribute("r:id").parse().unwrap()),
                 _ => (),
             }
         }
@@ -1088,31 +1077,20 @@ pub struct EmbeddedFontListEntry {
 }
 
 impl EmbeddedFontListEntry {
-    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<EmbeddedFontListEntry, String> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<EmbeddedFontListEntry, String> {
         let mut opt_font = None;
         let mut opt_regular = None;
         let mut opt_bold = None;
         let mut opt_italic = None;
         let mut opt_bold_italic = None;
 
-        let mut buffer = Vec::new();
-        loop {
-            match xml_reader.read_event(&mut buffer) {
-                Ok(quick_xml::events::Event::Start(ref element)) => {
-                    match element.local_name() {
-                        b"font" => opt_font = Some(drawingml::TextFont::from_xml_element(element).unwrap()),
-                        b"regular" => opt_regular = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        b"bold" => opt_bold = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        b"italic" => opt_italic = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        b"boldItalic" => opt_bold_italic = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        _ => (),
-                    }
-                }
-                Ok(quick_xml::events::Event::End(ref element)) => {
-                    if element.local_name() == xml_element.local_name() {
-                        break;
-                    }
-                }
+        for child_node in &xml_node.child_nodes {
+            match child_node.get_name() {
+                "font" => opt_font = Some(drawingml::TextFont::from_xml_element(child_node).unwrap()),
+                "regular" => opt_regular = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "bold" => opt_bold = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "italic" => opt_italic = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "boldItalic" => opt_bold_italic = Some(child_node.get_attribute("r:id").parse().unwrap()),
                 _ => (),
             }
         }
@@ -1139,50 +1117,44 @@ pub struct CustomShow {
 }
 
 impl CustomShow {
-    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart, xml_reader: &mut quick_xml::Reader<&[u8]>) -> Result<CustomShow, String> {
-        let mut opt_name = None;
-        let mut opt_id = None;
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow, MissingAttributeError> {
+        // let mut opt_name = None;
+        // let mut opt_id = None;
 
-        for attr in xml_element.attributes() {
-            if let Ok(a) = attr {
-                match a.key {
-                    b"name" => opt_name = Some(parse_xml_attribute(&a.value).unwrap()),
-                    b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
-                    _ => (),
-                }
-            }
-        }
+        // for attr in xml_element.attributes() {
+        //     if let Ok(a) = attr {
+        //         match a.key {
+        //             b"name" => opt_name = Some(parse_xml_attribute(&a.value).unwrap()),
+        //             b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
+        //             _ => (),
+        //         }
+        //     }
+        // }
 
-        if opt_name.is_none() {
-            return Err(String::from("CustomShow missing required attribute: name"));
-        }
+        // if opt_name.is_none() {
+        //     return Err(String::from("CustomShow missing required attribute: name"));
+        // }
 
-        if opt_id.is_none() {
-            return Err(String::from("CustomShow missing required attribute: id"));
-        }
+        // if opt_id.is_none() {
+        //     return Err(String::from("CustomShow missing required attribute: id"));
+        // }
+
+        let name = xml_node.get_attribute("name").parse().unwrap();
+        let id = xml_node.get_attribute("id").parse().unwrap();
 
         let mut instance = CustomShow {
-            name: opt_name.unwrap(),
-            id: opt_id.unwrap(),
+            name: name,
+            id: id,
             slide_list: Vec::new(),
         };
 
-        let mut buffer = Vec::new();
-        loop {
-            match xml_reader.read_event(&mut buffer) {
-                Ok(quick_xml::events::Event::Start(ref element)) => {
-                    match element.local_name() {
-                        b"sldLst" => (),
-                        b"sld" => instance.slide_list.push(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        _ => (),
+        for child_node in &xml_node.child_nodes {
+            match child_node.get_name() {
+                "sldLst" => {
+                    for slide_node in &child_node.child_nodes {
+                        instance.slide_list.push(slide_node.get_attribute("r:id").parse().unwrap());
                     }
                 }
-                Ok(quick_xml::events::Event::End(ref element)) => {
-                    if element.local_name() == xml_element.local_name() {
-                        break;
-                    }
-                }
-                _ => (),
             }
         }
 
@@ -1293,23 +1265,8 @@ impl Presentation {
 
         match presentation_file.read_to_string(&mut xml_string) {
             Ok(_) => {
-                let root_node = XmlNode::from_str(xml_string.as_str());
-
-                let mut buffer = Vec::new();
-                let mut xml_reader = quick_xml::Reader::from_str(xml_string.as_str());
-                loop {
-                    match xml_reader.read_event(&mut buffer) {
-                        Ok(quick_xml::events::Event::Start(ref element)) => {
-                            match element.local_name() {
-                                b"presentation" => presentation.parse_presentation_element(element, &mut xml_reader),
-                                _ => ()
-                            }
-                        },
-                        Ok(quick_xml::events::Event::Eof) => break,
-                        _ => (),
-                    }
-
-                    buffer.clear();
+                if let Some(ref root_node) = XmlNode::from_str(xml_string.as_str()) {
+                    presentation.parse_presentation_element(root_node);
                 }
             }
             Err(_) => return None,
@@ -1322,25 +1279,165 @@ impl Presentation {
 
         for (attr, value) in presentation_node.get_attributes() {
             match attr {
-                "serverZoom" => self.server_zoom = Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
-                "firstSlideNum" => self.first_slide_num = Some(parse_optional_xml_attribute(&a.value, 1)),
-                "showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = Some(parse_optional_xml_attribute(&a.value, true)),
-                "rtl" => self.rtl = Some(parse_optional_xml_attribute(&a.value, false)),
-                "removePersonalInfoOnSave" => self.remove_personal_info_on_save = Some(parse_optional_xml_attribute(&a.value, false)),
-                "compatMode" => self.compatibility_mode = Some(parse_optional_xml_attribute(&a.value, false)),
-                "strictFirstAndLastChars" => self.strict_first_and_last_chars = Some(parse_optional_xml_attribute(&a.value, true)),
-                "embedTrueTypeFonts" => self.embed_true_type_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
-                "saveSubsetFonts" => self.save_subset_fonts = Some(parse_optional_xml_attribute(&a.value, false)),
-                "autoCompressPictures" => self.auto_compress_pictures = Some(parse_optional_xml_attribute(&a.value, true)),
-                "bookmarkIdSeed" => self.bookmark_id_seed = Some(parse_optional_xml_attribute(&a.value, 1)),
-                "conformance" => self.conformance = Some(parse_xml_attribute(&a.value).unwrap()),
+                "serverZoom" => self.server_zoom = parse_optional_xml_attribute(value),// Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
+                "firstSlideNum" => self.first_slide_num = parse_optional_xml_attribute(value),
+                "showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = parse_optional_xml_attribute(value),
+                "rtl" => self.rtl = parse_optional_xml_attribute(value),
+                "removePersonalInfoOnSave" => self.remove_personal_info_on_save = parse_optional_xml_attribute(value),
+                "compatMode" => self.compatibility_mode = parse_optional_xml_attribute(value),
+                "strictFirstAndLastChars" => self.strict_first_and_last_chars = parse_optional_xml_attribute(value),
+                "embedTrueTypeFonts" => self.embed_true_type_fonts = parse_optional_xml_attribute(value),
+                "saveSubsetFonts" => self.save_subset_fonts = parse_optional_xml_attribute(value),
+                "autoCompressPictures" => self.auto_compress_pictures = parse_optional_xml_attribute(value),
+                "bookmarkIdSeed" => self.bookmark_id_seed = parse_optional_xml_attribute(value),
+                "conformance" => self.conformance = Some(attr.parse().unwrap()),
                 _ => (),
             }
         }
 
-        let mut buffer = Vec::new();
-        loop {
-            match xml_reader.read_event(&mut buffer) {
+        for child_node in presentation_node.child_nodes {
+            match child_node.get_name() {
+                "sldMasterIdLst" => {
+                    for slide_master_id_node in child_node.child_nodes {
+                        let mut opt_id = None;
+                        let mut opt_r_id = None;
+
+                        for (attr, value) in slide_master_id_node.get_attributes() {
+                            match attr {
+                                "id" => opt_id = parse_optional_xml_attribute(value),
+                                "r:id" => opt_r_id =  Some(value.parse().unwrap()),
+                                _ => (),
+                            }
+                        }
+
+                        // r:id attribute is required
+                        if let Some(r_id) = opt_r_id {
+                            self.slide_master_id_list.push(SlideMasterIdListEntry {
+                                id: opt_id,
+                                relationship_id: r_id,
+                            });
+                        }
+                    }
+                },
+                "notesMasterIdLst" => {
+                    for notes_master_id_node in child_node.child_nodes {
+                        self.notes_master_id_list.push(NotesMasterIdListEntry {
+                            relationship_id: notes_master_id_node.get_attribute("r:id").parse().unwrap(),
+                        });
+                    }
+                },
+                "handoutMasterIdLst" => {
+                    for handout_master_id_node in child_node.child_nodes {
+                        self.handout_master_id_list.push(HandoutMasterIdListEntry{
+                            relationship_id: handout_master_id_node.get_attribute("r:id").parse().unwrap(),
+                        });
+                    }
+                },
+                "sldIdLst" => {
+                    for slide_id_node in child_node.child_nodes {
+                        let mut opt_id = None;
+                        let mut opt_r_id = None;
+
+                        for (attr, value) in slide_id_node.get_attributes() {
+                            match attr {
+                                "id" => opt_id = Some(value.parse().unwrap()),
+                                "r:id" => opt_r_id = Some(value.parse().unwrap()),
+                                _ => (),
+                            }
+                        }
+
+                        if let (Some(id), Some(r_id)) = (opt_id, opt_r_id) {
+                            self.slide_id_list.push(SlideIdListEntry {
+                                id: id,
+                                relationship_id: r_id,
+                            });
+                        }
+                    }
+                },
+                "sldSz" => {
+                    let mut opt_width = None;
+                    let mut opt_height = None;
+                    let mut opt_size_type = None;
+
+                    for (attr, value) in child_node.get_attributes() {
+                        match attr {
+                            "cx" => opt_width = Some(value.parse().unwrap()),
+                            "cy" => opt_height = Some(value.parse().unwrap()),
+                            "type" => opt_size_type = parse_optional_xml_attribute(value),
+                            _ => (),
+                        }
+                    }
+
+                    if let (Some(w), Some(h)) = (opt_width, opt_height) {
+                        self.slide_size = Some(SlideSize {
+                            width: w,
+                            height: h,
+                            size_type: opt_size_type,
+                        })
+                    }
+                }
+                "notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
+                "smartTags" => self.smart_tags = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "embeddedFontLst" => (),
+                "embeddedFont" => {
+                    match EmbeddedFontListEntry::from_xml_element(child_node) {
+                        Ok(entry) => self.embedded_font_list.push(entry),
+                        Err(err) => println!("{}", err),
+                    }
+                }
+                "custShowLst" => (),
+                "custShow" => {
+                    match CustomShow::from_xml_element(child_node) {
+                        Ok(custom_show) => self.custom_show_list.push(custom_show),
+                        Err(err) => println!("{}", err),
+                    }
+                }
+                "photoAlbum" => {
+                    let mut photo_album = PhotoAlbum {
+                        black_and_white: None,
+                        frame: None,
+                        layout: None,
+                        show_captions: None,
+                    };
+
+                    for (attr, value) in child_node.get_attributes() {
+                        match attr {
+                            "bw" => photo_album.black_and_white = parse_optional_xml_attribute(value),
+                            "showCaptions" => photo_album.show_captions = parse_optional_xml_attribute(value),
+                            "layout" => photo_album.layout = parse_optional_xml_attribute(value),
+                            "frame" => photo_album.frame = parse_optional_xml_attribute(value),
+                            _ => (),
+                        }
+                    }
+
+                    self.photo_album = Some(photo_album);
+                }
+                "custDataLst" => self.customer_data_list = Some(CustomerDataList::from_xml_element(child_node).unwrap()),
+                "kinsoku" => {
+                    let mut opt_lang = None;
+                    let mut opt_invalid_st_chars = None;
+                    let mut opt_invalid_end_chars = None;
+
+                    for (attr, value) in child_node.get_attributes() {
+                        match attr {
+                            "lang" => opt_lang = parse_optional_xml_attribute(value),
+                            "invalStChars" => opt_invalid_st_chars = Some(value.parse().unwrap()),
+                            "invalEndChars" => opt_invalid_end_chars = Some(value.parse().unwrap()),
+                            _ => (),
+                        }
+                    }
+
+                    if let (Some(invalid_st_chars), Some(invalid_end_chars)) = (opt_invalid_st_chars, opt_invalid_end_chars) {
+                        self.kinsoku = Some(Kinsoku {
+                            language: opt_lang,
+                            invalid_start_chars: invalid_st_chars,
+                            invalid_end_chars: invalid_end_chars,
+                        });
+                    }
+                }
+            }
+        }
+
 /*
 		for (const MXmlNode2 &childNode : xmlNode)
 		{
@@ -1352,166 +1449,6 @@ impl Presentation {
 			//	instance->extLst.reset(ExtensionList::FromXmlNode(childNode));
 		}
                             */
-                Ok(quick_xml::events::Event::Start(ref element)) => {
-                    match element.local_name() {
-                        b"sldMasterIdLst" => (),
-                        b"sldMasterId" => {
-                            let mut opt_id = None;
-                            let mut opt_r_id = None;
 
-                            for attr in element.attributes() {
-                                if let Ok(a) = attr {
-                                    match a.key {
-                                        b"id" => opt_id = Some(parse_optional_xml_attribute(&a.value, 0)),
-                                        b"r:id" => opt_r_id = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        _ => (),
-                                    }
-                                }
-                            }
-
-                            // r:id attribute is required
-                            if let Some(r_id) = opt_r_id {
-                                self.slide_master_id_list.push(SlideMasterIdListEntry {
-                                    id: opt_id,
-                                    relationship_id: r_id,
-                                })
-                            }
-                        }
-                        b"notesMasterIdLst" => (),
-                        b"notesMasterId" => {
-                            self.notes_master_id_list.push(NotesMasterIdListEntry {
-                                relationship_id: parse_xml_element_attribute(element, b"r:id").unwrap(),
-                            })
-                        }
-                        b"handoutMasterIdLst" => (),
-                        b"handoutMasterId" => {
-                            self.handout_master_id_list.push(HandoutMasterIdListEntry{
-                                relationship_id: parse_xml_element_attribute(element, b"r:id").unwrap(),
-                            })
-                        }
-                        b"sldIdLst" => (),
-                        b"sldId" => {
-                            let mut opt_id = None;
-                            let mut opt_r_id = None;
-
-                            for attr in element.attributes() {
-                                if let Ok(a) = attr {
-                                    match a.key {
-                                        b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        b"r:id" => opt_r_id = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        _ => (),
-                                    }
-                                }
-                            }
-
-                            if let (Some(id), Some(r_id)) = (opt_id, opt_r_id) {
-                                self.slide_id_list.push(SlideIdListEntry {
-                                    id: id,
-                                    relationship_id: r_id,
-                                });
-                            }
-                        }
-                        b"sldSz" => {
-                            let mut opt_width = None;
-                            let mut opt_height = None;
-                            let mut opt_size_type = None;
-
-                            for attr in element.attributes() {
-                                if let Ok(a) = attr {
-                                    match a.key {
-                                        b"cx" => opt_width = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        b"cy" => opt_height = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        b"type" => opt_size_type = Some(parse_optional_xml_attribute(&a.value, SlideSizeType::Custom)),
-                                        _ => (),
-                                    }
-                                }
-                            }
-
-                            if let (Some(w), Some(h)) = (opt_width, opt_height) {
-                                self.slide_size = Some(SlideSize {
-                                    width: w,
-                                    height: h,
-                                    size_type: opt_size_type,
-                                })
-                            }
-                        }
-                        b"notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(element).unwrap()),
-                        b"smartTags" => self.smart_tags = Some(parse_xml_element_attribute(element, b"r:id").unwrap()),
-                        b"embeddedFontLst" => (),
-                        b"embeddedFont" => {
-                            match EmbeddedFontListEntry::from_xml_element(element, xml_reader) {
-                                Ok(entry) => self.embedded_font_list.push(entry),
-                                Err(err) => println!("{}", err),
-                            }
-                        }
-                        b"custShowLst" => (),
-                        b"custShow" => {
-                            match CustomShow::from_xml_element(element, xml_reader) {
-                                Ok(custom_show) => self.custom_show_list.push(custom_show),
-                                Err(err) => println!("{}", err),
-                            }
-                        }
-                        b"photoAlbum" => {
-                            let mut photo_album = PhotoAlbum {
-                                black_and_white: None,
-                                frame: None,
-                                layout: None,
-                                show_captions: None,
-                            };
-
-                            for attr in element.attributes() {
-                                if let Ok(a) = attr {
-                                    match a.key {
-                                        b"bw" => photo_album.black_and_white = Some(parse_optional_xml_attribute(&a.value, false)),
-                                        b"showCaptions" => photo_album.show_captions = Some(parse_optional_xml_attribute(&a.value, false)),
-                                        b"layout" => photo_album.layout = Some(parse_optional_xml_attribute(&a.value, PhotoAlbumLayout::FitToSlide)),
-                                        b"frame" => photo_album.frame = Some(parse_optional_xml_attribute(&a.value, PhotoAlbumFrameShape::FrameStyle1)),
-                                        _ => (),
-                                    }
-                                }
-                            }
-
-                            self.photo_album = Some(photo_album);
-                        }
-                        b"custDataLst" => self.customer_data_list = Some(CustomerDataList::from_xml_element(element, xml_reader).unwrap()),
-                        b"kinsoku" => {
-                            let mut opt_lang = None;
-                            let mut opt_invalid_st_chars = None;
-                            let mut opt_invalid_end_chars = None;
-
-                            for attr in element.attributes() {
-                                if let Ok(a) = attr {
-                                    match a.key {
-                                        b"lang" => opt_lang = Some(parse_optional_xml_attribute(&a.value, String::new())),
-                                        b"invalStChars" => opt_invalid_st_chars = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        b"invalEndChars" => opt_invalid_end_chars = Some(parse_xml_attribute(&a.value).unwrap()),
-                                        _ => (),
-                                    }
-                                }
-                            }
-
-                            if let (Some(invalid_st_chars), Some(invalid_end_chars)) = (opt_invalid_st_chars, opt_invalid_end_chars) {
-                                self.kinsoku = Some(Kinsoku {
-                                    language: opt_lang,
-                                    invalid_start_chars: invalid_st_chars,
-                                    invalid_end_chars: invalid_end_chars,
-                                });
-                            }
-                        }
-                        b"defaultTextStyle" => {
-
-                        }
-                        _ => (),
-                    }
-
-                }
-                Ok(quick_xml::events::Event::End(ref element)) => {
-                    if element.local_name() == b"presentation" {
-                        break;
-                    }
-                }
-                _ => (),
-            }
-        }
     }
 }
