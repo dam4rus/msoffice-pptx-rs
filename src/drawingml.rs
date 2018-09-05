@@ -1,7 +1,7 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
 use relationship;
-use helpers::*;
 use errors::*;
+use xml::*;
 
 use quick_xml;
 
@@ -1068,36 +1068,36 @@ impl ColorTransform {
         }
     }
 
-    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<ColorTransform, NotGroupMemberError> {
-        match xml_element.local_name() {
-            b"tint" => Ok(ColorTransform::Tint(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"shade" => Ok(ColorTransform::Shade(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"comp" => Ok(ColorTransform::Complement),
-            b"inv" => Ok(ColorTransform::Inverse),
-            b"gray" => Ok(ColorTransform::Grayscale),
-            b"alpha" => Ok(ColorTransform::Alpha(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"alphaOff" => Ok(ColorTransform::AlphaOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"alphaMod" => Ok(ColorTransform::AlphaModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"hue" => Ok(ColorTransform::Hue(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"hueOff" => Ok(ColorTransform::HueOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"hueMod" => Ok(ColorTransform::HueModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"sat" => Ok(ColorTransform::Saturation(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"satOff" => Ok(ColorTransform::SaturationOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"satMod" => Ok(ColorTransform::SaturationModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"lum" => Ok(ColorTransform::Luminance(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"lumOff" => Ok(ColorTransform::LuminanceOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"lumMod" => Ok(ColorTransform::LuminanceModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"red" => Ok(ColorTransform::Red(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"redOff" => Ok(ColorTransform::RedOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"redMod" => Ok(ColorTransform::RedModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"green" => Ok(ColorTransform::Green(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"greenOff" => Ok(ColorTransform::GreenOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"greenMod" => Ok(ColorTransform::GreenModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"blue" => Ok(ColorTransform::Blue(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"blueOff" => Ok(ColorTransform::BlueOffset(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"blueMod" => Ok(ColorTransform::BlueModulate(parse_xml_element_attribute(xml_element, b"val").unwrap())),
-            b"gamma" => Ok(ColorTransform::Gamma),
-            b"invGamma" => Ok(ColorTransform::InverseGamma),
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<ColorTransform, NotGroupMemberError> {
+        match xml_node.get_local_name() {
+            "tint" => Ok(ColorTransform::Tint(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "shade" => Ok(ColorTransform::Shade(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "comp" => Ok(ColorTransform::Complement),
+            "inv" => Ok(ColorTransform::Inverse),
+            "gray" => Ok(ColorTransform::Grayscale),
+            "alpha" => Ok(ColorTransform::Alpha(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "alphaOff" => Ok(ColorTransform::AlphaOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "alphaMod" => Ok(ColorTransform::AlphaModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "hue" => Ok(ColorTransform::Hue(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "hueOff" => Ok(ColorTransform::HueOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "hueMod" => Ok(ColorTransform::HueModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "sat" => Ok(ColorTransform::Saturation(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "satOff" => Ok(ColorTransform::SaturationOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "satMod" => Ok(ColorTransform::SaturationModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "lum" => Ok(ColorTransform::Luminance(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "lumOff" => Ok(ColorTransform::LuminanceOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "lumMod" => Ok(ColorTransform::LuminanceModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "red" => Ok(ColorTransform::Red(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "redOff" => Ok(ColorTransform::RedOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "redMod" => Ok(ColorTransform::RedModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "green" => Ok(ColorTransform::Green(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "greenOff" => Ok(ColorTransform::GreenOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "greenMod" => Ok(ColorTransform::GreenModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "blue" => Ok(ColorTransform::Blue(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "blueOff" => Ok(ColorTransform::BlueOffset(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "blueMod" => Ok(ColorTransform::BlueModulate(xml_node.get_attribute("val").unwrap().parse().unwrap())),
+            "gamma" => Ok(ColorTransform::Gamma),
+            "invGamma" => Ok(ColorTransform::InverseGamma),
             _ => Err(NotGroupMemberError { group: "EG_ColorTransform" }),
         }
     }
@@ -1121,22 +1121,17 @@ impl ScRgbColor {
         }
     }
 
-    pub fn from_xml_element (
-        xml_element: &quick_xml::events::BytesStart,
-        xml_reader: &mut quick_xml::Reader<&[u8]>
-    ) -> Result<ScRgbColor, MissingAttributeError> {
+    pub fn from_xml_element (xml_node: &XmlNode) -> Result<ScRgbColor, MissingAttributeError> {
         let mut opt_r = None;
         let mut opt_g = None;
         let mut opt_b = None;
 
-        for attr in xml_element.attributes() {
-            if let Ok(a) = attr {
-                match a.key {
-                    b"r" => opt_r = Some(parse_xml_attribute(&a.value).unwrap()),
-                    b"g" => opt_g = Some(parse_xml_attribute(&a.value).unwrap()),
-                    b"b" => opt_b = Some(parse_xml_attribute(&a.value).unwrap()),
-                    _ => (),
-                }
+        for (attr, value) in xml_node.get_attributes() {
+            match attr.as_str() {
+                "r" => opt_r = Some(value.parse().unwrap()),
+                "g" => opt_g = Some(value.parse().unwrap()),
+                "b" => opt_b = Some(value.parse().unwrap()),
+                _ => (),
             }
         }
 
@@ -1893,17 +1888,15 @@ pub struct PositiveSize2D {
 }
 
 impl PositiveSize2D {
-    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<PositiveSize2D, String> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<PositiveSize2D, String> {
         let mut opt_width: Option<PositiveCoordinate> = None;
         let mut opt_height: Option<PositiveCoordinate> = None;
 
-        for attr in xml_element.attributes() {
-            if let Ok(a) = attr {
-                match a.key {
-                    b"cx" => opt_width = Some(parse_xml_attribute(&a.value).unwrap()),
-                    b"cy" => opt_height = Some(parse_xml_attribute(&a.value).unwrap()),
-                    _ => (),
-                }
+      for (attr, value) in xml_node.get_attributes() {
+            match attr.as_str() {
+                "cx" => opt_width = Some(value.parse().unwrap()),
+                "cy" => opt_height = Some(value.parse().unwrap()),
+                _ => (),
             }
         }
 
@@ -2376,21 +2369,19 @@ pub struct TextFont {
 }
 
 impl TextFont {
-    pub fn from_xml_element(element: &quick_xml::events::BytesStart) -> Result<TextFont, String> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextFont, String> {
         let mut opt_typeface = None;
         let mut opt_panose = None;
         let mut opt_pitch_family = None;
         let mut opt_charset = None;
 
-        for attr in element.attributes() {
-            if let Ok(a) = attr {
-                match a.key {
-                    b"typeface" => opt_typeface = Some(parse_xml_attribute(&a.value).unwrap()),
-                    b"panose" => opt_panose = Some(parse_optional_xml_attribute(&a.value, String::new())),
-                    b"pitchFamily" => opt_pitch_family = Some(parse_optional_xml_attribute(&a.value, 0)),
-                    b"charset" => opt_charset = Some(parse_optional_xml_attribute(&a.value, 1)),
-                    _ => (),
-                }
+        for (attr, value) in xml_node.get_attributes() {
+            match attr.as_str() {
+                "typeface" => opt_typeface = Some(value.parse().unwrap()),
+                "panose" => opt_panose = xml::parse_optional_xml_attribute(value),
+                "pitchFamily" => opt_pitch_family = xml::parse_optional_xml_attribute(value),
+                "charset" => opt_charset = xml::parse_optional_xml_attribute(value),
+                _ => (),
             }
         }
 
@@ -2508,10 +2499,10 @@ impl TextBulletTypeface {
         }
     }
 
-    pub fn from_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<TextBulletTypeface, &'static str> {
-        match xml_element.local_name() {
-            b"buFontTx" => Ok(TextBulletTypeface::FollowText),
-            b"buFont" => Ok(TextBulletTypeface::Font(TextFont::from_xml_element(xml_element).unwrap())),
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextBulletTypeface, &'static str> {
+        match xml_node.get_local_name() {
+            "buFontTx" => Ok(TextBulletTypeface::FollowText),
+            "buFont" => Ok(TextBulletTypeface::Font(TextFont::from_xml_element(xml_node).unwrap())),
             _ => Err("Xml element is not a TextBulletTypeFace group choice"),
         }
     }
@@ -2892,7 +2883,7 @@ impl TextParagraphProperties {
                     } else if TextBulletColor::is_choice_member(element.local_name()) {
                         instance.bullet_size = Some(TextBulletSize::from_xml_element(element).unwrap());
                     } else if TextBulletTypeface::is_choice_member(element.local_name()) {
-                        instance.bullet_typeface = Some(TextBulletTypeface::from_xml_element(element).unwrap());
+                        //instance.bullet_typeface = Some(TextBulletTypeface::from_xml_element(element).unwrap());
                     } else if TextBullet::is_choice_member(element.local_name()) {
                         instance.bullet = Some(TextBullet::from_xml_element(element, xml_reader).unwrap());
                     } else {

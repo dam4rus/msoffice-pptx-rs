@@ -52,12 +52,13 @@ impl XmlNode {
         }
     }
 
-    pub fn get_attributes<'a>(&self) -> impl Iterator<Item = (&'a str, &'a str)>{
-        self.attributes.into_iter().map(|(key, value)| (key.as_str(), value.as_str()))
+    pub fn get_attributes(&self) -> &HashMap<String, String> {
+        &self.attributes
     }
 
-    pub fn get_attribute(&self, attr_name: &str) -> &str {
-        self.attributes[attr_name].as_str()
+    pub fn get_attribute(&self, attr_name: &str) -> Option<&String> {
+        self.attributes.get(attr_name)
+        //self.attributes[attr_name].as_str()
     }
 
     fn from_quick_xml_element(xml_element: &BytesStart) -> Option<XmlNode> {

@@ -582,8 +582,8 @@ impl CustomerDataList {
 
         for child_node in &xml_node.child_nodes {
             match child_node.get_name() {
-                "custData" => instance.customer_data_list.push(child_node.get_attribute("r:id").parse().unwrap()),
-                "tags" => instance.tags = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "custData" => instance.customer_data_list.push(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "tags" => instance.tags = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
                 _ => (),
             }
         }
@@ -1087,10 +1087,10 @@ impl EmbeddedFontListEntry {
         for child_node in &xml_node.child_nodes {
             match child_node.get_name() {
                 "font" => opt_font = Some(drawingml::TextFont::from_xml_element(child_node).unwrap()),
-                "regular" => opt_regular = Some(child_node.get_attribute("r:id").parse().unwrap()),
-                "bold" => opt_bold = Some(child_node.get_attribute("r:id").parse().unwrap()),
-                "italic" => opt_italic = Some(child_node.get_attribute("r:id").parse().unwrap()),
-                "boldItalic" => opt_bold_italic = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "regular" => opt_regular = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "bold" => opt_bold = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "italic" => opt_italic = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "boldItalic" => opt_bold_italic = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
                 _ => (),
             }
         }
@@ -1118,29 +1118,8 @@ pub struct CustomShow {
 
 impl CustomShow {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow, MissingAttributeError> {
-        // let mut opt_name = None;
-        // let mut opt_id = None;
-
-        // for attr in xml_element.attributes() {
-        //     if let Ok(a) = attr {
-        //         match a.key {
-        //             b"name" => opt_name = Some(parse_xml_attribute(&a.value).unwrap()),
-        //             b"id" => opt_id = Some(parse_xml_attribute(&a.value).unwrap()),
-        //             _ => (),
-        //         }
-        //     }
-        // }
-
-        // if opt_name.is_none() {
-        //     return Err(String::from("CustomShow missing required attribute: name"));
-        // }
-
-        // if opt_id.is_none() {
-        //     return Err(String::from("CustomShow missing required attribute: id"));
-        // }
-
-        let name = xml_node.get_attribute("name").parse().unwrap();
-        let id = xml_node.get_attribute("id").parse().unwrap();
+        let name = xml_node.get_attribute("name").unwrap().parse().unwrap();
+        let id = xml_node.get_attribute("id").unwrap().parse().unwrap();
 
         let mut instance = CustomShow {
             name: name,
@@ -1152,9 +1131,10 @@ impl CustomShow {
             match child_node.get_name() {
                 "sldLst" => {
                     for slide_node in &child_node.child_nodes {
-                        instance.slide_list.push(slide_node.get_attribute("r:id").parse().unwrap());
+                        instance.slide_list.push(slide_node.get_attribute("r:id").unwrap().parse().unwrap());
                     }
                 }
+                _ => (),
             }
         }
 
@@ -1278,7 +1258,7 @@ impl Presentation {
     fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
 
         for (attr, value) in presentation_node.get_attributes() {
-            match attr {
+            match attr.as_str() {
                 "serverZoom" => self.server_zoom = parse_optional_xml_attribute(value),// Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
                 "firstSlideNum" => self.first_slide_num = parse_optional_xml_attribute(value),
                 "showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = parse_optional_xml_attribute(value),
@@ -1295,15 +1275,15 @@ impl Presentation {
             }
         }
 
-        for child_node in presentation_node.child_nodes {
+        for child_node in &presentation_node.child_nodes {
             match child_node.get_name() {
                 "sldMasterIdLst" => {
-                    for slide_master_id_node in child_node.child_nodes {
+                    for slide_master_id_node in &child_node.child_nodes {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
 
                         for (attr, value) in slide_master_id_node.get_attributes() {
-                            match attr {
+                            match attr.as_str() {
                                 "id" => opt_id = parse_optional_xml_attribute(value),
                                 "r:id" => opt_r_id =  Some(value.parse().unwrap()),
                                 _ => (),
@@ -1320,26 +1300,26 @@ impl Presentation {
                     }
                 },
                 "notesMasterIdLst" => {
-                    for notes_master_id_node in child_node.child_nodes {
+                    for notes_master_id_node in &child_node.child_nodes {
                         self.notes_master_id_list.push(NotesMasterIdListEntry {
-                            relationship_id: notes_master_id_node.get_attribute("r:id").parse().unwrap(),
+                            relationship_id: notes_master_id_node.get_attribute("r:id").unwrap().parse().unwrap(),
                         });
                     }
                 },
                 "handoutMasterIdLst" => {
-                    for handout_master_id_node in child_node.child_nodes {
+                    for handout_master_id_node in &child_node.child_nodes {
                         self.handout_master_id_list.push(HandoutMasterIdListEntry{
-                            relationship_id: handout_master_id_node.get_attribute("r:id").parse().unwrap(),
+                            relationship_id: handout_master_id_node.get_attribute("r:id").unwrap().parse().unwrap(),
                         });
                     }
                 },
                 "sldIdLst" => {
-                    for slide_id_node in child_node.child_nodes {
+                    for slide_id_node in &child_node.child_nodes {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
 
                         for (attr, value) in slide_id_node.get_attributes() {
-                            match attr {
+                            match attr.as_str() {
                                 "id" => opt_id = Some(value.parse().unwrap()),
                                 "r:id" => opt_r_id = Some(value.parse().unwrap()),
                                 _ => (),
@@ -1360,7 +1340,7 @@ impl Presentation {
                     let mut opt_size_type = None;
 
                     for (attr, value) in child_node.get_attributes() {
-                        match attr {
+                        match attr.as_str() {
                             "cx" => opt_width = Some(value.parse().unwrap()),
                             "cy" => opt_height = Some(value.parse().unwrap()),
                             "type" => opt_size_type = parse_optional_xml_attribute(value),
@@ -1377,7 +1357,7 @@ impl Presentation {
                     }
                 }
                 "notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
-                "smartTags" => self.smart_tags = Some(child_node.get_attribute("r:id").parse().unwrap()),
+                "smartTags" => self.smart_tags = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
                 "embeddedFontLst" => (),
                 "embeddedFont" => {
                     match EmbeddedFontListEntry::from_xml_element(child_node) {
@@ -1401,7 +1381,7 @@ impl Presentation {
                     };
 
                     for (attr, value) in child_node.get_attributes() {
-                        match attr {
+                        match attr.as_str() {
                             "bw" => photo_album.black_and_white = parse_optional_xml_attribute(value),
                             "showCaptions" => photo_album.show_captions = parse_optional_xml_attribute(value),
                             "layout" => photo_album.layout = parse_optional_xml_attribute(value),
@@ -1419,7 +1399,7 @@ impl Presentation {
                     let mut opt_invalid_end_chars = None;
 
                     for (attr, value) in child_node.get_attributes() {
-                        match attr {
+                        match attr.as_str() {
                             "lang" => opt_lang = parse_optional_xml_attribute(value),
                             "invalStChars" => opt_invalid_st_chars = Some(value.parse().unwrap()),
                             "invalEndChars" => opt_invalid_end_chars = Some(value.parse().unwrap()),
@@ -1435,6 +1415,7 @@ impl Presentation {
                         });
                     }
                 }
+                _ => (),
             }
         }
 
