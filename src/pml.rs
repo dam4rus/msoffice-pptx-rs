@@ -1,6 +1,5 @@
 use std::io::{ Read, Seek };
 use std::str;
-//use helpers::{ parse_xml_attribute, parse_optional_xml_attribute, parse_xml_element_attribute };
 use xml::*;
 use errors::*;
 

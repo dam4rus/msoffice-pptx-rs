@@ -35,3 +35,21 @@ impl Error for NotGroupMemberError {
         "Xml element is not a group member error"
     }
 }
+
+/// Error indicating that an xml element doesn't have a required child node
+#[derive(Debug)]
+pub struct MissingChildNodeError {
+    pub child_node: &'static str,
+}
+
+impl fmt::Display for MissingChildNodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Xml element is missing a required child element: {}", self.child_node)
+    }
+}
+
+impl Error for MissingChildNodeError {
+    fn description(&self) -> &str {
+        "Xml element missing required child element"
+    }
+}
