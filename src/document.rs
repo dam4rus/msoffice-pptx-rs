@@ -1,16 +1,12 @@
 use std::collections::{ HashMap };
 use std::path::{ Path, PathBuf };
 use std::fs;
-use std::io::{ Read };
-use std::str;
+use zip;
 
 use pml;
 use drawingml;
 use docprops::{ AppInfo, Core };
 
-use quick_xml;
-
-use zip;
 
 /// Document
 pub struct Document {

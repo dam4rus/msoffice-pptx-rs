@@ -1,7 +1,7 @@
 use std::io::{ Read, Seek };
 use std::str;
 use xml::*;
-use errors::*;
+use error::*;
 
 use drawingml;
 use relationship;
@@ -580,9 +580,9 @@ impl CustomerDataList {
         };
 
         for child_node in &xml_node.child_nodes {
-            match child_node.get_name() {
-                "custData" => instance.customer_data_list.push(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
-                "tags" => instance.tags = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+            match child_node.name.as_str() {
+                "custData" => instance.customer_data_list.push(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "tags" => instance.tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 _ => (),
             }
         }
@@ -1084,12 +1084,12 @@ impl EmbeddedFontListEntry {
         let mut opt_bold_italic = None;
 
         for child_node in &xml_node.child_nodes {
-            match child_node.get_name() {
+            match child_node.name.as_str() {
                 "font" => opt_font = Some(drawingml::TextFont::from_xml_element(child_node).unwrap()),
-                "regular" => opt_regular = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
-                "bold" => opt_bold = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
-                "italic" => opt_italic = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
-                "boldItalic" => opt_bold_italic = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "regular" => opt_regular = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "bold" => opt_bold = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "italic" => opt_italic = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "boldItalic" => opt_bold_italic = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 _ => (),
             }
         }
@@ -1117,8 +1117,8 @@ pub struct CustomShow {
 
 impl CustomShow {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow, MissingAttributeError> {
-        let name = xml_node.get_attribute("name").unwrap().parse().unwrap();
-        let id = xml_node.get_attribute("id").unwrap().parse().unwrap();
+        let name = xml_node.attribute("name").unwrap().parse().unwrap();
+        let id = xml_node.attribute("id").unwrap().parse().unwrap();
 
         let mut instance = CustomShow {
             name: name,
@@ -1127,10 +1127,10 @@ impl CustomShow {
         };
 
         for child_node in &xml_node.child_nodes {
-            match child_node.get_name() {
+            match child_node.name.as_str() {
                 "sldLst" => {
                     for slide_node in &child_node.child_nodes {
-                        instance.slide_list.push(slide_node.get_attribute("r:id").unwrap().parse().unwrap());
+                        instance.slide_list.push(slide_node.attribute("r:id").unwrap().parse().unwrap());
                     }
                 }
                 _ => (),
@@ -1256,7 +1256,7 @@ impl Presentation {
 
     fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
 
-        for (attr, value) in presentation_node.get_attributes() {
+        for (attr, value) in &presentation_node.attributes {
             match attr.as_str() {
                 "serverZoom" => self.server_zoom = parse_optional_xml_attribute(value),// Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
                 "firstSlideNum" => self.first_slide_num = parse_optional_xml_attribute(value),
@@ -1275,13 +1275,13 @@ impl Presentation {
         }
 
         for child_node in &presentation_node.child_nodes {
-            match child_node.get_name() {
+            match child_node.name.as_str() {
                 "sldMasterIdLst" => {
                     for slide_master_id_node in &child_node.child_nodes {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
 
-                        for (attr, value) in slide_master_id_node.get_attributes() {
+                        for (attr, value) in &slide_master_id_node.attributes {
                             match attr.as_str() {
                                 "id" => opt_id = parse_optional_xml_attribute(value),
                                 "r:id" => opt_r_id =  Some(value.parse().unwrap()),
@@ -1301,14 +1301,14 @@ impl Presentation {
                 "notesMasterIdLst" => {
                     for notes_master_id_node in &child_node.child_nodes {
                         self.notes_master_id_list.push(NotesMasterIdListEntry {
-                            relationship_id: notes_master_id_node.get_attribute("r:id").unwrap().parse().unwrap(),
+                            relationship_id: notes_master_id_node.attribute("r:id").unwrap().parse().unwrap(),
                         });
                     }
                 },
                 "handoutMasterIdLst" => {
                     for handout_master_id_node in &child_node.child_nodes {
                         self.handout_master_id_list.push(HandoutMasterIdListEntry{
-                            relationship_id: handout_master_id_node.get_attribute("r:id").unwrap().parse().unwrap(),
+                            relationship_id: handout_master_id_node.attribute("r:id").unwrap().parse().unwrap(),
                         });
                     }
                 },
@@ -1317,7 +1317,7 @@ impl Presentation {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
 
-                        for (attr, value) in slide_id_node.get_attributes() {
+                        for (attr, value) in &slide_id_node.attributes {
                             match attr.as_str() {
                                 "id" => opt_id = Some(value.parse().unwrap()),
                                 "r:id" => opt_r_id = Some(value.parse().unwrap()),
@@ -1338,7 +1338,7 @@ impl Presentation {
                     let mut opt_height = None;
                     let mut opt_size_type = None;
 
-                    for (attr, value) in child_node.get_attributes() {
+                    for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
                             "cx" => opt_width = Some(value.parse().unwrap()),
                             "cy" => opt_height = Some(value.parse().unwrap()),
@@ -1356,7 +1356,7 @@ impl Presentation {
                     }
                 }
                 "notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
-                "smartTags" => self.smart_tags = Some(child_node.get_attribute("r:id").unwrap().parse().unwrap()),
+                "smartTags" => self.smart_tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "embeddedFontLst" => (),
                 "embeddedFont" => {
                     match EmbeddedFontListEntry::from_xml_element(child_node) {
@@ -1379,7 +1379,7 @@ impl Presentation {
                         show_captions: None,
                     };
 
-                    for (attr, value) in child_node.get_attributes() {
+                    for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
                             "bw" => photo_album.black_and_white = parse_optional_xml_attribute(value),
                             "showCaptions" => photo_album.show_captions = parse_optional_xml_attribute(value),
@@ -1397,7 +1397,7 @@ impl Presentation {
                     let mut opt_invalid_st_chars = None;
                     let mut opt_invalid_end_chars = None;
 
-                    for (attr, value) in child_node.get_attributes() {
+                    for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
                             "lang" => opt_lang = parse_optional_xml_attribute(value),
                             "invalStChars" => opt_invalid_st_chars = Some(value.parse().unwrap()),

@@ -5,9 +5,9 @@ use std;
 
 /// Represents an implementation independent xml node
 pub struct XmlNode {
-    name: String,
+    pub name: String,
     pub child_nodes: Vec<XmlNode>,
-    attributes: HashMap<String, String>,
+    pub attributes: HashMap<String, String>,
 }
 
 impl XmlNode {
@@ -28,7 +28,7 @@ impl XmlNode {
                 Ok(Event::Start(ref element)) => {
                     root_node = XmlNode::from_quick_xml_element(element);
                     if let Some(ref mut node) = root_node {
-                        node.child_nodes = XmlNode::get_child_elements(element, &mut xml_reader);
+                        node.child_nodes = XmlNode::parse_child_elements(element, &mut xml_reader);
                     }
                 },
                 Ok(Event::Eof) => break,
@@ -41,22 +41,14 @@ impl XmlNode {
         root_node
     }
 
-    pub fn get_name(&self) -> &str {
-        self.name.as_str()
-    }
-
-    pub fn get_local_name(&self) -> &str {
+    pub fn local_name(&self) -> &str {
         match self.name.find(':') {
             Some(idx) => self.name.split_at(idx).1,
             None => self.name.as_str(),
         }
     }
 
-    pub fn get_attributes(&self) -> &HashMap<String, String> {
-        &self.attributes
-    }
-
-    pub fn get_attribute(&self, attr_name: &str) -> Option<&String> {
+    pub fn attribute(&self, attr_name: &str) -> Option<&String> {
         self.attributes.get(attr_name)
         //self.attributes[attr_name].as_str()
     }
@@ -88,7 +80,7 @@ impl XmlNode {
         Some(node)
     }
 
-    fn get_child_elements(
+    fn parse_child_elements(
         xml_element: &BytesStart,
         xml_reader: &mut Reader<&[u8]>,
     ) -> Vec<XmlNode> {
@@ -99,7 +91,7 @@ impl XmlNode {
             match xml_reader.read_event(&mut buffer) {
                 Ok(Event::Start(ref element)) => {
                     if let Some(mut node) = XmlNode::from_quick_xml_element(element) {
-                        node.child_nodes = XmlNode::get_child_elements(element, xml_reader);
+                        node.child_nodes = XmlNode::parse_child_elements(element, xml_reader);
                         child_nodes.push(node);
                     }
                 },

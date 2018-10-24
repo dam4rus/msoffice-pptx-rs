@@ -3,9 +3,8 @@ extern crate zip;
 
 #[macro_use]
 mod macros;
-mod helpers;
 mod xml;
-pub mod errors;
+pub mod error;
 pub mod docprops;
 pub mod relationship;
 pub mod pml;
@@ -57,26 +56,26 @@ mod tests {
         file.read_to_string(&mut file_content).expect("Failed to read sample xml file to string");
 
         let root_node = XmlNode::from_str(file_content.as_str()).expect("Couldn't create XmlNode from string");
-        assert_eq!(root_node.get_name(), "p:presentation");
-        assert_eq!(root_node.get_attribute("xmlns:a"), "http://schemas.openxmlformats.org/drawingml/2006/main");
+        assert_eq!(root_node.name, "p:presentation");
+        assert_eq!(root_node.attribute("xmlns:a").unwrap(), "http://schemas.openxmlformats.org/drawingml/2006/main");
 
-        assert_eq!(root_node.child_nodes[0].get_name(), "p:sldMasterIdLst");
-        assert_eq!(root_node.child_nodes[1].get_name(), "p:sldIdLst");
-        assert_eq!(root_node.child_nodes[2].get_name(), "p:sldSz");
-        assert_eq!(root_node.child_nodes[3].get_name(), "p:notesSz");
-        assert_eq!(root_node.child_nodes[4].get_name(), "p:custDataLst");
-        assert_eq!(root_node.child_nodes[5].get_name(), "p:defaultTextStyle");
-        assert_eq!(root_node.child_nodes[0].child_nodes[0].get_name(), "p:sldMasterId");
+        assert_eq!(root_node.child_nodes[0].name, "p:sldMasterIdLst");
+        assert_eq!(root_node.child_nodes[1].name, "p:sldIdLst");
+        assert_eq!(root_node.child_nodes[2].name, "p:sldSz");
+        assert_eq!(root_node.child_nodes[3].name, "p:notesSz");
+        assert_eq!(root_node.child_nodes[4].name, "p:custDataLst");
+        assert_eq!(root_node.child_nodes[5].name, "p:defaultTextStyle");
+        assert_eq!(root_node.child_nodes[0].child_nodes[0].name, "p:sldMasterId");
 
         let slide_id_0_node = &root_node.child_nodes[1].child_nodes[0];
-        assert_eq!(slide_id_0_node.get_name(), "p:sldId");
-        assert_eq!(slide_id_0_node.get_attribute("id"), "256");
-        assert_eq!(slide_id_0_node.get_attribute("r:id"), "rId2");
+        assert_eq!(slide_id_0_node.name, "p:sldId");
+        assert_eq!(slide_id_0_node.attribute("id").unwrap(), "256");
+        assert_eq!(slide_id_0_node.attribute("r:id").unwrap(), "rId2");
 
-        assert_eq!(root_node.child_nodes[1].child_nodes[1].get_name(), "p:sldId");
+        assert_eq!(root_node.child_nodes[1].child_nodes[1].name, "p:sldId");
 
         let lvl1_ppr_defrpr_node = &root_node.child_nodes[5].child_nodes[1].child_nodes[0];
-        assert_eq!(lvl1_ppr_defrpr_node.get_attribute("sz"), "1800");
-        assert_eq!(lvl1_ppr_defrpr_node.get_attribute("kern"), "1200");
+        assert_eq!(lvl1_ppr_defrpr_node.attribute("sz").unwrap(), "1800");
+        assert_eq!(lvl1_ppr_defrpr_node.attribute("kern").unwrap(), "1200");
     }
 }

@@ -78,7 +78,7 @@ impl Core {
     pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Option<Core> where R: Read + Seek {
         let mut core_xml_file = match zipper.by_name("docProps/core.xml") {
             Ok(f) => f,
-            Err(err) => return None,
+            Err(_) => return None,
         };
 
         let mut core = Core::new();
@@ -107,7 +107,7 @@ impl Core {
                     buffer.clear();
                 }
             }
-            Err(err) => return None,
+            Err(_) => return None,
         }
 
         Some(core)
