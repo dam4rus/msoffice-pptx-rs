@@ -1,5 +1,3 @@
-use zip;
-use quick_xml;
 use std::io::{ Read, Seek };
 
 /// AppInfo

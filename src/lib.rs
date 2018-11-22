@@ -27,10 +27,7 @@ mod tests {
         let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let sample_pptx_path = test_dir.join("tests/samplepptx.pptx");
 
-        let document = match Document::from_file(&sample_pptx_path) {
-            Ok(info) => info,
-            Err(err) => panic!(err),
-        };
+        let document = Document::from_file(&sample_pptx_path).unwrap();
 
         if let Some(app_info) = document.app {
             assert_eq!(app_info.app_name.unwrap(), "Microsoft Office PowerPoint");

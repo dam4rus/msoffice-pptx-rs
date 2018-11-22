@@ -1,7 +1,7 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
-use relationship;
-use error::*;
-use xml::*;
+use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
+use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, XmlError};
+use ::relationship::RelationshipId;
 
 pub type Guid = String; // TODO: move to shared common types. pattern="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"
 pub type Percentage = f32;
@@ -1390,6 +1390,7 @@ pub struct ColorMapping {
 }
 
 pub struct ColorScheme {
+    pub name: String,
     pub dark1: Color,
     pub light1: Color,
     pub dark2: Color,
@@ -1402,7 +1403,79 @@ pub struct ColorScheme {
     pub accent6: Color,
     pub hyperlink: Color,
     pub followed_hyperlink: Color,
-    pub name: String,
+}
+
+impl ColorScheme {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, XmlError> {
+        let mut opt_name = None;
+        let mut opt_dk1 = None;
+        let mut opt_lt1 = None;
+        let mut opt_dk2 = None;
+        let mut opt_lt2 = None;
+        let mut opt_accent1 = None;
+        let mut opt_accent2 = None;
+        let mut opt_accent3 = None;
+        let mut opt_accent4 = None;
+        let mut opt_accent5 = None;
+        let mut opt_accent6 = None;
+        let mut opt_hyperlink = None;
+        let mut opt_follow_hyperlink = None;
+        
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "name" => opt_name = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "dk1" => opt_dk1 = Some(Color::from_xml_element(child_node)?),
+                "lt1" => opt_lt1 = Some(Color::from_xml_element(child_node)?),
+                "dk2" => opt_dk2 = Some(Color::from_xml_element(child_node)?),
+                "lt2" => opt_lt2 = Some(Color::from_xml_element(child_node)?),
+                "accent1" => opt_accent1 = Some(Color::from_xml_element(child_node)?),
+                "accent2" => opt_accent2 = Some(Color::from_xml_element(child_node)?),
+                "accent3" => opt_accent3 = Some(Color::from_xml_element(child_node)?),
+                "accent4" => opt_accent4 = Some(Color::from_xml_element(child_node)?),
+                "accent5" => opt_accent5 = Some(Color::from_xml_element(child_node)?),
+                "accent6" => opt_accent6 = Some(Color::from_xml_element(child_node)?),
+                "hlink" => opt_hyperlink = Some(Color::from_xml_element(child_node)?),
+                "folHlink" => opt_follow_hyperlink = Some(Color::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let name = opt_name.ok_or(XmlError::from(MissingAttributeError::new("name")))?;
+        let dark1 = opt_dk1.ok_or(XmlError::from(MissingChildNodeError::new("dk1")))?;
+        let light1 = opt_lt1.ok_or(XmlError::from(MissingChildNodeError::new("lt1")))?;
+        let dark2 = opt_dk2.ok_or(XmlError::from(MissingChildNodeError::new("dk2")))?;
+        let light2 = opt_lt2.ok_or(XmlError::from(MissingChildNodeError::new("lt2")))?;
+        let accent1 = opt_accent1.ok_or(XmlError::from(MissingChildNodeError::new("accent1")))?;
+        let accent2 = opt_accent2.ok_or(XmlError::from(MissingChildNodeError::new("accent2")))?;
+        let accent3 = opt_accent3.ok_or(XmlError::from(MissingChildNodeError::new("accent3")))?;
+        let accent4 = opt_accent4.ok_or(XmlError::from(MissingChildNodeError::new("accent4")))?;
+        let accent5 = opt_accent5.ok_or(XmlError::from(MissingChildNodeError::new("accent5")))?;
+        let accent6 = opt_accent6.ok_or(XmlError::from(MissingChildNodeError::new("accent6")))?;
+        let hyperlink = opt_hyperlink.ok_or(XmlError::from(MissingChildNodeError::new("hlink")))?;
+        let followed_hyperlink = opt_follow_hyperlink.ok_or(XmlError::from(MissingChildNodeError::new("folHlink")))?;
+
+        Ok(Self {
+            name,
+            dark1,
+            light1,
+            dark2,
+            light2,
+            accent1,
+            accent2,
+            accent3,
+            accent4,
+            accent5,
+            accent6,
+            hyperlink,
+            followed_hyperlink,
+        })
+    }
 }
 
 pub enum ColorMappingOverride {
@@ -2171,8 +2244,8 @@ impl BlipEffect {
 /// Blip
 pub struct Blip {
     pub effect_list: Vec<BlipEffect>,
-    pub embed_rel_id: Option<relationship::RelationshipId>,
-    pub linked_rel_id: Option<relationship::RelationshipId>,
+    pub embed_rel_id: Option<RelationshipId>,
+    pub linked_rel_id: Option<RelationshipId>,
     pub compression: Option<BlipCompression>,
 }
 
@@ -2475,7 +2548,7 @@ pub enum TextUnderlineFill {
 }
 
 pub struct Hyperlink {
-    pub relationship_id: Option<relationship::RelationshipId>,
+    pub relationship_id: Option<RelationshipId>,
     pub invalid_url: Option<String>,
     pub action: Option<String>,
     pub target_frame: Option<String>,
@@ -2957,7 +3030,7 @@ pub struct Connection {
 }
 
 pub struct EmbeddedWAVAudioFile {
-    pub embed_rel_id: relationship::RelationshipId,
+    pub embed_rel_id: RelationshipId,
     pub name: Option<String>,
     pub built_in: Option<bool>, // false
 }
@@ -2973,17 +3046,17 @@ pub struct AudioCD {
 }
 
 pub struct AudioFile {
-    pub link: relationship::RelationshipId,
+    pub link: RelationshipId,
     pub content_type: Option<String>,
 }
 
 pub struct VideoFile {
-    pub link: relationship::RelationshipId,
+    pub link: RelationshipId,
     pub content_type: Option<String>,
 }
 
 pub struct QuickTimeFile {
-    pub link: relationship::RelationshipId,
+    pub link: RelationshipId,
 }
 
 pub enum Media {
@@ -3193,10 +3266,44 @@ pub struct OfficeStyleSheet {
     pub name: Option<String>, // ""
 }
 
+impl OfficeStyleSheet {
+    // pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, ()> {
+    //     let mut name = None;
+    //     let mut theme_elements = None;
+
+    //     for (attr, value) in xml_node.attributes() {
+    //         match attr.as_str() {
+    //             "name" => Some(value),
+    //             _ => (),
+    //         }
+    //     }
+
+    //     for child_node in &xml_node.child_nodes {
+    //         match child_node.local_name() {
+    //             "themeElements" => 
+    //         }
+    //     }
+    // }
+}
+
 pub struct BaseStyles {
     pub color_scheme: ColorScheme,
     pub font_scheme: FontScheme,
     pub format_scheme: StyleMatrix,
+}
+
+impl BaseStyles {
+    // pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, ()> {
+    //     let mut color_scheme = None;
+    //     let mut font_scheme = None;
+    //     let mut format_scheme = None;
+
+    //     for child_node in &xml_node.child_nodes {
+    //         match child_node.local_name() {
+    //             "clrScheme" => color_scheme = ColorScheme::from
+    //         }
+    //     }
+    // }
 }
 
 pub struct StyleMatrix {

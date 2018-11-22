@@ -1,12 +1,9 @@
-use std::io::{ Read, Seek };
-use std::str;
-use xml::*;
-use error::*;
-
-use drawingml;
-use relationship;
-
-use zip;
+use ::std::io::{ Read, Seek };
+use ::relationship::RelationshipId;
+use ::xml::{XmlNode, parse_optional_xml_attribute};
+use ::error::{MissingAttributeError};
+use ::zip::result::ZipError;
+use ::zip::read::ZipFile;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -14,9 +11,9 @@ pub type SlideMasterId = u32; // TODO: 2147483648 <= n
 pub type Index = u32;
 pub type TLTimeNodeId = u32;
 pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
-pub type SlideSizeCoordinate = drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
+pub type SlideSizeCoordinate = ::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
 pub type Name = String;
-pub type TLSubShapeId = drawingml::ShapeId;
+pub type TLSubShapeId = ::drawingml::ShapeId;
 
 decl_simple_type_enum! {
     pub enum ConformanceClass {
@@ -453,19 +450,19 @@ pub struct IndexRange {
 }
 
 pub struct BackgroundProperties {
-    pub fill: drawingml::FillProperties,
-    pub effect: Option<drawingml::EffectProperties>,
+    pub fill: ::drawingml::FillProperties,
+    pub effect: Option<::drawingml::EffectProperties>,
     pub shade_to_title: Option<bool>, // false
 }
 
 pub enum BackgroundGroup {
     Properties(BackgroundProperties),
-    Reference(drawingml::StyleMatrixReference),
+    Reference(::drawingml::StyleMatrixReference),
 }
 
 pub struct Background {
     pub background: BackgroundGroup,
-    pub black_and_white_mode: Option<drawingml::BlackWhiteMode>, // white
+    pub black_and_white_mode: Option<::drawingml::BlackWhiteMode>, // white
 }
 
 pub struct Placeholder {
@@ -480,7 +477,7 @@ pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
-    pub media: Option<drawingml::Media>,
+    pub media: Option<::drawingml::Media>,
     //pub customer_data_list: Option<CustomerDataList>,
 
 }
@@ -491,70 +488,70 @@ pub enum ShapeGroup {
     GraphicFrame(GraphicalObjectFrame),
     Connector(Connector),
     Picture(Picture),
-    ContentPart(relationship::RelationshipId),
+    ContentPart(RelationshipId),
 }
 
 pub struct Shape {
     pub non_visual_props: ShapeNonVisual,
-    pub shape_props: drawingml::ShapeProperties,
-    pub style: Option<drawingml::ShapeStyle>,
-    pub text_body: Option<drawingml::TextBody>,
+    pub shape_props: ::drawingml::ShapeProperties,
+    pub style: Option<::drawingml::ShapeStyle>,
+    pub text_body: Option<::drawingml::TextBody>,
     pub use_bg_fill: Option<bool>, // false
 }
 
 pub struct ShapeNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub shape_drawing_props: drawingml::NonVisualDrawingShapeProps,
+    pub drawing_props: ::drawingml::NonVisualDrawingProps,
+    pub shape_drawing_props: ::drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct GroupShape {
     pub non_visual_props: GroupShapeNonVisual,
-    pub group_shape_props: drawingml::GroupShapeProperties,
+    pub group_shape_props: ::drawingml::GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
 }
 
 pub struct GroupShapeNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub group_drawing_props: drawingml::NonVisualGroupDrawingShapeProps,
+    pub drawing_props: ::drawingml::NonVisualDrawingProps,
+    pub group_drawing_props: ::drawingml::NonVisualGroupDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct GraphicalObjectFrame {
     pub non_visual_props: GraphicalObjectFrameNonVisual,
-    pub transform: drawingml::Transform2D,
-    pub graphic: drawingml::GraphicalObject,
-    pub black_white_mode: Option<drawingml::BlackWhiteMode>,
+    pub transform: ::drawingml::Transform2D,
+    pub graphic: ::drawingml::GraphicalObject,
+    pub black_white_mode: Option<::drawingml::BlackWhiteMode>,
 }
 
 pub struct GraphicalObjectFrameNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub graphic_frame_props: drawingml::NonVisualGraphicFrameProperties,
+    pub drawing_props: ::drawingml::NonVisualDrawingProps,
+    pub graphic_frame_props: ::drawingml::NonVisualGraphicFrameProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct Connector {
     pub non_visual_props: ConnectorNonVisual,
-    pub shape_props: drawingml::ShapeProperties,
-    pub shape_style: Option<drawingml::ShapeStyle>,
+    pub shape_props: ::drawingml::ShapeProperties,
+    pub shape_style: Option<::drawingml::ShapeStyle>,
 }
 
 pub struct ConnectorNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub connector_props: drawingml::NonVisualConnectorProperties,
+    pub drawing_props: ::drawingml::NonVisualDrawingProps,
+    pub connector_props: ::drawingml::NonVisualConnectorProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct Picture {
     pub non_visual_props: PictureNonVisual,
-    pub blip_fill: drawingml::BlipFillProperties,
-    pub shape_propers: drawingml::ShapeProperties,
-    pub shape_style: Option<drawingml::ShapeStyle>,
+    pub blip_fill: ::drawingml::BlipFillProperties,
+    pub shape_propers: ::drawingml::ShapeProperties,
+    pub shape_style: Option<::drawingml::ShapeStyle>,
 }
 
 pub struct PictureNonVisual {
-    pub drawing_props: drawingml::NonVisualDrawingProps,
-    pub picture_props: drawingml::NonVisualPictureProperties,
+    pub drawing_props: ::drawingml::NonVisualDrawingProps,
+    pub picture_props: ::drawingml::NonVisualPictureProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -568,8 +565,8 @@ pub struct CommonSlideData {
 
 /// CustomerDataList
 pub struct CustomerDataList {
-    pub customer_data_list: Vec<relationship::RelationshipId>,
-    pub tags: Option<relationship::RelationshipId>,
+    pub customer_data_list: Vec<RelationshipId>,
+    pub tags: Option<RelationshipId>,
 }
 
 impl CustomerDataList {
@@ -580,7 +577,7 @@ impl CustomerDataList {
         };
 
         for child_node in &xml_node.child_nodes {
-            match child_node.name.as_str() {
+            match child_node.local_name() {
                 "custData" => instance.customer_data_list.push(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "tags" => instance.tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 _ => (),
@@ -597,12 +594,12 @@ pub struct Control {
 }
 
 pub struct OleAttributes {
-    pub shape_id: Option<drawingml::ShapeId>,
+    pub shape_id: Option<::drawingml::ShapeId>,
     pub name: Option<String>, // ""
     pub show_as_icon: Option<bool>, // false
-    pub id: Option<relationship::RelationshipId>,
-    pub image_width: Option<drawingml::PositiveCoordinate32>,
-    pub image_height: Option<drawingml::PositiveCoordinate32>,
+    pub id: Option<RelationshipId>,
+    pub image_width: Option<::drawingml::PositiveCoordinate32>,
+    pub image_height: Option<::drawingml::PositiveCoordinate32>,
 }
 
 pub struct SlideSize {
@@ -613,31 +610,31 @@ pub struct SlideSize {
 
 pub struct SlideIdListEntry {
     pub id: SlideId,
-    pub relationship_id: relationship::RelationshipId,
+    pub relationship_id: RelationshipId,
 }
 
 pub struct SlideLayoutIdListEntry {
     pub id: Option<SlideLayoutId>,
-    pub relationship_id: relationship::RelationshipId,
+    pub relationship_id: RelationshipId,
 }
 
 pub struct SlideMasterIdListEntry {
     pub id: Option<SlideMasterId>,
-    pub relationship_id: relationship::RelationshipId,
+    pub relationship_id: RelationshipId,
 }
 
 pub struct NotesMasterIdListEntry {
-    pub relationship_id: relationship::RelationshipId,
+    pub relationship_id: RelationshipId,
 }
 
 pub struct HandoutMasterIdListEntry {
-    pub relationship_id: relationship::RelationshipId,
+    pub relationship_id: RelationshipId,
 }
 
 pub struct SlideMasterTextStyles {
-    pub title_styles: Option<drawingml::TextListStyle>,
-    pub body_styles: Option<drawingml::TextListStyle>,
-    pub other_styles: Option<drawingml::TextListStyle>,
+    pub title_styles: Option<::drawingml::TextListStyle>,
+    pub body_styles: Option<::drawingml::TextListStyle>,
+    pub other_styles: Option<::drawingml::TextListStyle>,
 }
 
 pub struct OrientationTransition {
@@ -698,7 +695,7 @@ pub enum SlideTransitionGroup {
 }
 
 pub struct TransitionStartSoundAction {
-    pub sound_file: drawingml::EmbeddedWAVAudioFile,
+    pub sound_file: ::drawingml::EmbeddedWAVAudioFile,
     pub is_looping:  Option<bool>, // false
 }
 
@@ -739,8 +736,8 @@ pub struct TLBuildParagraph {
 }
 
 pub struct TLPoint {
-    pub x: drawingml::Percentage,
-    pub y: drawingml::Percentage,
+    pub x: ::drawingml::Percentage,
+    pub y: ::drawingml::Percentage,
 }
 
 pub enum TLTime {
@@ -754,7 +751,7 @@ pub struct TLTemplate {
 }
 
 pub struct TLBuildCommonAttributes {
-    pub shape_id: drawingml::DrawingElementId,
+    pub shape_id: ::drawingml::DrawingElementId,
     pub group_id: u32,
     pub ui_expand: Option<bool>, // false
 }
@@ -777,7 +774,7 @@ pub struct TLGraphicalObjectBuild {
 
 pub enum TLGraphicalObjectBuildChoice {
     BuildAsOne,
-    BuildSubElements(drawingml::AnimationGraphicalObjectBuildProperties),
+    BuildSubElements(::drawingml::AnimationGraphicalObjectBuildProperties),
 }
 
 pub enum TimeNodeGroup {
@@ -818,8 +815,8 @@ pub struct TLAnimateBehavior {
 pub struct TLAnimateColorBehavior {
     pub common_behavior_data: TLCommonBehaviorData,
     pub by: Option<TLByAnimateColorTransform>,
-    pub from: Option<drawingml::Color>,
-    pub to: Option<drawingml::Color>,
+    pub from: Option<::drawingml::Color>,
+    pub to: Option<::drawingml::Color>,
     pub color_space: Option<TLAnimateColorSpace>,
     pub direction: Option<TLAnimateColorDirection>,
 }
@@ -841,15 +838,15 @@ pub struct TLAnimateMotionBehavior {
     pub origin: Option<TLAnimateMotionBehaviorOrigin>,
     pub path: Option<String>,
     pub path_edit_mode: Option<TLAnimateMotionPathEditMode>,
-    pub rotate_angle: Option<drawingml::Angle>,
+    pub rotate_angle: Option<::drawingml::Angle>,
     pub points_types: Option<String>,
 }
 
 pub struct TLAnimateRotationBehavior {
     pub common_behavior_data: TLCommonBehaviorData,
-    pub by: Option<drawingml::Angle>,
-    pub from: Option<drawingml::Angle>,
-    pub to: Option<drawingml::Angle>,
+    pub by: Option<::drawingml::Angle>,
+    pub from: Option<::drawingml::Angle>,
+    pub to: Option<::drawingml::Angle>,
 }
 
 pub struct TLAnimateScaleBehavior {
@@ -888,7 +885,7 @@ pub struct TLTimeAnimateValue {
 }
 
 pub enum TLTimeAnimateValueTime {
-    Percentage(drawingml::PositiveFixedPercentage),
+    Percentage(::drawingml::PositiveFixedPercentage),
     Indefinite,
 }
 
@@ -897,7 +894,7 @@ pub enum TLAnimVariant {
     Int(i32),
     Float(f32),
     String(String),
-    Color(drawingml::Color),
+    Color(::drawingml::Color),
 }
 
 pub struct TLCommonBehaviorData {
@@ -917,7 +914,7 @@ pub struct TLCommonBehaviorData {
 pub struct TLCommonMediaNodeData {
     pub common_time_node_data: TLCommonTimeNodeData,
     pub target_element: TLTimeTargetElement,
-    pub volume: Option<drawingml::PositiveFixedPercentage>, // 50000
+    pub volume: Option<::drawingml::PositiveFixedPercentage>, // 50000
     pub mute: Option<bool>, // false
     pub number_of_slides: Option<u32>, // 1
     pub show_when_stopped: Option<bool>, // true
@@ -931,14 +928,14 @@ pub enum TLTimeConditionTriggerGroup {
 
 pub enum TLTimeTargetElement {
     SlideTarget,
-    SoundTarget(drawingml::EmbeddedWAVAudioFile),
+    SoundTarget(::drawingml::EmbeddedWAVAudioFile),
     ShapeTarget(TLShapeTargetElement),
     InkTarget(TLSubShapeId),
 }
 
 pub struct TLShapeTargetElement {
     pub target: Option<TLShapeTargetElementGroup>,
-    pub shape_id: drawingml::DrawingElementId,
+    pub shape_id: ::drawingml::DrawingElementId,
 }
 
 pub enum TLShapeTargetElementGroup {
@@ -946,7 +943,7 @@ pub enum TLShapeTargetElementGroup {
     SubShape(TLSubShapeId),
     OleChartElement(TLOleChartTargetElement),
     TextElement(Option<TLTextTargetElement>),
-    GraphicElement(drawingml::AnimationElementChoice),
+    GraphicElement(::drawingml::AnimationElementChoice),
 }
 
 pub struct TLOleChartTargetElement {
@@ -979,9 +976,9 @@ pub struct TLCommonTimeNodeData {
     pub duration: Option<TLTime>,
     pub repeat_count: Option<TLTime>, // 1000
     pub repeat_duration: Option<TLTime>,
-    pub speed: Option<drawingml::Percentage>, // 100000
-    pub acceleration: Option<drawingml::PositiveFixedPercentage>, // 0
-    pub deceleration: Option<drawingml::PositiveFixedPercentage>, // 0
+    pub speed: Option<::drawingml::Percentage>, // 100000
+    pub acceleration: Option<::drawingml::PositiveFixedPercentage>, // 0
+    pub deceleration: Option<::drawingml::PositiveFixedPercentage>, // 0
     pub auto_reverse: Option<bool>, // false
     pub restart_type: Option<TLTimeNodeRestartType>,
     pub fill_type: Option<TLTimeNodeFillType>,
@@ -999,7 +996,7 @@ pub struct TLCommonTimeNodeData {
 
 pub enum TLIterateDataInterval {
     Absolute(TLTime),
-    Percent(drawingml::PositivePercentage),
+    Percent(::drawingml::PositivePercentage),
 }
 
 pub struct TLIterateData {
@@ -1014,23 +1011,23 @@ pub enum TLByAnimateColorTransform {
 }
 
 pub struct TLByRgbColorTransform {
-    pub r: drawingml::FixedPercentage,
-    pub g: drawingml::FixedPercentage,
-    pub b: drawingml::FixedPercentage,
+    pub r: ::drawingml::FixedPercentage,
+    pub g: ::drawingml::FixedPercentage,
+    pub b: ::drawingml::FixedPercentage,
 }
 
 pub struct TLByHslColorTransform {
-    pub h: drawingml::Angle,
-    pub s: drawingml::FixedPercentage,
-    pub l: drawingml::FixedPercentage,
+    pub h: ::drawingml::Angle,
+    pub s: ::drawingml::FixedPercentage,
+    pub l: ::drawingml::FixedPercentage,
 }
 
 pub struct TopLevelSlideData {
-    pub color_mapping: drawingml::ColorMapping,
+    pub color_mapping: ::drawingml::ColorMapping,
 }
 
 pub struct ChildSlideData {
-    pub color_mapping_override: Option<drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
     pub show_master_shapes: Option<bool>, // true
     pub show_master_placholder_animations: Option<bool>, // true
 }
@@ -1068,11 +1065,11 @@ pub struct Slide {
 
 /// EmbeddedFontListEntry
 pub struct EmbeddedFontListEntry {
-    pub font: drawingml::TextFont,
-    pub regular: Option<relationship::RelationshipId>,
-    pub bold: Option<relationship::RelationshipId>,
-    pub italic: Option<relationship::RelationshipId>,
-    pub bold_italic: Option<relationship::RelationshipId>,
+    pub font: ::drawingml::TextFont,
+    pub regular: Option<RelationshipId>,
+    pub bold: Option<RelationshipId>,
+    pub italic: Option<RelationshipId>,
+    pub bold_italic: Option<RelationshipId>,
 }
 
 impl EmbeddedFontListEntry {
@@ -1084,8 +1081,8 @@ impl EmbeddedFontListEntry {
         let mut opt_bold_italic = None;
 
         for child_node in &xml_node.child_nodes {
-            match child_node.name.as_str() {
-                "font" => opt_font = Some(drawingml::TextFont::from_xml_element(child_node).unwrap()),
+            match child_node.local_name() {
+                "font" => opt_font = Some(::drawingml::TextFont::from_xml_element(child_node).unwrap()),
                 "regular" => opt_regular = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "bold" => opt_bold = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "italic" => opt_italic = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
@@ -1112,7 +1109,7 @@ impl EmbeddedFontListEntry {
 pub struct CustomShow {
     pub name: Name,
     pub id: u32,
-    pub slide_list: Vec<relationship::RelationshipId>,
+    pub slide_list: Vec<RelationshipId>,
 }
 
 impl CustomShow {
@@ -1127,7 +1124,7 @@ impl CustomShow {
         };
 
         for child_node in &xml_node.child_nodes {
-            match child_node.name.as_str() {
+            match child_node.local_name() {
                 "sldLst" => {
                     for slide_node in &child_node.child_nodes {
                         instance.slide_list.push(slide_node.attribute("r:id").unwrap().parse().unwrap());
@@ -1170,7 +1167,7 @@ pub struct ModifyVerifier {
 
 /// Presentation
 pub struct Presentation {
-    pub server_zoom: Option<drawingml::Percentage>, // 50%
+    pub server_zoom: Option<::drawingml::Percentage>, // 50%
     pub first_slide_num: Option<i32>, // 1
     pub show_special_pls_on_title_slide: Option<bool>, // true
     pub rtl: Option<bool>, // false
@@ -1187,20 +1184,20 @@ pub struct Presentation {
     pub handout_master_id_list: Vec<HandoutMasterIdListEntry>, // length = 1
     pub slide_id_list: Vec<SlideIdListEntry>,
     pub slide_size: Option<SlideSize>,
-    pub notes_size: Option<drawingml::PositiveSize2D>,
-    pub smart_tags: Option<relationship::RelationshipId>,
+    pub notes_size: Option<::drawingml::PositiveSize2D>,
+    pub smart_tags: Option<RelationshipId>,
     pub embedded_font_list: Vec<EmbeddedFontListEntry>,
     pub custom_show_list: Vec<CustomShow>,
     pub photo_album: Option<PhotoAlbum>,
     pub customer_data_list: Option<CustomerDataList>,
     pub kinsoku: Option<Kinsoku>,
-    pub default_text_style: Option<drawingml::TextListStyle>,
+    pub default_text_style: Option<::drawingml::TextListStyle>,
     pub modify_verifier: Option<ModifyVerifier>,
 }
 
 impl Presentation {
-    fn new() -> Presentation {
-        Presentation {
+    fn new() -> Self {
+        Self {
             server_zoom: None,
             first_slide_num: None,
             show_special_pls_on_title_slide: None,
@@ -1230,16 +1227,12 @@ impl Presentation {
         }
     }
 
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Option<Presentation>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation, ZipError>
     where
         R: Read + Seek
     {
-        let mut presentation_file = match zipper.by_name("ppt/presentation.xml") {
-            Ok(f) => f,
-            Err(_) => return None,
-        };
-        
-        let mut presentation = Presentation::new();
+        let mut presentation_file = zipper.by_name("ppt/presentation.xml")?;
+        let mut presentation = Self::new();
         let mut xml_string = String::new();
 
         match presentation_file.read_to_string(&mut xml_string) {
@@ -1248,10 +1241,10 @@ impl Presentation {
                     presentation.parse_presentation_element(root_node);
                 }
             }
-            Err(_) => return None,
+            Err(_) => return Ok(presentation),
         }
 
-        Some(presentation)
+        Ok(presentation)
     }
 
     fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
@@ -1275,9 +1268,8 @@ impl Presentation {
         }
 
         for child_node in &presentation_node.child_nodes {
-            match child_node.name.as_str() {
+            match child_node.local_name() {
                 "sldMasterIdLst" => {
-                    println!("kaki");
                     for slide_master_id_node in &child_node.child_nodes {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
@@ -1356,7 +1348,7 @@ impl Presentation {
                         })
                     }
                 }
-                "notesSz" => self.notes_size = Some(drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
+                "notesSz" => self.notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
                 "smartTags" => self.smart_tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "embeddedFontLst" => (),
                 "embeddedFont" => {
@@ -1415,7 +1407,7 @@ impl Presentation {
                         });
                     }
                 }
-                "defaultTextStyle" => self.default_text_style = Some(drawingml::TextListStyle::from_xml_element(child_node)),
+                "defaultTextStyle" => self.default_text_style = Some(::drawingml::TextListStyle::from_xml_element(child_node)),
                 _ => (),
             }
         }

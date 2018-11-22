@@ -1,8 +1,6 @@
 use std::collections::HashMap;
-use quick_xml;
-use quick_xml::events;
-use std;
-use errors;
+use quick_xml::{Reader};
+use quick_xml::events::{BytesStart};
 
 /// Represents an implementation independent xml node
 pub struct XmlNode {
@@ -132,10 +130,10 @@ where
     }
 }
 
-pub fn parse_xml_bool(value: &str) -> Result<bool, errors::ParseBoolError> {
+pub fn parse_xml_bool(value: &str) -> Result<bool, ::error::ParseBoolError> {
     match value {
         "true" | "1" => Ok(true),
         "false" | "0" => Ok(false),
-        _ => Err(errors::ParseBoolError { attr_value: value }),
+        _ => Err(::error::ParseBoolError { attr_value: value }),
     }
 }
