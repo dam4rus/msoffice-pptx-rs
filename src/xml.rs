@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use quick_xml::*;
-use quick_xml::events::*;
+use quick_xml;
+use quick_xml::events;
 use std;
+use errors;
 
 /// Represents an implementation independent xml node
 pub struct XmlNode {
@@ -20,18 +21,18 @@ impl XmlNode {
     }
 
     pub fn from_str(xml_string: &str) -> Option<XmlNode> {
-        let mut xml_reader = Reader::from_str(xml_string);
+        let mut xml_reader = quick_xml::Reader::from_str(xml_string);
         let mut root_node = None;
         let mut buffer = Vec::new();
         loop {
             match xml_reader.read_event(&mut buffer) {
-                Ok(Event::Start(ref element)) => {
+                Ok(quick_xml::events::Event::Start(ref element)) => {
                     root_node = XmlNode::from_quick_xml_element(element);
                     if let Some(ref mut node) = root_node {
                         node.child_nodes = XmlNode::parse_child_elements(element, &mut xml_reader);
                     }
                 },
-                Ok(Event::Eof) => break,
+                Ok(quick_xml::events::Event::Eof) => break,
                 _ => (),
             }
 
@@ -43,7 +44,7 @@ impl XmlNode {
 
     pub fn local_name(&self) -> &str {
         match self.name.find(':') {
-            Some(idx) => self.name.split_at(idx).1,
+            Some(idx) => self.name.split_at(idx + 1).1,
             None => self.name.as_str(),
         }
     }
@@ -53,7 +54,7 @@ impl XmlNode {
         //self.attributes[attr_name].as_str()
     }
 
-    fn from_quick_xml_element(xml_element: &BytesStart) -> Option<XmlNode> {
+    fn from_quick_xml_element(xml_element: &quick_xml::events::BytesStart) -> Option<XmlNode> {
         let name_str = match std::str::from_utf8(xml_element.name()) {
             Ok(s) => s,
             Err(_) => return None,
@@ -89,18 +90,18 @@ impl XmlNode {
         let mut buffer = Vec::new();
         loop {
             match xml_reader.read_event(&mut buffer) {
-                Ok(Event::Start(ref element)) => {
+                Ok(quick_xml::events::Event::Start(ref element)) => {
                     if let Some(mut node) = XmlNode::from_quick_xml_element(element) {
                         node.child_nodes = XmlNode::parse_child_elements(element, xml_reader);
                         child_nodes.push(node);
                     }
                 },
-                Ok(Event::Empty(ref element)) => {
+                Ok(quick_xml::events::Event::Empty(ref element)) => {
                     if let Some(mut node) = XmlNode::from_quick_xml_element(element) {
                         child_nodes.push(node);
                     }
                 },
-                Ok(Event::End(ref element)) => {
+                Ok(quick_xml::events::Event::End(ref element)) => {
                     if element.name() == xml_element.name() {
                         break;
                     }
@@ -128,5 +129,13 @@ where
             println!("{}", err);
             None
         }
+    }
+}
+
+pub fn parse_xml_bool(value: &str) -> Result<bool, errors::ParseBoolError> {
+    match value {
+        "true" | "1" => Ok(true),
+        "false" | "0" => Ok(false),
+        _ => Err(errors::ParseBoolError { attr_value: value }),
     }
 }

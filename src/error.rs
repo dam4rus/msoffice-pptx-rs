@@ -53,3 +53,22 @@ impl Error for MissingChildNodeError {
         "Xml element missing required child element"
     }
 }
+
+/// Error indicating that an xml element's attribute is not a valid bool value
+/// Valid bool values are: true, false, 0, 1
+#[derive(Debug)]
+pub struct ParseBoolError<'a> {
+    pub attr_value: &'a str,
+}
+
+impl<'a> fmt::Display for ParseBoolError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Xml attribute is not a valid bool value: {}", self.attr_value)
+    }
+}
+
+impl<'a> Error for ParseBoolError<'a> {
+    fn description(&self) -> &str {
+        "Xml attribute is not a valid bool value"
+    }
+}

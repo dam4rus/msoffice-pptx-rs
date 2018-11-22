@@ -1277,6 +1277,7 @@ impl Presentation {
         for child_node in &presentation_node.child_nodes {
             match child_node.name.as_str() {
                 "sldMasterIdLst" => {
+                    println!("kaki");
                     for slide_master_id_node in &child_node.child_nodes {
                         let mut opt_id = None;
                         let mut opt_r_id = None;
@@ -1414,6 +1415,7 @@ impl Presentation {
                         });
                     }
                 }
+                "defaultTextStyle" => self.default_text_style = Some(drawingml::TextListStyle::from_xml_element(child_node)),
                 _ => (),
             }
         }
@@ -1421,8 +1423,6 @@ impl Presentation {
 /*
 		for (const MXmlNode2 &childNode : xmlNode)
 		{
-			else if (childNode.name == mT("defaultTextStyle"))
-				instance->defaultTextStyle.reset(DrawingML::TextListStyle::FromXmlNode(childNode));
 			//else if (childNode.name == mT("modifyVerifier"))
 			//	instance->modifyVerifier.reset(ModifyVerifier::FromXmlNode(childNode));
 			//else if (childNode.name == mT("extLst"))

@@ -1,5 +1,5 @@
 [package]
-name = "msoffice-pptx"
+name = "msoffice_pptx"
 version = "0.1.0"
 authors = ["kalmar"]
 

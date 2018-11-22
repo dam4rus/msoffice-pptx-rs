@@ -2589,6 +2589,9 @@ impl TextCharacterProperties {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "ln" => instance.line_properties = Some(LineProperties::from_xml_element(child_node)),
+                "latin" => instance.latin_font = Some(TextFont::from_xml_element(child_node).unwrap()),
+                "ea" => instance.east_asian_font = Some(TextFont::from_xml_element(child_node).unwrap()),
+                "cs" => instance.complex_script_font = Some(TextFont::from_xml_element(child_node).unwrap()),
                 _ => (),
             };
         }
@@ -2604,9 +2607,6 @@ impl TextCharacterProperties {
       <xsd:element name="highlight" type="CT_Color" minOccurs="0" maxOccurs="1"/>
       <xsd:group ref="EG_TextUnderlineLine" minOccurs="0" maxOccurs="1"/>
       <xsd:group ref="EG_TextUnderlineFill" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="latin" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="ea" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="cs" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
       <xsd:element name="sym" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
       <xsd:element name="hlinkClick" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
       <xsd:element name="hlinkMouseOver" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
@@ -2680,11 +2680,11 @@ impl TextParagraphProperties {
                 "indent" => instance.indent = Some(value.parse().unwrap()),
                 "algn" => instance.align = Some(value.parse().unwrap()),
                 "defTabSz" => instance.default_tab_size = Some(value.parse().unwrap()),
-                "rtl" => instance.rtl = Some(value.parse().unwrap()),
-                "eaLnBrk" => instance.east_asian_line_break = Some(value.parse().unwrap()),
+                "rtl" => instance.rtl = Some(parse_xml_bool(value).unwrap()),
+                "eaLnBrk" => instance.east_asian_line_break = Some(parse_xml_bool(value).unwrap()),
                 "fontAlgn" => instance.font_align = Some(value.parse().unwrap()),
-                "latinLnBrk" => instance.latin_line_break = Some(value.parse().unwrap()),
-                "hangingPunct" => instance.hanging_punctuations = Some(value.parse().unwrap()),
+                "latinLnBrk" => instance.latin_line_break = Some(parse_xml_bool(value).unwrap()),
+                "hangingPunct" => instance.hanging_punctuations = Some(parse_xml_bool(value).unwrap()),
                 _ => (),
             }
         }
@@ -2761,14 +2761,30 @@ pub struct TextField {
 /// TextListStyle
 pub struct TextListStyle {
     pub def_paragraph_props: Option<TextParagraphProperties>,
-    pub paragraph_level_props_array: [Option<TextParagraphProperties>; 9],
+    pub lvl1_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl2_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl3_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl4_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl5_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl6_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl7_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl8_paragraph_props: Option<TextParagraphProperties>,
+    pub lvl9_paragraph_props: Option<TextParagraphProperties>,
 }
 
 impl TextListStyle {
     fn new() -> TextListStyle {
         TextListStyle {
             def_paragraph_props: None,
-            paragraph_level_props_array: Default::default(),
+            lvl1_paragraph_props: None,
+            lvl2_paragraph_props: None,
+            lvl3_paragraph_props: None,
+            lvl4_paragraph_props: None,
+            lvl5_paragraph_props: None,
+            lvl6_paragraph_props: None,
+            lvl7_paragraph_props: None,
+            lvl8_paragraph_props: None,
+            lvl9_paragraph_props: None,
         }
     }
 
@@ -2778,6 +2794,15 @@ impl TextListStyle {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "defPPr" => instance.def_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl1pPr" => instance.lvl1_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl2pPr" => instance.lvl2_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl3pPr" => instance.lvl3_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl4pPr" => instance.lvl4_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl5pPr" => instance.lvl5_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl6pPr" => instance.lvl6_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl7pPr" => instance.lvl7_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl8pPr" => instance.lvl8_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
+                "lvl9pPr" => instance.lvl9_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)),
                 _ => (),
             }
         }
