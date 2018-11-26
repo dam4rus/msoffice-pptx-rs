@@ -1498,21 +1498,21 @@ impl GradientStop {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<GradientStop, MissingAttributeError> {
         let pos = match xml_node.attribute("pos") {
             Some(val) => val.parse().unwrap(),
-            None => return Err(MissingAttributeError { attr: "pos" }),
+            None => return Err(MissingAttributeError::new("pos")),
         };
 
         let child_node = match xml_node.child_nodes.get(0) {
             Some(node) => node,
-            None => return Err(MissingAttributeError { attr: "pos" }),
+            None => return Err(MissingAttributeError::new("pos")),
         };
 
         if !Color::is_choice_member(child_node.local_name()) {
-            return Err(MissingAttributeError { attr: "color" });
+            return Err(MissingAttributeError::new("color"));
         }
 
         let color = match Color::from_xml_element(child_node) {
             Ok(clr) => clr,
-            Err(_) => return Err(MissingAttributeError { attr: "color" }),
+            Err(_) => return Err(MissingAttributeError::new("color")),
         };
 
         Ok(GradientStop { color: color, position: pos })
@@ -1524,14 +1524,83 @@ pub struct LinearShadeProperties {
     pub scaled: Option<bool>,
 }
 
+impl LinearShadeProperties {
+    fn new() -> Self {
+        Self {
+            angle: None,
+            scaled: None,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Self {
+        let mut instance = Self::new();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "ang" => instance.angle = Some(value.parse::<i32>().unwrap()),
+                "scaled" => instance.scaled = Some(parse_xml_bool(value.as_str()).unwrap()),
+                _ => (),
+            }
+        }
+
+        instance
+    }
+}
+
 pub struct PathShadeProperties {
     pub fill_to_rect: Option<RelativeRect>,
     pub path: Option<PathShadeType>,
 }
 
+impl PathShadeProperties {
+    fn new() -> Self {
+        Self {
+            fill_to_rect: None,
+            path: None,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Self {
+        let mut instance = Self::new();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "path" => instance.path = Some(value.parse::<PathShadeType>().unwrap()),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "fillToRect" => instance.fill_to_rect = Some(RelativeRect::from_xml_element(child_node)),
+                _ => (),
+            }
+        }
+
+        instance
+    }
+}
+
 pub enum ShadeProperties {
     Linear(LinearShadeProperties),
     Path(PathShadeProperties),
+}
+
+impl ShadeProperties {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "lin" | "path" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, NotGroupMemberError> {
+        match xml_node.local_name() {
+            "lin" => Ok(ShadeProperties::Linear(LinearShadeProperties::from_xml_element(xml_node))),
+            "path" => Ok(ShadeProperties::Path(PathShadeProperties::from_xml_element(xml_node))),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_ShadeProperties")),
+        }
+    }
 }
 
 /// GradientFillProperties
@@ -1544,8 +1613,8 @@ pub struct GradientFillProperties {
 }
 
 impl GradientFillProperties {
-    fn new() -> GradientFillProperties {
-        GradientFillProperties {
+    fn new() -> Self {
+        Self {
             gradient_stop_list: Vec::new(),
             shade_properties: None,
             tile_rect: None,
@@ -1554,22 +1623,31 @@ impl GradientFillProperties {
         }
     }
 
-    pub fn from_xml_element(xml_node: &XmlNode) -> GradientFillProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Self {
         let mut instance = GradientFillProperties::new();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "flip" => instance.flip = Some(value.parse().unwrap()),
-                "rotWithShape" => instance.rotate_with_shape = Some(value.parse().unwrap()),
+                "rotWithShape" => instance.rotate_with_shape = Some(parse_xml_bool(value).unwrap()),
                 _ => (),
             }
         }
 
         for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "gs" => instance.gradient_stop_list.push(GradientStop::from_xml_element(child_node).unwrap()),
-                "tileRect" => instance.tile_rect = Some(RelativeRect::from_xml_element(child_node)),
-                _ => (),
+            let local_name = child_node.local_name();
+            if ShadeProperties::is_choice_member(local_name) {
+                instance.shade_properties = Some(ShadeProperties::from_xml_element(child_node).unwrap());
+            } else {
+                match child_node.local_name() {
+                    "gsLst" => {
+                        for gs_node in &child_node.child_nodes {
+                            instance.gradient_stop_list.push(GradientStop::from_xml_element(gs_node).unwrap());
+                        }
+                    }
+                    "tileRect" => instance.tile_rect = Some(RelativeRect::from_xml_element(child_node)),
+                    _ => (),
+                }
             }
         }
 
@@ -1623,7 +1701,7 @@ impl FillProperties {
         match xml_node.local_name() {
             "noFill" => Ok(FillProperties::NoFill),
             "solidFill" => Ok(FillProperties::SolidFill(Color::from_xml_element(&xml_node.child_nodes[0])?)),
-            "gradFill" => Ok(FillProperties::GradientFill(GradientFillProperties::from_xml_element(&xml_node.child_nodes[0]))),
+            "gradFill" => Ok(FillProperties::GradientFill(GradientFillProperties::from_xml_element(xml_node))),
             // TODO: implement
             // <xsd:element name="blipFill" type="CT_BlipFillProperties" minOccurs="1" maxOccurs="1"/>
             // <xsd:element name="pattFill" type="CT_PatternFillProperties" minOccurs="1" maxOccurs="1"/>

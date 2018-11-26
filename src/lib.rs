@@ -233,8 +233,8 @@ mod tests {
 
                     match gradient.shade_properties {
                         Some(::drawingml::ShadeProperties::Linear(ref shade_props)) => {
-                            assert_eq!(shade_props.angle.unwrap(), 16_200_000);
-                            assert_eq!(shade_props.scaled.unwrap(), true);
+                            assert_eq!(shade_props.angle, Some(16_200_000));
+                            assert_eq!(shade_props.scaled, Some(true));
                         }
                         _ => panic!("shape is not linear"),
                     }
@@ -242,31 +242,37 @@ mod tests {
                 _ => panic!("fill[1] is invalid"),
             }
 
-            /*
-            <a:gradFill rotWithShape="1">
-					<a:gsLst>
-						<a:gs pos="0">
-							<a:schemeClr val="phClr">
-								<a:tint val="50000"/>
-								<a:satMod val="300000"/>
-							</a:schemeClr>
-						</a:gs>
-						<a:gs pos="35000">
-							<a:schemeClr val="phClr">
-								<a:tint val="37000"/>
-								<a:satMod val="300000"/>
-							</a:schemeClr>
-						</a:gs>
-						<a:gs pos="100000">
-							<a:schemeClr val="phClr">
-								<a:tint val="15000"/>
-								<a:satMod val="350000"/>
-							</a:schemeClr>
-						</a:gs>
-					</a:gsLst>
-					<a:lin ang="16200000" scaled="1"/>
-				</a:gradFill>
-            */
+            let ln_style = &format_scheme.line_style_list[0];
+            assert_eq!(ln_style.width, Some(9_525));
+            assert_eq!(ln_style.cap, Some(::drawingml::LineCap::Flat));
+            assert_eq!(ln_style.compound, Some(::drawingml::CompoundLine::Single));
+            assert_eq!(ln_style.pen_alignment, Some(::drawingml::PenAlignment::Center));
+            
+            match ln_style.fill_properties {
+                Some(::drawingml::LineFillProperties::SolidFill(ref clr)) => {
+                    match clr {
+                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                            match scheme_clr.color_transforms[0] {
+                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 95_000.0),
+                                _ => panic!("ColorTransform is not Shade"),
+                            }
+
+                            match scheme_clr.color_transforms[1] {
+                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 105_000.0),
+                                _ => panic!("ColorTransform is not SatMode"),
+                            }
+                        }
+                        _ => panic!("Scheme color is not PlaceholderColor"),
+                    }
+                }
+                _ => panic!("ln_style.fill_properties is not SolidFill"),
+            }
+
+            match ln_style.dash_properties {
+                Some(::drawingml::LineDashProperties::PresetDash(ref dash)) => assert_eq!(*dash, ::drawingml::PresetLineDashVal::Solid),
+                _ => panic!("ln_style.dash_properties is not PresetDash"),
+            }
         }
     }
 
