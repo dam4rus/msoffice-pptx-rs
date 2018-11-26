@@ -55,12 +55,22 @@ impl Error for MissingChildNodeError {
 /// Error indicating that an xml element is not a member of a given element group
 #[derive(Debug)]
 pub struct NotGroupMemberError {
-    pub group: &'static str,
+    node_name: String,
+    group: &'static str,
+}
+
+impl NotGroupMemberError {
+    pub fn new(node_name: String, group: &'static str) -> Self {
+        Self {
+            node_name,
+            group,
+        }
+    }
 }
 
 impl fmt::Display for NotGroupMemberError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Xml element is not a member of {} group", self.group)
+        write!(f, "XmlNode '{}' is not a member of {} group", self.node_name, self.group)
     }
 }
 
@@ -70,12 +80,72 @@ impl Error for NotGroupMemberError {
     }
 }
 
+#[derive(Debug)]
+pub enum Limit {
+    Value(u32),
+    Unbounded,
+}
+
+impl fmt::Display for Limit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Limit::Value(val) => write!(f, "{}", val),
+            Limit::Unbounded => write!(f, "unbounded"),
+        }
+    }
+}
+
+/// Error indicating that the element violates either minOccurs or maxOccurs
+#[derive(Debug)]
+pub struct LimitViolationError {
+    element_name: &'static str,
+    min_occurs: Limit,
+    max_occurs: Limit,
+    occurs: u32,
+}
+
+impl LimitViolationError {
+    pub fn new(
+        element_name: &'static str,
+        min_occurs: Limit,
+        max_occurs: Limit,
+        occurs: u32
+    ) -> Self {
+        LimitViolationError {
+            element_name,
+            min_occurs,
+            max_occurs,
+            occurs,
+        }
+    }
+}
+
+impl fmt::Display for LimitViolationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Element {} violates the limits of occurance. minOccurs: {}, maxOccurs: {}, occurance: {}",
+            self.element_name,
+            self.min_occurs,
+            self.max_occurs,
+            self.occurs
+        )
+    }
+}
+
+impl Error for LimitViolationError {
+    fn description(&self) -> &str {
+        "Occurance limit violation"
+    }
+}
+
 /// Chained error type for all possible xml error
 #[derive(Debug)]
 pub enum XmlError {
     Attribute(MissingAttributeError),
     ChildNode(MissingChildNodeError),
     NotGroupMember(NotGroupMemberError),
+    LimitViolation(LimitViolationError),
 }
 
 impl fmt::Display for XmlError {
@@ -84,6 +154,7 @@ impl fmt::Display for XmlError {
             XmlError::Attribute(ref err) => err.fmt(f),
             XmlError::ChildNode(ref err) => err.fmt(f),
             XmlError::NotGroupMember(ref err) => err.fmt(f),
+            XmlError::LimitViolation(ref err) => err.fmt(f),
         }
     }
 }
@@ -112,6 +183,12 @@ impl From<NotGroupMemberError> for XmlError {
     }
 }
 
+impl From<LimitViolationError> for XmlError {
+    fn from(error: LimitViolationError) -> Self {
+        XmlError::LimitViolation(error)
+    }
+}
+
 /// Error indicating that an xml element's attribute is not a valid bool value
 /// Valid bool values are: true, false, 0, 1
 #[derive(Debug)]
@@ -128,5 +205,28 @@ impl<'a> fmt::Display for ParseBoolError<'a> {
 impl<'a> Error for ParseBoolError<'a> {
     fn description(&self) -> &str {
         "Xml attribute is not a valid bool value"
+    }
+}
+
+/// Error indicating that the parsed xml document is invalid
+#[derive(Debug)]
+pub struct InvalidXmlError {
+}
+
+impl InvalidXmlError {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl fmt::Display for InvalidXmlError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid xml document")
+    }
+}
+
+impl Error for InvalidXmlError {
+    fn description(&self) -> &str {
+        "Invalid xml error"
     }
 }

@@ -1,9 +1,8 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
-use ::xml::{XmlNode, parse_optional_xml_attribute};
+use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
 use ::error::{MissingAttributeError};
 use ::zip::result::ZipError;
-use ::zip::read::ZipFile;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -1237,7 +1236,7 @@ impl Presentation {
 
         match presentation_file.read_to_string(&mut xml_string) {
             Ok(_) => {
-                if let Some(ref root_node) = XmlNode::from_str(xml_string.as_str()) {
+                if let Ok(ref root_node) = XmlNode::from_str(xml_string.as_str()) {
                     presentation.parse_presentation_element(root_node);
                 }
             }
@@ -1250,6 +1249,7 @@ impl Presentation {
     fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
 
         for (attr, value) in &presentation_node.attributes {
+            println!("parsing presentation attribute: {}", attr);
             match attr.as_str() {
                 "serverZoom" => self.server_zoom = parse_optional_xml_attribute(value),// Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
                 "firstSlideNum" => self.first_slide_num = parse_optional_xml_attribute(value),
@@ -1259,7 +1259,7 @@ impl Presentation {
                 "compatMode" => self.compatibility_mode = parse_optional_xml_attribute(value),
                 "strictFirstAndLastChars" => self.strict_first_and_last_chars = parse_optional_xml_attribute(value),
                 "embedTrueTypeFonts" => self.embed_true_type_fonts = parse_optional_xml_attribute(value),
-                "saveSubsetFonts" => self.save_subset_fonts = parse_optional_xml_attribute(value),
+                "saveSubsetFonts" => self.save_subset_fonts = parse_xml_bool(value).ok(),
                 "autoCompressPictures" => self.auto_compress_pictures = parse_optional_xml_attribute(value),
                 "bookmarkIdSeed" => self.bookmark_id_seed = parse_optional_xml_attribute(value),
                 "conformance" => self.conformance = Some(attr.parse().unwrap()),
@@ -1268,6 +1268,7 @@ impl Presentation {
         }
 
         for child_node in &presentation_node.child_nodes {
+            println!("parsing child_node: {}", child_node);
             match child_node.local_name() {
                 "sldMasterIdLst" => {
                     for slide_master_id_node in &child_node.child_nodes {

@@ -1,8 +1,10 @@
 use ::std::collections::{ HashMap };
 use ::std::path::{Path, PathBuf};
 use ::std::fs::File;
+use ::std::io::Read;
 use ::zip::ZipArchive;
 use ::docprops::{AppInfo, Core};
+use ::xml::XmlNode;
 
 
 /// Document
@@ -41,6 +43,7 @@ impl Document {
 
         document.app = AppInfo::from_zip(&mut zipper);
         document.core = Core::from_zip(&mut zipper);
+        println!("parsing presentation.xml");
         document.presentation = match ::pml::Presentation::from_zip(&mut zipper) {
             Ok(p) => Some(p),
             Err(err) => {
@@ -49,8 +52,10 @@ impl Document {
             }
         };
 
+        println!("");
+
         for i in 0..zipper.len() {
-            let zip_file = match zipper.by_index(i) {
+            let mut zip_file = match zipper.by_index(i) {
                 Ok(f) => f,
                 Err(err) => {
                     println!("Failed to get zip file by index. Index: {}, error: {}", i, err);
@@ -58,8 +63,29 @@ impl Document {
                 }
             };
 
-            if Path::new(zip_file.name()).starts_with("ppt/theme") {
-                //let theme = ::drawingml::OfficeStyleSheet::
+            let file_path = PathBuf::from(zip_file.name());
+            if file_path.starts_with("ppt/theme") {
+                println!("parsing theme file: {}", zip_file.name());
+                let mut xml_string = String::new();
+                if let Err(err) = zip_file.read_to_string(&mut xml_string) {
+                    println!("{}", err);
+                    continue;
+                }
+
+                let xml_node = match XmlNode::from_str(xml_string.as_str()) {
+                    Ok(node) => node,
+                    Err(err) => {
+                        println!("{}", err);
+                        continue;
+                    }
+                };
+
+                match ::drawingml::OfficeStyleSheet::from_xml_element(&xml_node) {
+                    Ok(v) => {
+                        document.theme_map.insert(file_path, v);
+                    }
+                    Err(err) => println!("{}", err),
+                }
             }
         }
 

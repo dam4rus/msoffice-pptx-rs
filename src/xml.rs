@@ -1,33 +1,41 @@
 use std::collections::HashMap;
 use quick_xml::{Reader};
 use quick_xml::events::{BytesStart};
+use ::error::InvalidXmlError;
 
 /// Represents an implementation independent xml node
+#[derive(Debug)]
 pub struct XmlNode {
     pub name: String,
     pub child_nodes: Vec<XmlNode>,
     pub attributes: HashMap<String, String>,
 }
 
+impl ::std::fmt::Display for XmlNode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "name: {}", self.name)
+    }
+}
+
 impl XmlNode {
-    pub fn new(name: &str) -> XmlNode {
-        XmlNode {
+    pub fn new(name: &str) -> Self {
+        Self {
             name: String::from(name),
             child_nodes: Vec::new(),
             attributes: HashMap::new(),
         }
     }
 
-    pub fn from_str(xml_string: &str) -> Option<XmlNode> {
+    pub fn from_str(xml_string: &str) -> Result<Self, InvalidXmlError> {
         let mut xml_reader = quick_xml::Reader::from_str(xml_string);
         let mut root_node = None;
         let mut buffer = Vec::new();
         loop {
             match xml_reader.read_event(&mut buffer) {
                 Ok(quick_xml::events::Event::Start(ref element)) => {
-                    root_node = XmlNode::from_quick_xml_element(element);
+                    root_node = Self::from_quick_xml_element(element);
                     if let Some(ref mut node) = root_node {
-                        node.child_nodes = XmlNode::parse_child_elements(element, &mut xml_reader);
+                        node.child_nodes = Self::parse_child_elements(element, &mut xml_reader);
                     }
                 },
                 Ok(quick_xml::events::Event::Eof) => break,
@@ -37,7 +45,7 @@ impl XmlNode {
             buffer.clear();
         }
 
-        root_node
+        root_node.ok_or(InvalidXmlError::new())
     }
 
     pub fn local_name(&self) -> &str {
@@ -49,16 +57,15 @@ impl XmlNode {
 
     pub fn attribute(&self, attr_name: &str) -> Option<&String> {
         self.attributes.get(attr_name)
-        //self.attributes[attr_name].as_str()
     }
 
-    fn from_quick_xml_element(xml_element: &quick_xml::events::BytesStart) -> Option<XmlNode> {
+    fn from_quick_xml_element(xml_element: &quick_xml::events::BytesStart) -> Option<Self> {
         let name_str = match std::str::from_utf8(xml_element.name()) {
             Ok(s) => s,
             Err(_) => return None,
         };
 
-        let mut node = XmlNode::new(name_str);
+        let mut node = Self::new(name_str);
 
         for attr in xml_element.attributes() {
             if let Ok(a) = attr {
@@ -82,20 +89,20 @@ impl XmlNode {
     fn parse_child_elements(
         xml_element: &BytesStart,
         xml_reader: &mut Reader<&[u8]>,
-    ) -> Vec<XmlNode> {
+    ) -> Vec<Self> {
         let mut child_nodes = Vec::new();
 
         let mut buffer = Vec::new();
         loop {
             match xml_reader.read_event(&mut buffer) {
                 Ok(quick_xml::events::Event::Start(ref element)) => {
-                    if let Some(mut node) = XmlNode::from_quick_xml_element(element) {
-                        node.child_nodes = XmlNode::parse_child_elements(element, xml_reader);
+                    if let Some(mut node) = Self::from_quick_xml_element(element) {
+                        node.child_nodes = Self::parse_child_elements(element, xml_reader);
                         child_nodes.push(node);
                     }
                 },
                 Ok(quick_xml::events::Event::Empty(ref element)) => {
-                    if let Some(mut node) = XmlNode::from_quick_xml_element(element) {
+                    if let Some(mut node) = Self::from_quick_xml_element(element) {
                         child_nodes.push(node);
                     }
                 },
