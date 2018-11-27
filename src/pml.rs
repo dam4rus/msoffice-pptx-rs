@@ -1226,22 +1226,17 @@ impl Presentation {
         }
     }
 
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation, ZipError>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation, Box<::std::error::Error>>
     where
         R: Read + Seek
     {
         let mut presentation_file = zipper.by_name("ppt/presentation.xml")?;
-        let mut presentation = Self::new();
         let mut xml_string = String::new();
+        presentation_file.read_to_string(&mut xml_string)?;
 
-        match presentation_file.read_to_string(&mut xml_string) {
-            Ok(_) => {
-                if let Ok(ref root_node) = XmlNode::from_str(xml_string.as_str()) {
-                    presentation.parse_presentation_element(root_node);
-                }
-            }
-            Err(_) => return Ok(presentation),
-        }
+        let mut presentation = Self::new();
+        let root = XmlNode::from_str(xml_string.as_str())?;
+        presentation.parse_presentation_element(&root);
 
         Ok(presentation)
     }

@@ -2,6 +2,8 @@
 use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
 use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, XmlError};
 use ::relationship::RelationshipId;
+use ::zip::read::ZipFile;
+use ::std::io::Read;
 
 pub type Guid = String; // TODO: move to shared common types. pattern="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"
 pub type Percentage = f32;
@@ -3446,6 +3448,17 @@ pub struct OfficeStyleSheet {
 }
 
 impl OfficeStyleSheet {
+    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self, Box<::std::error::Error>> {
+        let mut xml_string = String::new();
+        zip_file.read_to_string(&mut xml_string)?;
+        let xml_node = XmlNode::from_str(xml_string.as_str())?;
+
+        match ::drawingml::OfficeStyleSheet::from_xml_element(&xml_node) {
+            Ok(v) => Ok(v),
+            Err(err) => Err(Box::new(err)),
+        }
+    }
+
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, XmlError> {
         let mut name = None;
         let mut opt_theme_elements = None;

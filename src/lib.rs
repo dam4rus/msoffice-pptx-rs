@@ -41,6 +41,7 @@ mod tests {
             assert_eq!(core.modified_time.unwrap(), "2009-05-06T22:13:30Z");
         }
 
+        // presentation test
         if let Some(presentation) = document.presentation {
             let master_id = presentation.slide_master_id_list.get(0).unwrap();
             assert_eq!(master_id.id.unwrap(), 2147483684);
@@ -88,67 +89,68 @@ mod tests {
         for (path, theme) in document.theme_map {
             assert_eq!("ppt/theme/theme1.xml", path.to_str().unwrap());
 
+            // color scheme test
             let color_scheme = theme.theme_elements.color_scheme;
             assert_eq!(color_scheme.name, "Default Design 1");
 
             match color_scheme.dark1 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x000066),
-                _ => panic!("theme1 dk1 color doesn't equals to 0x00000066"),
+                _ => panic!("theme1 dk1 color type mismatch"),
             }
             
             match color_scheme.light1 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xFFFFFF),
-                _ => panic!("theme1 lt1 color doesn't equals to 0xFFFFFF"),
+                _ => panic!("theme1 lt1 color type mismatch"),
             }
             
             match color_scheme.dark2 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x003366),
-                _ => panic!("theme1 dk2 color doesn't equals to 0x003366"),
+                _ => panic!("theme1 dk2 color type mismatch"),
             }
             
             match color_scheme.light2 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xFFFFFF),
-                _ => panic!("theme1 lt2 color doesn't equals to 0xFFFFFF"),
+                _ => panic!("theme1 lt2 color type mismatch"),
             }
             
             match color_scheme.accent1 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x8EB3C8),
-                _ => panic!("theme1 accent1 color doesn't equals to 0x8EB3C8"),
+                _ => panic!("theme1 accent1 color type mismatch"),
             }
             
             match color_scheme.accent2 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x6F97B3),
-                _ => panic!("theme1 accent2 color doesn't equals to 0x6F97B3"),
+                _ => panic!("theme1 accent2 color type mismatch"),
             }
             
             match color_scheme.accent3 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xAAADB8),
-                _ => panic!("theme1 accent3 color doesn't equals to 0xAAADB8"),
+                _ => panic!("theme1 accent3 color type mismatch"),
             }
             
             match color_scheme.accent4 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xDADADA),
-                _ => panic!("theme1 accent4 color doesn't equals to 0xDADADA"),
+                _ => panic!("theme1 accent4 color type mismatch"),
             }
             
             match color_scheme.accent5 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xC6D6E0),
-                _ => panic!("theme1 accent5 color doesn't equals to 0xC6D6E0"),
+                _ => panic!("theme1 accent5 color type mismatch"),
             }
             
             match color_scheme.accent6 {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x6488A2),
-                _ => panic!("theme1 accent6 color doesn't equals to 0x6488A2"),
+                _ => panic!("theme1 accent6 color type mismatch"),
             }
             
             match color_scheme.hyperlink {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x556575),
-                _ => panic!("theme1 hyperlink color doesn't equals to 0x556575"),
+                _ => panic!("theme1 hyperlink color type mismatch"),
             }
             
             match color_scheme.followed_hyperlink {
                 ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x3D556F),
-                _ => panic!("theme1 followhyperlink color doesn't equals to 0x3D556F"),
+                _ => panic!("theme1 followhyperlink type mismatch"),
             }
 
             // font_scheme test
@@ -168,12 +170,14 @@ mod tests {
             let format_scheme = theme.theme_elements.format_scheme;
             assert_eq!(format_scheme.name.unwrap(), "Office");
 
+            // first fill style test
             let fill_style = &format_scheme.fill_style_list[0];
             match fill_style {
                 ::drawingml::FillProperties::SolidFill(::drawingml::Color::SchemeColor(clr)) => assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor),
                 _ => panic!("fill[0] is invalid"),
             }
 
+            // second fill style test
             let fill_style = &format_scheme.fill_style_list[1];
             match fill_style {
                 ::drawingml::FillProperties::GradientFill(ref gradient) => {
@@ -242,6 +246,7 @@ mod tests {
                 _ => panic!("fill[1] is invalid"),
             }
 
+            // outline style test
             let ln_style = &format_scheme.line_style_list[0];
             assert_eq!(ln_style.width, Some(9_525));
             assert_eq!(ln_style.cap, Some(::drawingml::LineCap::Flat));
@@ -272,6 +277,93 @@ mod tests {
             match ln_style.dash_properties {
                 Some(::drawingml::LineDashProperties::PresetDash(ref dash)) => assert_eq!(*dash, ::drawingml::PresetLineDashVal::Solid),
                 _ => panic!("ln_style.dash_properties is not PresetDash"),
+            }
+
+            // bg fill style test
+            let bg_fill_style = &format_scheme.bg_fill_style_list[1];
+            match bg_fill_style {
+                ::drawingml::FillProperties::GradientFill(ref gradient) => {
+                    assert_eq!(gradient.rotate_with_shape, Some(true));
+
+                    let stop = &gradient.gradient_stop_list[0];
+                    assert_eq!(stop.position, 0.0);
+                    match stop.color {
+                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+
+                            match scheme_clr.color_transforms[0] {
+                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 40_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+
+                            match scheme_clr.color_transforms[1] {
+                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+                        }
+                        _ => panic!("stop color is not scheme color"),
+                    }
+
+                    let stop = &gradient.gradient_stop_list[1];
+                    assert_eq!(stop.position, 40_000.0);
+                    match stop.color {
+                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+
+                            match scheme_clr.color_transforms[0] {
+                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 45_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+
+                            match scheme_clr.color_transforms[1] {
+                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 99_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+
+                            match scheme_clr.color_transforms[2] {
+                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+                        }
+                        _ => panic!("stop color is not scheme color"),
+                    }
+
+                    let stop = &gradient.gradient_stop_list[2];
+                    assert_eq!(stop.position, 100_000.0);
+                    match stop.color {
+                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+
+                            match scheme_clr.color_transforms[0] {
+                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 20_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+
+                            match scheme_clr.color_transforms[1] {
+                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 255_000.0),
+                                _ => panic!("invalid color transform"),
+                            }
+                        }
+                        _ => panic!("stop color is not scheme color"),
+                    }
+
+                    match gradient.shade_properties {
+                        Some(::drawingml::ShadeProperties::Path(ref path)) => {
+                            assert_eq!(path.path, Some(::drawingml::PathShadeType::Circle));
+                            match path.fill_to_rect {
+                                Some(ref rect) => {
+                                    assert_eq!(rect.left, Some(50_000.0));
+                                    assert_eq!(rect.top, Some(-80_000.0));
+                                    assert_eq!(rect.right, Some(50_000.0));
+                                    assert_eq!(rect.bottom, Some(180_000.0));
+                                }
+                                None => panic!("fill_to_rect is None"),
+                            }
+                        }
+                        _ => panic!("gradient shade properties is not path"),
+                    }
+                }
+                _ => panic!("bg fill style is not gradient"),
             }
         }
     }

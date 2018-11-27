@@ -1,4 +1,5 @@
 use std::io::{ Read, Seek };
+use ::xml::XmlNode;
 
 /// AppInfo
 /// 
@@ -15,38 +16,26 @@ impl AppInfo {
         }
     }
 
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Option<AppInfo> where R: Read + Seek {
-        let mut app_xml_file = match zipper.by_name("docProps/app.xml") {
-            Ok(f) => f,
-            Err(_) => return None,
-        };
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<AppInfo, Box<::std::error::Error>>
+    where
+        R: Read + Seek
+    {
+        let mut app_xml_file = zipper.by_name("docProps/app.xml")?;
         
-        let mut app_info = AppInfo::new();
         let mut xml_string = String::new();
-        match app_xml_file.read_to_string(&mut xml_string) {
-            Ok(_) => {
-                let mut buffer = Vec::new();
-                let mut xml_reader = quick_xml::Reader::from_str(xml_string.as_str());
-                loop {
-                    match xml_reader.read_event(&mut buffer) {
-                        Ok(quick_xml::events::Event::Start(ref element)) => {
-                            match element.local_name() {
-                                b"Application" => app_info.app_name = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                b"AppVersion" => app_info.app_version = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                _ => (),
-                            }
-                        }
-                        Ok(quick_xml::events::Event::Eof) => break,
-                        _ => (),
-                    }
+        app_xml_file.read_to_string(&mut xml_string)?;
+        let root = XmlNode::from_str(&xml_string)?;
 
-                    buffer.clear();
-                }
-            },
-            Err(_) => return None,
+        let mut app_info = AppInfo::new();
+        for child_node in &root.child_nodes {
+            match child_node.local_name() {
+                "Application" => app_info.app_name = child_node.text.as_ref().map(|ok| ok.clone()),
+                "AppVersion" => app_info.app_version = child_node.text.as_ref().map(|ok| ok.clone()),
+                _ => (),
+            }
         }
 
-        Some(app_info)
+        Ok(app_info)
     }
 }
 
@@ -73,41 +62,29 @@ impl Core {
         }
     }
 
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Option<Core> where R: Read + Seek {
-        let mut core_xml_file = match zipper.by_name("docProps/core.xml") {
-            Ok(f) => f,
-            Err(_) => return None,
-        };
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Core, Box<::std::error::Error>>
+    where
+        R: Read + Seek
+    {
+        let mut core_xml_file = zipper.by_name("docProps/core.xml")?;
+        let mut xml_string = String::new();
+        core_xml_file.read_to_string(&mut xml_string)?;
+        let root = XmlNode::from_str(&xml_string)?;
 
         let mut core = Core::new();
-        let mut xml_string = String::new();
-        match core_xml_file.read_to_string(&mut xml_string) {
-            Ok(_) => {
-                let mut buffer = Vec::new();
-                let mut xml_reader = quick_xml::Reader::from_str(xml_string.as_str());
-                loop {
-                    match xml_reader.read_event(&mut buffer) {
-                        Ok(quick_xml::events::Event::Start(ref element)) => {
-                            match element.local_name() {
-                                b"title" => core.title = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                b"creator" => core.creator = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                b"lastModifiedBy" => core.last_modified_by = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                b"revision" => core.revision = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap().parse::<i32>().unwrap()),
-                                b"created" => core.created_time = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                b"modified" => core.modified_time = Some(xml_reader.read_text(element.name(), &mut Vec::new()).unwrap()),
-                                _ => (),
-                            }
-                        }
-                        Ok(quick_xml::events::Event::Eof) => break,
-                        _ => (),
-                    }
 
-                    buffer.clear();
-                }
+        for child_node in &root.child_nodes {
+            match child_node.local_name() {
+                "title" => core.title = child_node.text.as_ref().map(|s| s.clone()),
+                "creator" => core.creator = child_node.text.as_ref().map(|s| s.clone()),
+                "lastModifiedBy" => core.last_modified_by = child_node.text.as_ref().map(|s| s.clone()),
+                "revision" => core.revision = child_node.text.as_ref().and_then(|s| s.parse::<i32>().ok()),
+                "created" => core.created_time = child_node.text.as_ref().map(|s| s.clone()),
+                "modified" => core.modified_time = child_node.text.as_ref().map(|s| s.clone()),
+                _ => (),
             }
-            Err(_) => return None,
         }
 
-        Some(core)
+        Ok(core)
     }
 }
