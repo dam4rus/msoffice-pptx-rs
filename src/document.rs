@@ -8,7 +8,7 @@ use ::xml::XmlNode;
 
 
 /// Document
-pub struct Document {
+pub struct PPTXDocument {
     pub file_path: PathBuf,
     pub app: Option<AppInfo>,
     pub core: Option<Core>,
@@ -20,8 +20,8 @@ pub struct Document {
     pub medias: Vec<PathBuf>,
 }
 
-impl Document {
-    pub fn from_file(pptx_path: &Path) -> Result<Document, Box<::std::error::Error>> {
+impl PPTXDocument {
+    pub fn from_file(pptx_path: &Path) -> Result<Self, Box<::std::error::Error>> {
         let pptx_file = File::open(&pptx_path)?;
         let mut zipper = ZipArchive::new(&pptx_file)?;
 
@@ -55,6 +55,16 @@ impl Document {
                     }
                     Err(err) => println!("{}", err),
                 }
+            } else if file_path.starts_with("ppt/slideMasters") {
+                println!("parsing slide master file: {}", zip_file.name());
+
+                match ::pml::SlideMaster::from_zip_file(&mut zip_file) {
+                    Ok(slide) => {
+                        slide_master_map.insert(file_path, slide);
+                    }
+                    Err(err) => println!("{}", err);;
+                }
+                
             } else if file_path.starts_with("ppt/media") {
                 medias.push(file_path);
             }

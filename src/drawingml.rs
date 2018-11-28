@@ -3453,7 +3453,7 @@ impl OfficeStyleSheet {
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
 
-        match ::drawingml::OfficeStyleSheet::from_xml_element(&xml_node) {
+        match Self::from_xml_element(&xml_node) {
             Ok(v) => Ok(v),
             Err(err) => Err(Box::new(err)),
         }

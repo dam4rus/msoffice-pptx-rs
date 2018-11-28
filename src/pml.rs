@@ -1,7 +1,8 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
 use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
-use ::error::{MissingAttributeError};
+use ::error::{MissingAttributeError, MissingChildNodeError, XmlError};
+use ::zip::read::ZipFile;
 use ::zip::result::ZipError;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
@@ -555,11 +556,55 @@ pub struct PictureNonVisual {
 }
 
 pub struct CommonSlideData {
+    pub name: Option<String>,
     pub background: Option<Background>,
     pub shape_tree: GroupShape,
     pub customer_data_list: Option<CustomerDataList>,
     pub control_list: Vec<Control>,
-    pub name: Option<String>,
+}
+
+impl CommonSlideData {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, XmlError> {
+        let mut name = None;
+        let mut background = None;
+        let mut opt_shape_tree = None;
+        let mut customer_data_list = None;
+        let mut control_list = Vec::new();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "name" => name = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "bg" => background = Some(Background::from_xml_element(child_node)?),
+                "spTree" => opt_shape_tree = Some(GroupShape::from_xml_element(child_node)?),
+                "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
+                "controls" => {
+                    for control_node in child_node.child_nodes {
+                        match control_node.local_name() {
+                            "control" => control_list.push(Control::from_xml_element(control_node)?),
+                            _ => (),
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        let shape_tree = opt_shape_tree.ok_or(XmlError::from(MissingChildNodeError::new("spTree")))?;
+
+        Ok(Self {
+            name,
+            background,
+            shape_tree,
+            customer_data_list,
+            control_list,
+        })
+    }
 }
 
 /// CustomerDataList
@@ -1021,10 +1066,6 @@ pub struct TLByHslColorTransform {
     pub l: ::drawingml::FixedPercentage,
 }
 
-pub struct TopLevelSlideData {
-    pub color_mapping: ::drawingml::ColorMapping,
-}
-
 pub struct ChildSlideData {
     pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
     pub show_master_shapes: Option<bool>, // true
@@ -1033,13 +1074,75 @@ pub struct ChildSlideData {
 
 pub struct SlideMaster {
     pub common_slide_data: CommonSlideData,
-    pub top_level_slide_data: TopLevelSlideData,
+    pub color_mapping: ::drawingml::ColorMapping,
     pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
     pub transition: Option<SlideTransition>,
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
     pub text_styles: Option<SlideMasterTextStyles>,
     pub preserve: Option<bool>, // false
+}
+
+impl SlideMaster {
+    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self, Box<::std::error::Error>> {
+        let mut xml_string = String::new();
+        zip_file.read_to_string(&mut xml_string)?;
+        let xml_node = XmlNode::from_str(xml_string.as_str())?;
+
+        Self::from_xml_element(&xml_node)
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut opt_common_slide_data = None;
+        let mut opt_color_mapping = None;
+        let mut slide_layout_id_list = Vec::new();
+        let mut transition = None;
+        let mut timing = None;
+        let mut header_footer = None;
+        let mut text_styles = None;
+        let mut preserve = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "preserve" => preserve = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cSld" => opt_common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
+                "clrMap" => opt_color_mapping = Some(::drawingml::ColorMapping::from_xml_element(child_node)?),
+                "sldLayoutIdLst" => {
+                    for slide_layout_id_node in child_node.child_nodes {
+                        match slide_layout_id_node.local_name() {
+                            "sldLayoutId" => slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?),
+                            _ => (),
+                        }
+                    }
+                }
+                "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
+                "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
+                "hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
+                "txStyles" => text_styles = Some(SlideMasterTextStyles::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let common_slide_data = opt_common_slide_data.ok_or(XmlError::from(MissingChildNodeError::new("cSld")))?;
+        let color_mapping = opt_color_mapping.ok_or(XmlError::from(MissingChildNodeError::new("clrMap")))?;
+
+        Ok(Self {
+            common_slide_data,
+            color_mapping,
+            slide_layout_id_list,
+            transition,
+            timing,
+            header_footer,
+            text_styles,
+            preserve,
+        })
+    }
 }
 
 pub struct SlideLayout {
