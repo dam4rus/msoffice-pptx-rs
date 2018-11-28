@@ -62,7 +62,7 @@ impl PPTXDocument {
                     Ok(slide) => {
                         slide_master_map.insert(file_path, slide);
                     }
-                    Err(err) => println!("{}", err);;
+                    Err(err) => println!("{}", err),
                 }
                 
             } else if file_path.starts_with("ppt/media") {

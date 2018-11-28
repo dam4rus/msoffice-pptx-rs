@@ -1448,19 +1448,19 @@ impl ColorScheme {
             }
         }
 
-        let name = opt_name.ok_or(XmlError::from(MissingAttributeError::new("name")))?;
-        let dark1 = opt_dk1.ok_or(XmlError::from(MissingChildNodeError::new("dk1")))?;
-        let light1 = opt_lt1.ok_or(XmlError::from(MissingChildNodeError::new("lt1")))?;
-        let dark2 = opt_dk2.ok_or(XmlError::from(MissingChildNodeError::new("dk2")))?;
-        let light2 = opt_lt2.ok_or(XmlError::from(MissingChildNodeError::new("lt2")))?;
-        let accent1 = opt_accent1.ok_or(XmlError::from(MissingChildNodeError::new("accent1")))?;
-        let accent2 = opt_accent2.ok_or(XmlError::from(MissingChildNodeError::new("accent2")))?;
-        let accent3 = opt_accent3.ok_or(XmlError::from(MissingChildNodeError::new("accent3")))?;
-        let accent4 = opt_accent4.ok_or(XmlError::from(MissingChildNodeError::new("accent4")))?;
-        let accent5 = opt_accent5.ok_or(XmlError::from(MissingChildNodeError::new("accent5")))?;
-        let accent6 = opt_accent6.ok_or(XmlError::from(MissingChildNodeError::new("accent6")))?;
-        let hyperlink = opt_hyperlink.ok_or(XmlError::from(MissingChildNodeError::new("hlink")))?;
-        let followed_hyperlink = opt_follow_hyperlink.ok_or(XmlError::from(MissingChildNodeError::new("folHlink")))?;
+        let name = opt_name.ok_or_else(|| XmlError::from(MissingAttributeError::new("name")))?;
+        let dark1 = opt_dk1.ok_or_else(|| XmlError::from(MissingChildNodeError::new("dk1")))?;
+        let light1 = opt_lt1.ok_or_else(|| XmlError::from(MissingChildNodeError::new("lt1")))?;
+        let dark2 = opt_dk2.ok_or_else(|| XmlError::from(MissingChildNodeError::new("dk2")))?;
+        let light2 = opt_lt2.ok_or_else(|| XmlError::from(MissingChildNodeError::new("lt2")))?;
+        let accent1 = opt_accent1.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent1")))?;
+        let accent2 = opt_accent2.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent2")))?;
+        let accent3 = opt_accent3.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent3")))?;
+        let accent4 = opt_accent4.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent4")))?;
+        let accent5 = opt_accent5.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent5")))?;
+        let accent6 = opt_accent6.ok_or_else(|| XmlError::from(MissingChildNodeError::new("accent6")))?;
+        let hyperlink = opt_hyperlink.ok_or_else(|| XmlError::from(MissingChildNodeError::new("hlink")))?;
+        let followed_hyperlink = opt_follow_hyperlink.ok_or_else(|| XmlError::from(MissingChildNodeError::new("folHlink")))?;
 
         Ok(Self {
             name,
@@ -1699,6 +1699,14 @@ pub enum FillProperties {
 }
 
 impl FillProperties {
+    pub fn is_choice_member(name: &str) -> bool {
+        // TODO: implement "blipFill" | "pattFill" | "grpFill"
+        match name {
+            "noFill" | "solidFill" | "gradFill" => true,
+            _ => false,
+        }
+    }
+
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, NotGroupMemberError> {
         match xml_node.local_name() {
             "noFill" => Ok(FillProperties::NoFill),
@@ -1723,8 +1731,9 @@ pub enum LineFillProperties {
 
 impl LineFillProperties {
     pub fn is_choice_member(name: &str) -> bool {
+        // TODO: implement "pattFill"
         match name {
-            "noFill" | "solidFill" | "gradFill" | "pattFill" => true,
+            "noFill" | "solidFill" | "gradFill" => true,
             _ => false,
         }
     }
@@ -2008,6 +2017,15 @@ impl PositiveSize2D {
 pub struct StyleMatrixReference {
     pub index: StyleMatrixColumnIndex,
     pub color: Option<Color>,
+}
+
+impl StyleMatrixReference {
+    // pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    //     let mut opt_index = None;
+    //     let mut color = None;
+
+
+    // }
 }
 
 /// EffectContainer
@@ -2461,8 +2479,8 @@ impl SupplementalFont {
             }
         }
 
-        let script = opt_script.ok_or(MissingAttributeError::new("script"))?;
-        let typeface = opt_typeface.ok_or(MissingAttributeError::new("typeface"))?;
+        let script = opt_script.ok_or_else(|| MissingAttributeError::new("script"))?;
+        let typeface = opt_typeface.ok_or_else(|| MissingAttributeError::new("typeface"))?;
 
         Ok(Self {
             script,
@@ -3077,9 +3095,9 @@ impl FontScheme {
             }
         }
 
-        let name = opt_name.ok_or(XmlError::from(MissingAttributeError::new("name")))?;
-        let major_font = opt_major_font.ok_or(XmlError::from(MissingChildNodeError::new("majorFont")))?;
-        let minor_font = opt_minor_font.ok_or(XmlError::from(MissingChildNodeError::new("minorFont")))?;
+        let name = opt_name.ok_or_else(|| XmlError::from(MissingAttributeError::new("name")))?;
+        let major_font = opt_major_font.ok_or_else(|| XmlError::from(MissingChildNodeError::new("majorFont")))?;
+        let minor_font = opt_minor_font.ok_or_else(|| XmlError::from(MissingChildNodeError::new("minorFont")))?;
 
         Ok(Self {
             name,
@@ -3113,9 +3131,9 @@ impl FontCollection {
             }
         }
 
-        let latin = opt_latin.ok_or(XmlError::from(MissingChildNodeError::new("latin")))?;
-        let east_asian = opt_ea.ok_or(XmlError::from(MissingChildNodeError::new("ea")))?;
-        let complex_script = opt_cs.ok_or(XmlError::from(MissingChildNodeError::new("cs")))?;
+        let latin = opt_latin.ok_or_else(|| XmlError::from(MissingChildNodeError::new("latin")))?;
+        let east_asian = opt_ea.ok_or_else(|| XmlError::from(MissingChildNodeError::new("ea")))?;
+        let complex_script = opt_cs.ok_or_else(|| XmlError::from(MissingChildNodeError::new("cs")))?;
 
         Ok(Self {
             latin,
@@ -3131,8 +3149,54 @@ pub struct NonVisualDrawingProps {
     pub name: String,
     pub description: Option<String>,
     pub hidden: Option<bool>, // false
+    pub title: Option<String>,
     pub hyperlink_click: Option<Hyperlink>,
     pub hyperlink_hover: Option<Hyperlink>,
+}
+
+impl NonVisualDrawingProps {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut opt_id = None;
+        let mut opt_name = None;
+        let mut description = None;
+        let mut hidden = None;
+        let mut title = None;
+        let mut hyperlink_click = None;
+        let mut hyperlink_hover = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "id" => opt_id = Some(value.parse::<DrawingElementId>()?),
+                "name" => opt_name = Some(value.clone()),
+                "descr" => description = Some(value.clone()),
+                "hidden" => hidden = Some(parse_xml_bool(value)?),
+                "title" => title = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        // TODO: implement
+        // for child_node in &xml_node.child_nodes {
+        //     match child_node.local_name() {
+        //         "hlinkClick" => hyperlink_click = Some(Hyperlink::from_xml_element(child_node)?),
+        //         "hlinkHover" => hyperlink_hover = Some(Hyperlink::from_xml_element(child_node)?),
+        //         _ => (),
+        //     }
+        // }
+
+        let id = opt_id.ok_or_else(|| MissingAttributeError::new("id"))?;
+        let name = opt_name.ok_or_else(|| MissingAttributeError::new("name"))?;
+
+        Ok(Self {
+            id,
+            name,
+            description,
+            hidden,
+            title,
+            hyperlink_click,
+            hyperlink_hover,
+        })
+    }
 }
 
 pub struct Locking {
@@ -3455,7 +3519,7 @@ impl OfficeStyleSheet {
 
         match Self::from_xml_element(&xml_node) {
             Ok(v) => Ok(v),
-            Err(err) => Err(Box::new(err)),
+            Err(err) => Err(err.into()),
         }
     }
 
@@ -3478,7 +3542,7 @@ impl OfficeStyleSheet {
             }
         }
 
-        let theme_elements = opt_theme_elements.ok_or(XmlError::from(MissingChildNodeError::new("themeElements")))?;
+        let theme_elements = opt_theme_elements.ok_or_else(|| XmlError::from(MissingChildNodeError::new("themeElements")))?;
 
         Ok(Self {
             name,
@@ -3511,9 +3575,9 @@ impl BaseStyles {
             }
         }
 
-        let color_scheme = opt_color_scheme.ok_or(XmlError::from(MissingChildNodeError::new("clrScheme")))?;
-        let font_scheme = opt_font_scheme.ok_or(XmlError::from(MissingChildNodeError::new("fontScheme")))?;
-        let format_scheme = opt_format_scheme.ok_or(XmlError::from(MissingChildNodeError::new("fmtScheme")))?;
+        let color_scheme = opt_color_scheme.ok_or_else(|| XmlError::from(MissingChildNodeError::new("clrScheme")))?;
+        let font_scheme = opt_font_scheme.ok_or_else(|| XmlError::from(MissingChildNodeError::new("fontScheme")))?;
+        let format_scheme = opt_format_scheme.ok_or_else(|| XmlError::from(MissingChildNodeError::new("fmtScheme")))?;
 
         Ok(Self {
             color_scheme,

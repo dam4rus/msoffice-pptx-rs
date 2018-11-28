@@ -192,17 +192,25 @@ impl From<LimitViolationError> for XmlError {
 /// Error indicating that an xml element's attribute is not a valid bool value
 /// Valid bool values are: true, false, 0, 1
 #[derive(Debug)]
-pub struct ParseBoolError<'a> {
-    pub attr_value: &'a str,
+pub struct ParseBoolError {
+    pub attr_value: String,
 }
 
-impl<'a> fmt::Display for ParseBoolError<'a> {
+impl ParseBoolError {
+    pub fn new(attr_value: String) -> Self {
+        Self {
+            attr_value,
+        }
+    }
+}
+
+impl fmt::Display for ParseBoolError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Xml attribute is not a valid bool value: {}", self.attr_value)
     }
 }
 
-impl<'a> Error for ParseBoolError<'a> {
+impl Error for ParseBoolError {
     fn description(&self) -> &str {
         "Xml attribute is not a valid bool value"
     }

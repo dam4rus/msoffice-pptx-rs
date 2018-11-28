@@ -1,7 +1,7 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
 use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
-use ::error::{MissingAttributeError, MissingChildNodeError, XmlError};
+use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use ::zip::read::ZipFile;
 use ::zip::result::ZipError;
 
@@ -450,9 +450,42 @@ pub struct IndexRange {
 }
 
 pub struct BackgroundProperties {
+    pub shade_to_title: Option<bool>, // false
     pub fill: ::drawingml::FillProperties,
     pub effect: Option<::drawingml::EffectProperties>,
-    pub shade_to_title: Option<bool>, // false
+}
+
+impl BackgroundProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut shade_to_title = None;
+        let mut opt_fill = None;
+        let mut effect = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "shadeToTitle" => shade_to_title = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            if ::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
+                opt_fill = Some(::drawingml::FillProperties::from_xml_element(child_node)?);
+            }
+            // TODO: implement EffectProperties
+            // else if ::drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
+            //    effect = Some(::drawingml::EffectProperties::from_xml_element(child_node)?);
+            //}
+        }
+
+        let fill = opt_fill.ok_or_else(|| MissingChildNodeError::new("EG_FillProperties"))?;
+
+        Ok(Self {
+            shade_to_title,
+            fill,
+            effect,
+        })
+    }
 }
 
 pub enum BackgroundGroup {
@@ -460,9 +493,53 @@ pub enum BackgroundGroup {
     Reference(::drawingml::StyleMatrixReference),
 }
 
+impl BackgroundGroup {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "bgPr" | "bgRef" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        match xml_node.local_name() {
+            "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
+            "bgRef" => Ok(BackgroundGroup::Reference(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
+        }
+    }
+}
+
 pub struct Background {
     pub background: BackgroundGroup,
     pub black_and_white_mode: Option<::drawingml::BlackWhiteMode>, // white
+}
+
+impl Background {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let opt_background = None;
+        let black_and_white_mode = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "bwMode" => black_and_white_mode = Some(value.parse::<::drawingml::BlackWhiteMode>()?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            if BackgroundGroup::is_choice_member(child_node.local_name()) {
+                opt_background = Some(BackgroundGroup::from_xml_element(child_node)?);
+            }
+        }
+
+        let background = opt_background.ok_or_else(|| MissingChildNodeError::new("bgPr|bgRef"))?;
+
+        Ok(Self{
+            background,
+            black_and_white_mode,
+        })
+    }
 }
 
 pub struct Placeholder {
@@ -511,10 +588,76 @@ pub struct GroupShape {
     pub shape_array: Vec<ShapeGroup>,
 }
 
+impl GroupShape {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut opt_non_visual_props = None;
+        let mut opt_group_shape_props = None;
+        let mut shape_array = Vec::new();
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "nvGrpSpPr" => opt_non_visual_props = Some(GroupShapeNonVisual::from_xml_element(child_node)?),
+                "grpSpPr" => opt_group_shape_props = Some(::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
+                "sp" => shape_array.push(ShapeGroup::Shape(Shape::from_xml_element(child_node)?)),
+                "grpSp" => shape_array.push(ShapeGroup::GroupShape(GroupShape::from_xml_element(child_node)?)),
+                "graphicFrame" => shape_array.push(ShapeGroup::GraphicFrame(GraphicalObjectFrame::from_xml_element(child_node)?)),
+                "cxnSp" => shape_array.push(ShapeGroup::Connector(Connector::from_xml_element(child_node)?)),
+                "pic" => shape_array.push(ShapeGroup::Picture(Picture::from_xml_element(child_node)?)),
+                "contentPart" => {
+                    let attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    shape_array.push(ShapeGroup::ContentPart(attr.clone()));
+                }
+                _ => (),
+            }
+        }
+
+        let non_visual_props = opt_non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvGrpSpPr"))?;
+        let group_shape_props = opt_group_shape_props.ok_or_else(|| MissingChildNodeError::new("grpSpPr"))?;
+
+        Ok(Self {
+            non_visual_props,
+            group_shape_props,
+            shape_array,
+        })
+    }
+}
+
 pub struct GroupShapeNonVisual {
     pub drawing_props: ::drawingml::NonVisualDrawingProps,
     pub group_drawing_props: ::drawingml::NonVisualGroupDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
+}
+
+impl GroupShapeNonVisual {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut opt_drawing_props = None;
+        let mut opt_group_drawing_props = None;
+        let mut opt_app_props = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cNvPr" => opt_drawing_props = Some(
+                    ::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?
+                ),
+                "cNvGrpSpPr" => opt_group_drawing_props = Some(
+                    ::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
+                ),
+                "nvPr" => opt_app_props = Some(
+                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
+                ),
+                _ => (),
+            }
+        }
+
+        let drawing_props = opt_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
+        let group_drawing_props = opt_group_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvGrpSpPr"))?;
+        let app_props = opt_app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
+        Ok(Self {
+            drawing_props,
+            group_drawing_props,
+            app_props,
+        })
+    }
 }
 
 pub struct GraphicalObjectFrame {
@@ -564,7 +707,7 @@ pub struct CommonSlideData {
 }
 
 impl CommonSlideData {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, XmlError> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
         let mut name = None;
         let mut background = None;
         let mut opt_shape_tree = None;
@@ -595,7 +738,7 @@ impl CommonSlideData {
             }
         }
 
-        let shape_tree = opt_shape_tree.ok_or(XmlError::from(MissingChildNodeError::new("spTree")))?;
+        let shape_tree = opt_shape_tree.ok_or_else(|| XmlError::from(MissingChildNodeError::new("spTree")))?;
 
         Ok(Self {
             name,
@@ -1129,8 +1272,8 @@ impl SlideMaster {
             }
         }
 
-        let common_slide_data = opt_common_slide_data.ok_or(XmlError::from(MissingChildNodeError::new("cSld")))?;
-        let color_mapping = opt_color_mapping.ok_or(XmlError::from(MissingChildNodeError::new("clrMap")))?;
+        let common_slide_data = opt_common_slide_data.ok_or_else(|| XmlError::from(MissingChildNodeError::new("cSld")))?;
+        let color_mapping = opt_color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new("clrMap")))?;
 
         Ok(Self {
             common_slide_data,

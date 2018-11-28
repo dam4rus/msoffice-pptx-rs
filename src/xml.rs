@@ -132,6 +132,6 @@ pub fn parse_xml_bool(value: &str) -> Result<bool, ::error::ParseBoolError> {
     match value {
         "true" | "1" => Ok(true),
         "false" | "0" => Ok(false),
-        _ => Err(::error::ParseBoolError { attr_value: value }),
+        _ => Err(::error::ParseBoolError::new(String::from(value))),
     }
 }
