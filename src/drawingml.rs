@@ -1,6 +1,9 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
 use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
-use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, XmlError};
+use ::error::{
+    NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, XmlError,
+    ParseBoolError
+};
 use ::relationship::RelationshipId;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
@@ -1980,6 +1983,29 @@ pub struct Point2D {
     pub y: Coordinate,
 }
 
+impl Point2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Point2D, Box<std::error::Error>> {
+        let mut x = None;
+        let mut y = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "x" => x = Some(value.parse::<Coordinate>()?),
+                "y" => y = Some(value.parse::<Coordinate>()?),
+                _ => (),
+            }
+        }
+
+        let x = x.ok_or_else(|| MissingAttributeError::new("x"))?;
+        let y = y.ok_or_else(|| MissingAttributeError::new("y"))?;
+
+        Ok(Self {
+            x,
+            y,
+        })
+    }
+}
+
 /// PositiveSize2D
 pub struct PositiveSize2D {
     pub width: PositiveCoordinate,
@@ -1987,30 +2013,25 @@ pub struct PositiveSize2D {
 }
 
 impl PositiveSize2D {
-    fn new(width: PositiveCoordinate, height: PositiveCoordinate) -> PositiveSize2D {
-        PositiveSize2D {
-            width: width,
-            height: height,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<PositiveSize2D, MissingAttributeError> {
-        let mut opt_width: Option<PositiveCoordinate> = None;
-        let mut opt_height: Option<PositiveCoordinate> = None;
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<PositiveSize2D, Box<std::error::Error>> {
+        let mut width = None;
+        let mut height = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "cx" => opt_width = Some(value.parse().unwrap()),
-                "cy" => opt_height = Some(value.parse().unwrap()),
+                "cx" => width = Some(value.parse::<PositiveCoordinate>()?),
+                "cy" => height = Some(value.parse::<PositiveCoordinate>()?),
                 _ => (),
             }
         }
 
-        match (opt_width, opt_height) {
-            (Some(w), Some(h)) => Ok(PositiveSize2D::new(w, h)),
-            (None, _) => Err(MissingAttributeError { attr: "cx" }),
-            (_, None) => Err(MissingAttributeError { attr: "cy" }),
-        }
+        let width = width.ok_or_else(|| MissingAttributeError::new("cx"))?;
+        let height = height.ok_or_else(|| MissingAttributeError::new("cy"))?;
+
+        Ok(Self {
+            width,
+            height,
+        })
     }
 }
 
@@ -3227,6 +3248,40 @@ pub struct GroupLocking {
     pub no_resize: Option<bool>, // false
 }
 
+impl GroupLocking {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, ParseBoolError> {
+        let mut no_grouping = None;
+        let mut no_ungrouping = None;
+        let mut no_select = None;
+        let mut no_rotate = None;
+        let mut no_change_aspect_ratio = None;
+        let mut no_move = None;
+        let mut no_resize = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "noGrp" => no_grouping = Some(parse_xml_bool(value)?),
+                "noUngrp" => no_ungrouping = Some(parse_xml_bool(value)?),
+                "noSelect" => no_select = Some(parse_xml_bool(value)?),
+                "noRot" => no_rotate = Some(parse_xml_bool(value)?),
+                "noChangeAspect" => no_change_aspect_ratio = Some(parse_xml_bool(value)?),
+                "noMove" => no_move = Some(parse_xml_bool(value)?),
+                "noResize" => no_resize = Some(parse_xml_bool(value)?),
+            }
+        }
+
+        Ok(Self {
+            no_grouping,
+            no_ungrouping,
+            no_select,
+            no_rotate,
+            no_change_aspect_ratio,
+            no_move,
+            no_resize,
+        })
+    }
+}
+
 pub struct GraphicalObjectFrameLocking {
     pub no_grouping: Option<bool>, // false
     pub no_drilldown: Option<bool>, // false
@@ -3252,6 +3307,23 @@ pub struct NonVisualDrawingShapeProps {
 
 pub struct NonVisualGroupDrawingShapeProps {
     pub locks: Option<GroupLocking>,
+}
+
+impl NonVisualGroupDrawingShapeProps {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let mut locks = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "grpSpLocks" => locks = Some(GroupLocking::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            locks
+        })
+    }
 }
 
 pub struct NonVisualGraphicFrameProperties {
@@ -3312,6 +3384,26 @@ pub enum Media {
     QuickTimeFile(QuickTimeFile),
 }
 
+// impl Media {
+//     pub fn is_choice_member(name: &str) -> bool {
+//         match name {
+//             "audioCd" | "wavAudioFile" | "audioFile" | "videoFile" | "quickTimeFile" => true,
+//             _ => false,
+//         }
+//     }
+
+//     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+//         match xml_node.local_name() {
+//             "audioCd" => Ok(Media::AudioCd(AudioCD::from_xml_element(xml_node)?)),
+//             "wavAudioFile" => Ok(Media::WavAudioFile(EmbeddedWAVAudioFile::from_xml_element(xml_node)?)),
+//             "audioFile" => Ok(Media::AudioFile(AudioFile::from_xml_element(xml_node)?)),
+//             "videoFile" => Ok(Media::VideoFile(VideoFile::from_xml_element(xml_node)?)),
+//             "quickTimeFile" => Ok(Media::QuickTimeFile(QuickTimeFile::from_xml_element(xml_node)?)),
+//             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Media").into()),
+//         }
+//     }
+// }
+
 pub struct Transform2D {
     pub offset: Option<Point2D>,
     pub extents:  Option<PositiveSize2D>,
@@ -3321,21 +3413,99 @@ pub struct Transform2D {
 }
 
 pub struct GroupTransform2D {
+    pub rotate_angle: Option<Angle>, // 0
+    pub flip_horizontal: Option<bool>, // false
+    pub flip_vertical: Option<bool>, // false
     pub offset: Option<Point2D>,
     pub extents:  Option<PositiveSize2D>,
     pub child_offset: Option<Point2D>,
     pub child_extents: Option<PositiveSize2D>,
-    pub rotate_angle: Option<Angle>, // 0
-    pub flip_horizontal: Option<bool>, // false
-    pub flip_vertical: Option<bool>, // false
+}
+
+impl GroupTransform2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let rotate_angle = None;
+        let flip_horizontal = None;
+        let flip_vertical = None;
+        let offset = None;
+        let extents = None;
+        let child_offset = None;
+        let child_extents = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "rot" => rotate_angle = Some(value.parse::<Angle>()?),
+                "flipH" => flip_horizontal = Some(parse_xml_bool(value)?),
+                "flipV" => flip_vertical = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "off" => offset = Some(Point2D::from_xml_element(child_node)?),
+                "ext" => extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                "chOff" => child_offset = Some(Point2D::from_xml_element(child_node)?),
+                "chExt" => child_extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            rotate_angle,
+            flip_horizontal,
+            flip_vertical,
+            offset,
+            extents,
+            child_offset,
+            child_extents,
+        })
+    }
 }
 
 pub struct GroupShapeProperties {
+    pub black_and_white_mode: Option<BlackWhiteMode>,
     pub transform: Option<GroupTransform2D>,
     pub fill_properties: Option<FillProperties>,
     pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
-    pub black_and_white_mode: Option<BlackWhiteMode>,
+}
+
+impl GroupShapeProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+        let black_and_white_mode = None;
+        let transform = None;
+        let fill_properties = None;
+        let effect_properties = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "bwMode" => black_and_white_mode = Some(value.parse::<BlackWhiteMode>()?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            let local_name = child_node.local_name();
+            if FillProperties::is_choice_member(local_name) {
+                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
+            //} else if EffectProperties::is_choice_member(local_name) {
+            //    effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+            } else {
+                match child_node.local_name() {
+                    "xfrm" => transform = Some(GroupTransform2D::from_xml_element(child_node)?),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(Self {
+            black_and_white_mode,
+            transform,
+            fill_properties,
+            effect_properties,
+        })
+    }
 }
 
 pub enum Geometry {

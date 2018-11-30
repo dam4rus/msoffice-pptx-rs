@@ -1,7 +1,7 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
 use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
-use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
+use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError, ParseBoolError};
 use ::zip::read::ZipFile;
 use ::zip::result::ZipError;
 
@@ -14,6 +14,8 @@ pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
 pub type SlideSizeCoordinate = ::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
 pub type Name = String;
 pub type TLSubShapeId = ::drawingml::ShapeId;
+
+pub type Result<T> = ::std::result::Result<T>;
 
 decl_simple_type_enum! {
     pub enum ConformanceClass {
@@ -456,7 +458,7 @@ pub struct BackgroundProperties {
 }
 
 impl BackgroundProperties {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut shade_to_title = None;
         let mut opt_fill = None;
         let mut effect = None;
@@ -501,7 +503,7 @@ impl BackgroundGroup {
         }
     }
 
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
             "bgRef" => Ok(BackgroundGroup::Reference(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
@@ -516,7 +518,7 @@ pub struct Background {
 }
 
 impl Background {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let opt_background = None;
         let black_and_white_mode = None;
 
@@ -550,13 +552,79 @@ pub struct Placeholder {
     pub has_custom_prompt: Option<bool>, // false
 }
 
+impl Placeholder {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let placeholder_type = None;
+        let orientation = None;
+        let size = None;
+        let index = None;
+        let has_custom_prompt = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "type" => placeholder_type = Some(value.parse::<PlaceholderType>()?),
+                "orient" => orientation = Some(value.parse::<Direction>()?),
+                "sz" => size = Some(value.parse::<PlaceholderSize>()?),
+                "idx" => index = Some(value.parse::<u32>()?),
+                "hasCustomPrompt" => has_custom_prompt = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            placeholder_type,
+            orientation,
+            size,
+            index,
+            has_custom_prompt,
+        })
+    }
+}
+
 pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
     pub media: Option<::drawingml::Media>,
     //pub customer_data_list: Option<CustomerDataList>,
+}
 
+impl ApplicationNonVisualDrawingProps {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let is_photo = None;
+        let is_user_drawn = None;
+        let placeholder = None;
+        let media = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "isPhoto" => is_photo = Some(parse_xml_bool(value)?),
+                "userDrawn" => is_user_drawn = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            let local_name = child_node.local_name();
+            // TODO implement
+            // if ::drawingml::Media::is_choice_member(local_name) {
+            //     media = ::drawingml::Media::from_xml_element(child_node)?;
+            // } else {
+            match child_node.local_name() {
+                "ph" => placeholder = Some(Placeholder::from_xml_element(child_node)?),
+                "custDataLst" => (), // TODO implement
+                _ => (),
+            }
+            //}
+        }
+
+        Ok(Self {
+            is_photo,
+            is_user_drawn,
+            placeholder,
+            media,
+        })
+    }
 }
 
 pub enum ShapeGroup {
@@ -569,17 +637,82 @@ pub enum ShapeGroup {
 }
 
 pub struct Shape {
+    pub use_bg_fill: Option<bool>, // false
     pub non_visual_props: ShapeNonVisual,
     pub shape_props: ::drawingml::ShapeProperties,
     pub style: Option<::drawingml::ShapeStyle>,
     pub text_body: Option<::drawingml::TextBody>,
-    pub use_bg_fill: Option<bool>, // false
+}
+
+impl Shape {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut use_bg_fill = None;
+        let mut non_visual_props = None;
+        let mut shape_props = None;
+        let mut style = None;
+        let mut text_body = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "useBgFill" => use_bg_fill = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "nvSpPr" => non_visual_props = Some(ShapeNonVisual::from_xml_element(child_node)?),
+                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
+                "style" => style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
+                "txBody" => text_body = Some(::drawingml::TextBody::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvSpPr"))?;
+        let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new("spPr"))?;
+
+        Ok(Self {
+            use_bg_fill,
+            non_visual_props,
+            shape_props,
+            style,
+            text_body,
+        })
+    }
 }
 
 pub struct ShapeNonVisual {
     pub drawing_props: ::drawingml::NonVisualDrawingProps,
     pub shape_drawing_props: ::drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
+}
+
+impl ShapeNonVisual {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut drawing_props = None;
+        let mut shape_drawing_props = None;
+        let mut app_props = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvSpPr" => shape_drawing_props = Some(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
+        let shape_drawing_props = shape_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvSpPr"))?;
+        let app_props = app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
+
+        Ok(Self {
+            drawing_props,
+            shape_drawing_props,
+            app_props,
+        })
+    }
 }
 
 pub struct GroupShape {
@@ -589,7 +722,7 @@ pub struct GroupShape {
 }
 
 impl GroupShape {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut opt_non_visual_props = None;
         let mut opt_group_shape_props = None;
         let mut shape_array = Vec::new();
@@ -629,7 +762,7 @@ pub struct GroupShapeNonVisual {
 }
 
 impl GroupShapeNonVisual {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut opt_drawing_props = None;
         let mut opt_group_drawing_props = None;
         let mut opt_app_props = None;
@@ -707,7 +840,7 @@ pub struct CommonSlideData {
 }
 
 impl CommonSlideData {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut name = None;
         let mut background = None;
         let mut opt_shape_tree = None;
@@ -1227,7 +1360,7 @@ pub struct SlideMaster {
 }
 
 impl SlideMaster {
-    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
@@ -1235,7 +1368,7 @@ impl SlideMaster {
         Self::from_xml_element(&xml_node)
     }
 
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut opt_common_slide_data = None;
         let mut opt_color_mapping = None;
         let mut slide_layout_id_list = Vec::new();
@@ -1472,7 +1605,7 @@ impl Presentation {
         }
     }
 
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation, Box<::std::error::Error>>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation>
     where
         R: Read + Seek
     {
