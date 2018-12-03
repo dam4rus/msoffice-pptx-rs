@@ -3030,15 +3030,81 @@ pub struct TextParagraph {
     pub end_paragraph_char_properties: Option<TextCharacterProperties>,
 }
 
+impl TextParagraph {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut properties = None;
+        let mut text_run_list = Vec::new();
+        let mut end_paragraph_char_properties = None;
+
+        for child_node in xml_node.child_nodes {
+            let local_name = child_node.local_name();
+            if TextRun::is_choice_member(local_name) {
+                text_run_list.push(TextRun::from_xml_element(child_node)?);
+                } else {
+                match child_node.local_name() {
+                    "pPr" => properties = Some(TextParagraphProperties::from_xml_element(child_node)?),
+                    "endParaRPr" => end_paragraph_char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(Self {
+            properties,
+            text_run_list,
+            end_paragraph_char_properties,
+        })
+    }
+}
+
 pub enum TextRun {
     RegularTextRun(RegularTextRun),
     LineBreak(TextLineBreak),
     TextField(TextField),
 }
 
+impl TextRun {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "r" | "br" | "fld" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "r" => Ok(TextRun::RegularTextRun(RegularTextRun::from_xml_element(xml_node)?)),
+            "br" => Ok(TextRun::LineBreak(TextLineBreak::from_xml_element(xml_node)?)),
+            "fld" => Ok(TextRun::TextField(TextField::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextRun").into()),
+        }
+    }
+}
+
 pub struct RegularTextRun {
     pub char_properties: Option<TextCharacterProperties>,
     pub text: String,
+}
+
+impl RegularTextRun {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut char_properties = None;
+        let mut text = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "rPr" => char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                "t" => text = Some(child_node.text.clone()),
+                _ => (),
+            }
+        }
+
+        let text = text.ok_or_else(|| MissingChildNodeError::new("t"))?;
+        Ok(Self {
+            char_properties,
+            text,
+        })
+    }
 }
 
 pub struct TextLineBreak {
@@ -3260,9 +3326,47 @@ pub enum TextAutoFit {
     ShapeAutoFit,
 }
 
+impl TextAutoFit {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "noAutofit" | "normAutofit" | "spAutoFit" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "noAutofit" => Ok(TextAutoFit::NoAutoFit),
+            "normAutofit" => Ok(TextAutoFit::NormalAutoFit(TextNormalAutoFit::from_xml_element(xml_node)?)),
+            "spAutoFit" => Ok(TextAutoFit::ShapeAutoFit),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextAutofit").into()),
+        }
+    }
+}
+
 pub struct TextNormalAutoFit {
     pub font_scale: Option<TextFontScalePercent>, // 100000
     pub line_spacing_reduction: Option<TextSpacingPercent>, // 0
+}
+
+impl TextNormalAutoFit {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut font_scale = None;
+        let mut line_spacing_reduction = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "fontScale" => font_scale = Some(value.parse::<TextFontScalePercent>()?),
+                "lnSpcReduction" => line_spacing_reduction = Some(value.parse::<TextSpacingPercent>()?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            font_scale,
+            line_spacing_reduction
+        })
+    }
 }
 
 pub struct PresetTextShape {

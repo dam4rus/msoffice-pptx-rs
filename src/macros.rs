@@ -8,12 +8,12 @@ macro_rules! decl_simple_type_enum {
         }
 
         impl ::std::str::FromStr for $name {
-            type Err = String;
+            type Err = ::error::ParseEnumError;
 
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
+            fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
                 match s {
                     $($str_value => Ok($name::$variant)),*,
-                    _ => Err(format!("Cannot convert string to {}", stringify!($name))),
+                    _ => Err(Self::Err::new(stringify!($name))),
                 }
             }
         }

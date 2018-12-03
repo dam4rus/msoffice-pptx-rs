@@ -15,7 +15,7 @@ pub type SlideSizeCoordinate = ::drawingml::PositiveCoordinate32; // TODO: 91440
 pub type Name = String;
 pub type TLSubShapeId = ::drawingml::ShapeId;
 
-pub type Result<T> = ::std::result::Result<T>;
+pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
 
 decl_simple_type_enum! {
     pub enum ConformanceClass {
@@ -890,21 +890,28 @@ pub struct CustomerDataList {
 }
 
 impl CustomerDataList {
-    fn from_xml_element(xml_node: &XmlNode) -> Result<CustomerDataList, String> {
-        let mut instance = CustomerDataList {
-            customer_data_list: Vec::new(),
-            tags: None,
-        };
+    fn from_xml_element(xml_node: &XmlNode) -> Result<CustomerDataList> {
+        let mut customer_data_list = Vec::new();
+        let mut tags = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "custData" => instance.customer_data_list.push(child_node.attribute("r:id").unwrap().parse().unwrap()),
-                "tags" => instance.tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "custData" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    customer_data_list.push(id_attr.clone());
+                }
+                "tags" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    tags = Some(id_attr.clone());
+                }
                 _ => (),
             }
         }
 
-        Ok(instance)
+        Ok(Self {
+            customer_data_list,
+            tags,
+        })
     }
 }
 
@@ -1451,35 +1458,45 @@ pub struct EmbeddedFontListEntry {
 }
 
 impl EmbeddedFontListEntry {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<EmbeddedFontListEntry, String> {
-        let mut opt_font = None;
-        let mut opt_regular = None;
-        let mut opt_bold = None;
-        let mut opt_italic = None;
-        let mut opt_bold_italic = None;
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut font = None;
+        let mut regular = None;
+        let mut bold = None;
+        let mut italic = None;
+        let mut bold_italic = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "font" => opt_font = Some(::drawingml::TextFont::from_xml_element(child_node).unwrap()),
-                "regular" => opt_regular = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
-                "bold" => opt_bold = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
-                "italic" => opt_italic = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
-                "boldItalic" => opt_bold_italic = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "font" => font = Some(::drawingml::TextFont::from_xml_element(child_node)?),
+                "regular" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    regular = Some(id_attr.clone());
+                }
+                "bold" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    bold = Some(id_attr.clone());
+                }
+                "italic" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    italic = Some(id_attr.clone());
+                }
+                "boldItalic" => {
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    bold_italic = Some(id_attr.clone());
+                }
                 _ => (),
             }
         }
 
-        if let Some(font) = opt_font {
-            Ok(EmbeddedFontListEntry {
-                font: font,
-                regular: opt_regular,
-                bold: opt_bold,
-                italic: opt_italic,
-                bold_italic: opt_bold_italic,
-            })
-        } else {
-            Err(String::from("Failed to create EmbeddedFontListEntry from xml element"))
-        }
+        let font = font.ok_or_else(|| MissingChildNodeError::new("font"))?;
+
+        Ok(Self {
+            font,
+            regular,
+            bold,
+            italic,
+            bold_italic,
+        })
     }
 }
 
@@ -1487,32 +1504,44 @@ impl EmbeddedFontListEntry {
 pub struct CustomShow {
     pub name: Name,
     pub id: u32,
-    pub slide_list: Vec<RelationshipId>,
+    pub slides: Vec<RelationshipId>,
 }
 
 impl CustomShow {
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow, MissingAttributeError> {
-        let name = xml_node.attribute("name").unwrap().parse().unwrap();
-        let id = xml_node.attribute("id").unwrap().parse().unwrap();
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow> {
+        let mut name = None;
+        let mut id = None;
+        
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "name" => name = Some(value.clone()),
+                "id" => id = Some(value.parse::<u32>()?),
+                _ => (),
+            }
+        }
 
-        let mut instance = CustomShow {
-            name: name,
-            id: id,
-            slide_list: Vec::new(),
-        };
+        let mut slides = Vec::new();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "sldLst" => {
                     for slide_node in &child_node.child_nodes {
-                        instance.slide_list.push(slide_node.attribute("r:id").unwrap().parse().unwrap());
+                        let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        slides.push(id_attr.clone());
                     }
                 }
                 _ => (),
             }
         }
 
-        Ok(instance)
+        let name = name.ok_or_else(|| MissingAttributeError::new("name"))?;
+        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+
+        Ok(Self {
+            name,
+            id,
+            slides,
+        })
     }
 }
 
@@ -1574,38 +1603,7 @@ pub struct Presentation {
 }
 
 impl Presentation {
-    fn new() -> Self {
-        Self {
-            server_zoom: None,
-            first_slide_num: None,
-            show_special_pls_on_title_slide: None,
-            rtl: None,
-            remove_personal_info_on_save: None,
-            compatibility_mode: None,
-            strict_first_and_last_chars: None,
-            embed_true_type_fonts: None,
-            save_subset_fonts: None,
-            auto_compress_pictures: None,
-            bookmark_id_seed: None,
-            conformance: None,
-            slide_master_id_list: Vec::new(),
-            notes_master_id_list: Vec::new(),
-            handout_master_id_list: Vec::new(),
-            slide_id_list: Vec::new(),
-            slide_size: None,
-            notes_size: None,
-            smart_tags: None,
-            embedded_font_list: Vec::new(),
-            custom_show_list: Vec::new(),
-            photo_album: None,
-            customer_data_list: None,
-            kinsoku: None,
-            default_text_style: None,
-            modify_verifier: None,
-        }
-    }
-
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Presentation>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self>
     where
         R: Read + Seek
     {
@@ -1615,127 +1613,145 @@ impl Presentation {
 
         let mut presentation = Self::new();
         let root = XmlNode::from_str(xml_string.as_str())?;
-        presentation.parse_presentation_element(&root);
-
-        Ok(presentation)
+        Self::from_xml_element(&root)
     }
 
-    fn parse_presentation_element(&mut self, presentation_node: &XmlNode) {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut server_zoom = None;
+        let mut first_slide_num = None;
+        let mut show_special_pls_on_title_slide = None;
+        let mut rtl = None;
+        let mut remove_personal_info_on_save = None;
+        let mut compatibility_mode = None;
+        let mut strict_first_and_last_chars = None;
+        let mut embed_true_type_fonts = None;
+        let mut save_subset_fonts = None;
+        let mut auto_compress_pictures = None;
+        let mut bookmark_id_seed = None;
+        let mut conformance = None;
 
-        for (attr, value) in &presentation_node.attributes {
+        for (attr, value) in &xml_node.attributes {
             println!("parsing presentation attribute: {}", attr);
             match attr.as_str() {
-                "serverZoom" => self.server_zoom = parse_optional_xml_attribute(value),// Some(parse_optional_xml_attribute(&a.value, 50_000) as f32 / 100_000.0),
-                "firstSlideNum" => self.first_slide_num = parse_optional_xml_attribute(value),
-                "showSpecialPlsOnTitleSld" => self.show_special_pls_on_title_slide = parse_optional_xml_attribute(value),
-                "rtl" => self.rtl = parse_optional_xml_attribute(value),
-                "removePersonalInfoOnSave" => self.remove_personal_info_on_save = parse_optional_xml_attribute(value),
-                "compatMode" => self.compatibility_mode = parse_optional_xml_attribute(value),
-                "strictFirstAndLastChars" => self.strict_first_and_last_chars = parse_optional_xml_attribute(value),
-                "embedTrueTypeFonts" => self.embed_true_type_fonts = parse_optional_xml_attribute(value),
-                "saveSubsetFonts" => self.save_subset_fonts = parse_xml_bool(value).ok(),
-                "autoCompressPictures" => self.auto_compress_pictures = parse_optional_xml_attribute(value),
-                "bookmarkIdSeed" => self.bookmark_id_seed = parse_optional_xml_attribute(value),
-                "conformance" => self.conformance = Some(attr.parse().unwrap()),
+                "serverZoom" => server_zoom = Some(value.parse::<::drawingml::Percentage>()?),
+                "firstSlideNum" => first_slide_num = Some(value.parse::<i32>()?),
+                "showSpecialPlsOnTitleSld" => show_special_pls_on_title_slide = Some(parse_xml_bool(value)?),
+                "rtl" => rtl = Some(parse_xml_bool(value)?),
+                "removePersonalInfoOnSave" => remove_personal_info_on_save = Some(parse_xml_bool(value)?),
+                "compatMode" => compatibility_mode = Some(parse_xml_bool(value)?),
+                "strictFirstAndLastChars" => strict_first_and_last_chars = Some(parse_xml_bool(value)?),
+                "embedTrueTypeFonts" => embed_true_type_fonts = Some(parse_xml_bool(value)?),
+                "saveSubsetFonts" => save_subset_fonts = Some(parse_xml_bool(value)?),
+                "autoCompressPictures" => auto_compress_pictures = Some(parse_xml_bool(value)?),
+                "bookmarkIdSeed" => bookmark_id_seed = Some(parse_xml_bool(value)?),
+                "conformance" => conformance = Some(attr.parse::<ConformanceClass>()?),
                 _ => (),
             }
         }
+        
+        let mut slide_master_id_list = Vec::new();
+        let mut notes_master_id_list = Vec::new();
+        let mut handout_master_id_list = Vec::new();
+        let mut slide_id_list = Vec::new();
 
-        for child_node in &presentation_node.child_nodes {
+        for child_node in &xml_node.child_nodes {
             println!("parsing child_node: {}", child_node);
             match child_node.local_name() {
                 "sldMasterIdLst" => {
                     for slide_master_id_node in &child_node.child_nodes {
-                        let mut opt_id = None;
-                        let mut opt_r_id = None;
+                        let mut id = None;
+                        let mut relationship_id = None;
 
                         for (attr, value) in &slide_master_id_node.attributes {
                             match attr.as_str() {
-                                "id" => opt_id = parse_optional_xml_attribute(value),
-                                "r:id" => opt_r_id =  Some(value.parse().unwrap()),
+                                "id" => id = Some(value.parse::<u32>()?),
+                                "r:id" => relationship_id =  Some(value.clone()),
                                 _ => (),
                             }
                         }
 
                         // r:id attribute is required
-                        if let Some(r_id) = opt_r_id {
-                            self.slide_master_id_list.push(SlideMasterIdListEntry {
-                                id: opt_id,
-                                relationship_id: r_id,
-                            });
-                        }
+                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        slide_master_id_list.push(SlideMasterIdListEntry {
+                            id,
+                            relationship_id,
+                        });
                     }
                 },
                 "notesMasterIdLst" => {
                     for notes_master_id_node in &child_node.child_nodes {
-                        self.notes_master_id_list.push(NotesMasterIdListEntry {
-                            relationship_id: notes_master_id_node.attribute("r:id").unwrap().parse().unwrap(),
+                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        notes_master_id_list.push(NotesMasterIdListEntry {
+                            relationship_id: r_id_attr.clone(),
                         });
                     }
                 },
                 "handoutMasterIdLst" => {
-                    for handout_master_id_node in &child_node.child_nodes {
-                        self.handout_master_id_list.push(HandoutMasterIdListEntry{
-                            relationship_id: handout_master_id_node.attribute("r:id").unwrap().parse().unwrap(),
+                    for notes_master_id_node in &child_node.child_nodes {
+                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        handout_master_id_list.push(HandoutMasterIdListEntry {
+                            relationship_id: r_id_attr.clone(),
                         });
                     }
                 },
                 "sldIdLst" => {
                     for slide_id_node in &child_node.child_nodes {
-                        let mut opt_id = None;
-                        let mut opt_r_id = None;
+                        let mut id = None;
+                        let mut relationship_id = None;
 
                         for (attr, value) in &slide_id_node.attributes {
                             match attr.as_str() {
-                                "id" => opt_id = Some(value.parse().unwrap()),
-                                "r:id" => opt_r_id = Some(value.parse().unwrap()),
+                                "id" => id = Some(value.parse::<u32>()?),
+                                "r:id" => relationship_id = Some(value.clone()),
                                 _ => (),
                             }
                         }
 
-                        if let (Some(id), Some(r_id)) = (opt_id, opt_r_id) {
-                            self.slide_id_list.push(SlideIdListEntry {
-                                id: id,
-                                relationship_id: r_id,
-                            });
-                        }
+                        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+
+                        slide_id_list.push(SlideIdListEntry {
+                            id,
+                            relationship_id,
+                        });
                     }
                 },
                 "sldSz" => {
-                    let mut opt_width = None;
-                    let mut opt_height = None;
-                    let mut opt_size_type = None;
+                    let mut width = None;
+                    let mut height = None;
+                    let mut size_type = None;
 
                     for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
-                            "cx" => opt_width = Some(value.parse().unwrap()),
-                            "cy" => opt_height = Some(value.parse().unwrap()),
-                            "type" => opt_size_type = parse_optional_xml_attribute(value),
+                            "cx" => width = Some(value.parse::<SlideSizeCoordinate>()?),
+                            "cy" => height = Some(value.parse::<SlideSizeCoordinate>()?),
+                            "type" => size_type = Some(value.parse::<SlideSizeType>()?),
                             _ => (),
                         }
                     }
 
-                    if let (Some(w), Some(h)) = (opt_width, opt_height) {
-                        self.slide_size = Some(SlideSize {
-                            width: w,
-                            height: h,
-                            size_type: opt_size_type,
-                        })
-                    }
+                    let width = width.ok_or_else(|| MissingAttributeError::new("cx"))?;
+                    let height = height.ok_or_else(|| MissingAttributeError::new("cy"))?;
+
+                    slide_size = Some(SlideSize {
+                        width,
+                        height,
+                        size_type,
+                    })
                 }
-                "notesSz" => self.notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
-                "smartTags" => self.smart_tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
+                "notesSz" => notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
+                "smartTags" => smart_tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
                 "embeddedFontLst" => (),
                 "embeddedFont" => {
                     match EmbeddedFontListEntry::from_xml_element(child_node) {
-                        Ok(entry) => self.embedded_font_list.push(entry),
+                        Ok(entry) => embedded_font_list.push(entry),
                         Err(err) => println!("{}", err),
                     }
                 }
                 "custShowLst" => (),
                 "custShow" => {
                     match CustomShow::from_xml_element(child_node) {
-                        Ok(custom_show) => self.custom_show_list.push(custom_show),
+                        Ok(custom_show) => custom_show_list.push(custom_show),
                         Err(err) => println!("{}", err),
                     }
                 }
@@ -1797,5 +1813,7 @@ impl Presentation {
 		}
                             */
 
+
+        Ok(presentation)
     }
 }

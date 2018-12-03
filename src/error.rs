@@ -189,6 +189,30 @@ impl From<LimitViolationError> for XmlError {
     }
 }
 
+/// Error indicating that the parsed xml document is invalid
+#[derive(Debug)]
+pub struct InvalidXmlError {
+}
+
+impl InvalidXmlError {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl fmt::Display for InvalidXmlError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid xml document")
+    }
+}
+
+impl Error for InvalidXmlError {
+    fn description(&self) -> &str {
+        "Invalid xml error"
+    }
+}
+
+
 /// Error indicating that an xml element's attribute is not a valid bool value
 /// Valid bool values are: true, false, 0, 1
 #[derive(Debug)]
@@ -216,25 +240,27 @@ impl Error for ParseBoolError {
     }
 }
 
-/// Error indicating that the parsed xml document is invalid
-#[derive(Debug)]
-pub struct InvalidXmlError {
+/// Error indicating that a string cannot be converted to an enum type
+pub struct ParseEnumError {
+    enum_name: &'static str,
 }
 
-impl InvalidXmlError {
-    pub fn new() -> Self {
-        Self {}
+impl ParseEnumError {
+    pub fn new(enum_name: &'static str) -> Self {
+        Self {
+            enum_name,
+        }
     }
 }
 
-impl fmt::Display for InvalidXmlError {
+impl fmt::Display for ParseEnumError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid xml document")
+        write!(f, "Cannot convert string to {}", self.enum_name)
     }
 }
 
-impl Error for InvalidXmlError {
+impl Error for ParseEnumError {
     fn description(&self) -> &str {
-        "Invalid xml error"
+        "Cannot convert string to enum"
     }
 }
