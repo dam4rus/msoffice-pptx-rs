@@ -2062,12 +2062,20 @@ pub struct StyleMatrixReference {
 }
 
 impl StyleMatrixReference {
-    // pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self, Box<::std::error::Error>> {
-    //     let mut opt_index = None;
-    //     let mut color = None;
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let idx_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new("idx"))?;
+        let index = idx_attr.parse()?;
 
+        let color = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(Color::from_xml_element(node)?),
+            None => None,
+        };
 
-    // }
+        Ok(Self {
+            index,
+            color,
+        })
+    }
 }
 
 /// EffectContainer
@@ -3036,11 +3044,11 @@ impl TextParagraph {
         let mut text_run_list = Vec::new();
         let mut end_paragraph_char_properties = None;
 
-        for child_node in xml_node.child_nodes {
+        for child_node in &xml_node.child_nodes {
             let local_name = child_node.local_name();
             if TextRun::is_choice_member(local_name) {
                 text_run_list.push(TextRun::from_xml_element(child_node)?);
-                } else {
+            } else {
                 match child_node.local_name() {
                     "pPr" => properties = Some(TextParagraphProperties::from_xml_element(child_node)?),
                     "endParaRPr" => end_paragraph_char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
@@ -3094,7 +3102,7 @@ impl RegularTextRun {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "rPr" => char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
-                "t" => text = Some(child_node.text.clone()),
+                "t" => text = child_node.text.clone(),
                 _ => (),
             }
         }
@@ -3111,12 +3119,63 @@ pub struct TextLineBreak {
     pub char_properties: Option<TextCharacterProperties>,
 }
 
+impl TextLineBreak {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let char_properties = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(TextCharacterProperties::from_xml_element(node)?),
+            None => None,
+        };
+
+        Ok(Self {
+            char_properties,
+        })
+    }
+}
+
 pub struct TextField {
-    pub char_properties: Option<TextCharacterProperties>,
-    pub paragraph_properties: Option<TextParagraph>,
-    pub text: String,
     pub id: Guid,
     pub field_type: Option<String>,
+    pub char_properties: Option<TextCharacterProperties>,
+    pub paragraph_properties: Option<TextParagraph>,
+    pub text: Option<String>,
+}
+
+impl TextField {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut id = None;
+        let mut field_type = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "id" => id = Some(value.clone()),
+                "type" => field_type = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+
+        let mut char_properties = None;
+        let mut paragraph_properties = None;
+        let mut text = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "rPr" => char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                "pPr" => paragraph_properties = Some(TextParagraph::from_xml_element(child_node)?),
+                "t" => text = child_node.text.clone(),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            id,
+            field_type,
+            char_properties,
+            paragraph_properties,
+            text,
+        })
+    }
 }
 
 /// TextListStyle
@@ -3376,7 +3435,20 @@ pub struct PresetTextShape {
 
 impl PresetTextShape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new("prst"))?;
+        let preset = preset_attr.parse()?;
 
+        let mut adjust_value_list = Vec::new();
+        if let Some(node) = xml_node.child_nodes.get(0) {
+            for av_node in &node.child_nodes {
+                adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
+            }
+        }
+
+        Ok(Self {
+            preset,
+            adjust_value_list,
+        })
     }
 }
 
@@ -3710,6 +3782,28 @@ pub enum Geometry {
 pub struct GeomGuide {
     pub name: GeomGuideName,
     pub formula: GeomGuideFormula,
+}
+
+impl GeomGuide {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut name = None;
+        let mut formula = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "name" => name = Some(value.clone()),
+                "fmla" => formula = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let name = name.ok_or_else(|| MissingAttributeError::new("name"))?;
+        let formula = formula.ok_or_else(|| MissingAttributeError::new("fmla"))?;
+        Ok(Self {
+            name,
+            formula,
+        })
+    }
 }
 
 pub enum AdjustHandle {

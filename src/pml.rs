@@ -1633,8 +1633,8 @@ impl Presentation {
         for (attr, value) in &xml_node.attributes {
             println!("parsing presentation attribute: {}", attr);
             match attr.as_str() {
-                "serverZoom" => server_zoom = Some(value.parse::<::drawingml::Percentage>()?),
-                "firstSlideNum" => first_slide_num = Some(value.parse::<i32>()?),
+                "serverZoom" => server_zoom = Some(value.parse()?),
+                "firstSlideNum" => first_slide_num = Some(value.parse()?),
                 "showSpecialPlsOnTitleSld" => show_special_pls_on_title_slide = Some(parse_xml_bool(value)?),
                 "rtl" => rtl = Some(parse_xml_bool(value)?),
                 "removePersonalInfoOnSave" => remove_personal_info_on_save = Some(parse_xml_bool(value)?),
@@ -1643,8 +1643,8 @@ impl Presentation {
                 "embedTrueTypeFonts" => embed_true_type_fonts = Some(parse_xml_bool(value)?),
                 "saveSubsetFonts" => save_subset_fonts = Some(parse_xml_bool(value)?),
                 "autoCompressPictures" => auto_compress_pictures = Some(parse_xml_bool(value)?),
-                "bookmarkIdSeed" => bookmark_id_seed = Some(parse_xml_bool(value)?),
-                "conformance" => conformance = Some(attr.parse::<ConformanceClass>()?),
+                "bookmarkIdSeed" => bookmark_id_seed = Some(value.parse()?),
+                "conformance" => conformance = Some(value.parse()?),
                 _ => (),
             }
         }
@@ -1653,6 +1653,16 @@ impl Presentation {
         let mut notes_master_id_list = Vec::new();
         let mut handout_master_id_list = Vec::new();
         let mut slide_id_list = Vec::new();
+        let mut slide_size = None;
+        let mut notes_size = None;
+        let mut smart_tags = None;
+        let mut embedded_font_list = Vec::new();
+        let mut custom_show_list = Vec::new();
+        let mut photo_album = None;
+        let mut customer_data_list = None;
+        let mut kinsoku = None;
+        let mut default_text_style = None;
+        let mut modify_verifier = None;
 
         for child_node in &xml_node.child_nodes {
             println!("parsing child_node: {}", child_node);
@@ -1723,9 +1733,9 @@ impl Presentation {
 
                     for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
-                            "cx" => width = Some(value.parse::<SlideSizeCoordinate>()?),
-                            "cy" => height = Some(value.parse::<SlideSizeCoordinate>()?),
-                            "type" => size_type = Some(value.parse::<SlideSizeType>()?),
+                            "cx" => width = Some(value.parse()?),
+                            "cy" => height = Some(value.parse()?),
+                            "type" => size_type = Some(value.parse()?),
                             _ => (),
                         }
                     }
@@ -1739,66 +1749,69 @@ impl Presentation {
                         size_type,
                     })
                 }
-                "notesSz" => notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node).unwrap()),
-                "smartTags" => smart_tags = Some(child_node.attribute("r:id").unwrap().parse().unwrap()),
-                "embeddedFontLst" => (),
-                "embeddedFont" => {
-                    match EmbeddedFontListEntry::from_xml_element(child_node) {
-                        Ok(entry) => embedded_font_list.push(entry),
-                        Err(err) => println!("{}", err),
+                "notesSz" => notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node)?),
+                "smartTags" => {
+                    let r_id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    smart_tags = Some(r_id_attr.clone());
+                }
+                "embeddedFontLst" => {
+                    for embedded_font_node in &child_node.child_nodes {
+                        embedded_font_list.push(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?);
                     }
                 }
-                "custShowLst" => (),
-                "custShow" => {
-                    match CustomShow::from_xml_element(child_node) {
-                        Ok(custom_show) => custom_show_list.push(custom_show),
-                        Err(err) => println!("{}", err),
+                "custShowLst" => {
+                    for custom_show_node in &child_node.child_nodes {
+                        custom_show_list.push(CustomShow::from_xml_element(custom_show_node)?);
                     }
                 }
                 "photoAlbum" => {
-                    let mut photo_album = PhotoAlbum {
-                        black_and_white: None,
-                        frame: None,
-                        layout: None,
-                        show_captions: None,
-                    };
+                    let mut black_and_white = None;
+                    let mut frame = None;
+                    let mut layout = None;
+                    let mut show_captions = None;
 
                     for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
-                            "bw" => photo_album.black_and_white = parse_optional_xml_attribute(value),
-                            "showCaptions" => photo_album.show_captions = parse_optional_xml_attribute(value),
-                            "layout" => photo_album.layout = parse_optional_xml_attribute(value),
-                            "frame" => photo_album.frame = parse_optional_xml_attribute(value),
+                            "bw" => black_and_white = Some(value.parse()?);
+                            "showCaptions" => show_captions = Some(value.parse()?);
+                            "layout" => layout = Some(value.parse()?);
+                            "frame" => frame = Some(value.parse()?);
                             _ => (),
                         }
                     }
 
-                    self.photo_album = Some(photo_album);
+                    photo_album = Some(PhotoAlbum {
+                        black_and_white,
+                        frame,
+                        layout,
+                        show_captions,
+                    });
                 }
-                "custDataLst" => self.customer_data_list = Some(CustomerDataList::from_xml_element(child_node).unwrap()),
+                "custDataLst" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "kinsoku" => {
-                    let mut opt_lang = None;
-                    let mut opt_invalid_st_chars = None;
-                    let mut opt_invalid_end_chars = None;
+                    let mut language = None;
+                    let mut invalid_start_chars = None;
+                    let mut invalid_end_chars = None;
 
                     for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
-                            "lang" => opt_lang = parse_optional_xml_attribute(value),
-                            "invalStChars" => opt_invalid_st_chars = Some(value.parse().unwrap()),
-                            "invalEndChars" => opt_invalid_end_chars = Some(value.parse().unwrap()),
+                            "lang" => language = Some(value.clone()),
+                            "invalStChars" => invalid_start_chars = Some(value.clone()),
+                            "invalEndChars" => invalid_end_chars = Some(value.clone()),
                             _ => (),
                         }
                     }
 
-                    if let (Some(invalid_st_chars), Some(invalid_end_chars)) = (opt_invalid_st_chars, opt_invalid_end_chars) {
-                        self.kinsoku = Some(Kinsoku {
-                            language: opt_lang,
-                            invalid_start_chars: invalid_st_chars,
-                            invalid_end_chars: invalid_end_chars,
-                        });
-                    }
+                    let invalid_start_chars = invalid_start_chars.ok_or_else(|| MissingAttributeError::new("invalStChars"))?;
+                    let invalid_end_chars = invalid_end_chars.ok_or_else(|| MissingAttributeError::new("invalEndChars"))?;
+
+                    kinsoku = Some(Kinsoku {
+                        language,
+                        invalid_start_chars,
+                        invalid_end_chars,
+                    });
                 }
-                "defaultTextStyle" => self.default_text_style = Some(::drawingml::TextListStyle::from_xml_element(child_node)),
+                "defaultTextStyle" => default_text_style = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -1814,6 +1827,33 @@ impl Presentation {
                             */
 
 
-        Ok(presentation)
+        Ok(Self {
+            server_zoom,
+            first_slide_num,
+            show_special_pls_on_title_slide,
+            rtl,
+            remove_personal_info_on_save,
+            compatibility_mode,
+            strict_first_and_last_chars,
+            embed_true_type_fonts,
+            save_subset_fonts,
+            auto_compress_pictures,
+            bookmark_id_seed,
+            conformance,
+            slide_master_id_list,
+            notes_master_id_list,
+            handout_master_id_list,
+            slide_id_list,
+            slide_size,
+            notes_size,
+            smart_tags,
+            embedded_font_list,
+            custom_show_list,
+            photo_album,
+            customer_data_list,
+            kinsoku,
+            default_text_style,
+            modify_verifier,
+        })
     }
 }
