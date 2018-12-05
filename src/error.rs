@@ -1,7 +1,7 @@
 use std::fmt;
 use std::error::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct MissingAttributeError {
     pub attr: &'static str,
 }
@@ -27,7 +27,7 @@ impl Error for MissingAttributeError {
 }
 
 /// Error indicating that an xml element doesn't have a required child node
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct MissingChildNodeError {
     pub child_node: &'static str,
 }
@@ -53,7 +53,7 @@ impl Error for MissingChildNodeError {
 }
 
 /// Error indicating that an xml element is not a member of a given element group
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct NotGroupMemberError {
     node_name: String,
     group: &'static str,
@@ -80,7 +80,7 @@ impl Error for NotGroupMemberError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Limit {
     Value(u32),
     Unbounded,
@@ -96,7 +96,7 @@ impl fmt::Display for Limit {
 }
 
 /// Error indicating that the element violates either minOccurs or maxOccurs
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LimitViolationError {
     element_name: &'static str,
     min_occurs: Limit,
@@ -140,7 +140,7 @@ impl Error for LimitViolationError {
 }
 
 /// Chained error type for all possible xml error
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum XmlError {
     Attribute(MissingAttributeError),
     ChildNode(MissingChildNodeError),
@@ -190,7 +190,7 @@ impl From<LimitViolationError> for XmlError {
 }
 
 /// Error indicating that the parsed xml document is invalid
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct InvalidXmlError {
 }
 
@@ -215,7 +215,7 @@ impl Error for InvalidXmlError {
 
 /// Error indicating that an xml element's attribute is not a valid bool value
 /// Valid bool values are: true, false, 0, 1
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseBoolError {
     pub attr_value: String,
 }
@@ -241,6 +241,7 @@ impl Error for ParseBoolError {
 }
 
 /// Error indicating that a string cannot be converted to an enum type
+#[derive(Debug, Clone, Copy)]
 pub struct ParseEnumError {
     enum_name: &'static str,
 }

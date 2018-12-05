@@ -1772,10 +1772,10 @@ impl Presentation {
 
                     for (attr, value) in &child_node.attributes {
                         match attr.as_str() {
-                            "bw" => black_and_white = Some(value.parse()?);
-                            "showCaptions" => show_captions = Some(value.parse()?);
-                            "layout" => layout = Some(value.parse()?);
-                            "frame" => frame = Some(value.parse()?);
+                            "bw" => black_and_white = Some(value.parse()?),
+                            "showCaptions" => show_captions = Some(value.parse()?),
+                            "layout" => layout = Some(value.parse()?),
+                            "frame" => frame = Some(value.parse()?),
                             _ => (),
                         }
                     }

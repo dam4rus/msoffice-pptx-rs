@@ -3779,6 +3779,23 @@ pub enum Geometry {
     Preset(PresetGeometry2D),
 }
 
+impl Geometry {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "custGeom" | "prstGeom" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "custGeom" => Ok(Geometry::Custom(CustomGeometry2D::from_xml_element(xml_node)?)),
+            "prstGeom" => Ok(Geometry::Preset(PresetGeometry2D::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Geometry").into());
+        }
+    }
+}
+
 pub struct GeomGuide {
     pub name: GeomGuideName,
     pub formula: GeomGuideFormula,
@@ -3811,6 +3828,23 @@ pub enum AdjustHandle {
     Polar(PolarAdjustHandle),
 }
 
+impl AdjustHandle {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "ahXY" | "ahPolar" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "ahXY" => Ok(AdjustHandle::XY(XYAdjustHandle::from_xml_element(xml_node)?)),
+            "ahPolar" => Ok(AdjustHandle::Polar(PolarAdjustHandle::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "AdjustHandle").into()),
+        }
+    }
+}
+
 pub enum AdjCoordinate {
     Coordinate(Coordinate),
     GeomGuideName(GeomGuideName),
@@ -3834,13 +3868,49 @@ pub struct GeomRect {
 }
 
 pub struct XYAdjustHandle {
-    pub position: AdjPoint2D,
     pub guide_reference_x: Option<GeomGuideName>,
     pub guide_reference_y: Option<GeomGuideName>,
     pub min_x: Option<AdjCoordinate>,
     pub max_x: Option<AdjCoordinate>,
     pub min_y: Option<AdjCoordinate>,
     pub max_y: Option<AdjCoordinate>,
+    pub position: AdjPoint2D,
+}
+
+impl XYAdjustHandle {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut guide_reference_x = None;
+        let mut guide_reference_y = None;
+        let mut min_x = None;
+        let mut max_x = None;
+        let mut min_y = None;
+        let mut max_y = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "gdRefX" => guide_reference_x = Some(value.clone()),
+                "gdRefY" => guide_reference_y = Some(value.clone()),
+                "minX" => min_x = Some(value.parse()?),
+                "maxX" => max_x = Some(value.parse()?),
+                "minY" => min_y = Some(value.parse()?),
+                "maxY" => max_y = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let position = AdjPoint2D::from_xml_element(pos_node)?;
+
+        Ok(Self {
+            guide_reference_x,
+            guide_reference_y,
+            min_x,
+            max_x,
+            min_y,
+            max_y,
+            position,
+        })
+    }
 }
 
 pub struct PolarAdjustHandle {
@@ -3892,6 +3962,58 @@ pub struct CustomGeometry2D {
     pub path_list: Vec<Path2D>,
 }
 
+impl CustomGeometry2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut adjust_value_list = Vec::new();
+        let mut guide_list = Vec::new();
+        let mut adjust_handle_list = Vec::new();
+        let mut connection_site_list = Vec::new();
+        let mut rect = None;
+        let mut path_list = Vec::new();
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "avLst" => {
+                    for av_node in &child_node.child_nodes {
+                        adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
+                    }
+                }
+                "gdLst" => {
+                    for gd_node in &child_node.child_nodes {
+                        guide_list.push(GeomGuide::from_xml_element(gd_node)?);
+                    }
+                }
+                "ahLst" => {
+                    for ah_node in &child_node.child_nodes {
+                        adjust_handle_list.push(AdjustHandle::from_xml_element(ah_node)?);
+                    }
+                }
+                "cxnLst" => {
+                    for cxn_node in &child_node.child_nodes {
+                        connection_site_list.push(ConnectionSite::from_xml_element(connection_site_list)?);
+                    }
+                }
+                "rect" => rect = Some(GeomRect::from_xml_element(child_node)?),
+                "pathLst" => {
+                    for path_node in child_node.child_nodes {
+                        path_list.push(Path2D::from_xml_element(path_node)?);
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            adjust_value_list,
+            guide_list,
+            adjust_handle_list,
+            connection_site_list,
+            rect,
+            path_list,
+        })
+    }
+}
+
 pub struct PresetGeometry2D {
     pub adjust_value_list: Vec<GeomGuide>,
     pub preset: ShapeType,
@@ -3906,6 +4028,45 @@ pub struct ShapeProperties {
     pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
     //pub shape_3d: Option<Shape3D>,
+}
+
+impl ShapeProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let black_and_white_mode = match xml_node.attribute("bwMode") {
+            Some(value) => Some(value.parse()?),
+            None => None,
+        };
+
+        let mut transform = None;
+        let mut geometry = None;
+        let mut fill_properties = None;
+        let mut line_properties = None;
+        let mut effect_properties = None;
+
+        for child_node in &xml_node.child_nodes {
+            let child_local_name = child_node.local_name();
+            if Geometry::is_choice_member(child_local_name) {
+                geometry = Some(Geometry::from_xml_element(child_node))?;
+            } else if FillProperties::is_choice_member(child_local_name) {
+                fill_properties = Some(FillProperties::from_xml_element(child_node))?;
+            //} else if EffectProperties::is_choice_member(child_local_name) {
+            //    effect_properties = Some(EffectProperties::from_xml_element(child_node))?;
+            } else {
+                match child_node.local_name() {
+                    "xfrm" => transform = Some(Transform2D::from_xml_element(child_node)),
+                }
+            }
+        }
+
+        Ok(Self {
+            black_and_white_mode,
+            transform,
+            geometry,
+            fill_properties,
+            line_properties,
+            effect_properties,
+        })
+    }
 }
 
 pub struct ShapeStyle {
