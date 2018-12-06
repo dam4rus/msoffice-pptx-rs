@@ -4,6 +4,9 @@ use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError,
 use ::relationship::RelationshipId;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
+use ::std::str::FromStr;
+use ::std::error::Error;
+use ::std::fmt::{Display, Formatter};
 
 pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
 
@@ -3791,7 +3794,7 @@ impl Geometry {
         match xml_node.local_name() {
             "custGeom" => Ok(Geometry::Custom(CustomGeometry2D::from_xml_element(xml_node)?)),
             "prstGeom" => Ok(Geometry::Preset(PresetGeometry2D::from_xml_element(xml_node)?)),
-            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Geometry").into());
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Geometry").into()),
         }
     }
 }
@@ -3850,14 +3853,74 @@ pub enum AdjCoordinate {
     GeomGuideName(GeomGuideName),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum AdjustParseError {}
+
+impl Display for AdjustParseError {
+    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+        write!(f, "AdjCoordinate or AdjAngle parse error")
+    }
+}
+
+impl Error for AdjustParseError {
+    fn description(&self) -> &str {
+        "Adjust parse error"
+    }
+}
+
+impl FromStr for AdjCoordinate {
+    type Err = AdjustParseError;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        match s.parse::<Coordinate>() {
+            Ok(coord) => Ok(AdjCoordinate::Coordinate(coord)),
+            Err(_) => Ok(AdjCoordinate::GeomGuideName(GeomGuideName::from(s))),
+        }
+    }
+}
+
 pub enum AdjAngle {
     Angle(Angle),
     GeomGuideName(GeomGuideName),
 }
 
+impl FromStr for AdjAngle {
+    type Err = AdjustParseError;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        match s.parse::<Angle>() {
+            Ok(angle) => Ok(AdjAngle::Angle(angle)),
+            Err(_) => Ok(AdjAngle::GeomGuideName(GeomGuideName::from(s))),
+        }
+    }
+}
+
 pub struct AdjPoint2D {
     pub x: AdjCoordinate,
     pub y: AdjCoordinate,
+}
+
+impl AdjPoint2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut x = None;
+        let mut y = None;
+
+        for (attr, value) in xml_node.attributes {
+            match attr.as_str() {
+                "x" => x = Some(value.parse()?),
+                "y" => y = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let x = x.ok_or_else(|| MissingAttributeError::new("x"))?;
+        let y = y.ok_or_else(|| MissingAttributeError::new("y"))?;
+
+        Ok(Self {
+            x,
+            y,
+        })
+    }
 }
 
 pub struct GeomRect {
@@ -3914,18 +3977,69 @@ impl XYAdjustHandle {
 }
 
 pub struct PolarAdjustHandle {
-    pub position: AdjPoint2D,
     pub guide_reference_radial: Option<GeomGuideName>,
     pub guide_reference_angle: Option<GeomGuideName>,
     pub min_radial: Option<AdjCoordinate>,
     pub max_radial: Option<AdjCoordinate>,
     pub min_angle: Option<AdjAngle>,
     pub max_angle: Option<AdjAngle>,
+    pub position: AdjPoint2D,
+}
+
+impl PolarAdjustHandle {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut guide_reference_radial = None;
+        let mut guide_reference_angle = None;
+        let mut min_radial = None;
+        let mut max_radial = None;
+        let mut min_angle = None;
+        let mut max_angle = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "gdRefR" => guide_reference_radial = Some(value.clone()),
+                "gdRefAng" => guide_reference_angle = Some(value.clone()),
+                "minR" => min_radial = Some(value.parse()?),
+                "maxR" => max_radial = Some(value.parse()?),
+                "minAng" => min_angle = Some(value.parse()?),
+                "maxAng" => max_angle = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let position = AdjPoint2D::from_xml_element(pos_node)?;
+
+        Ok(Self {
+            guide_reference_radial,
+            guide_reference_angle,
+            min_radial,
+            max_radial,
+            min_angle,
+            max_angle,
+            position,
+        })
+    }
 }
 
 pub struct ConnectionSite {
-    pub position: AdjPoint2D,
     pub angle: AdjAngle,
+    pub position: AdjPoint2D,
+}
+
+impl ConnectionSite {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let angle_attr = xml_node.attribute("ang").ok_or_else(|| MissingAttributeError::new("ang"))?;
+        let angle = angle_attr.parse()?;
+
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let position = AdjPoint2D::from_xml_element(pos_node)?;
+
+        Ok(Self {
+            angle,
+            position,
+        })
+    }
 }
 
 pub enum Path2DCommand {
@@ -3944,13 +4058,125 @@ pub struct Path2DArcTo {
     pub swing_angle: AdjAngle,
 }
 
+impl Path2DArcTo {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut width_radius = None;
+        let mut height_radius = None;
+        let mut start_angle = None;
+        let mut swing_angle = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "wR" => width_radius = Some(value.parse()?),
+                "hR" => height_radius = Some(value.parse()?),
+                "stAng" => start_angle = Some(value.parse()?),
+                "swAng" => swing_angle = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let width_radius = width_radius.ok_or_else(|| MissingAttributeError::new("wR"))?;
+        let height_radius = height_radius.ok_or_else(|| MissingAttributeError::new("hR"))?;
+        let start_angle = start_angle.ok_or_else(|| MissingAttributeError::new("stAng"))?;
+        let swing_angle = swing_angle.ok_or_else(|| MissingAttributeError::new("swAng"))?;
+
+        Ok(Self {
+            width_radius,
+            height_radius,
+            start_angle,
+            swing_angle,
+        })
+    }
+}
+
 pub struct Path2D {
-    pub commands: Vec<Path2DCommand>,
     pub width: Option<PositiveCoordinate>, // 0
     pub height: Option<PositiveCoordinate>, // 0
     pub fill_mode: Option<PathFillMode>, // norm
     pub stroke: Option<bool>, // true
     pub extrusion_ok: Option<bool>, // true
+    pub commands: Vec<Path2DCommand>,
+}
+
+impl Path2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut width = None;
+        let mut height = None;
+        let mut fill_mode = None;
+        let mut stroke = None;
+        let mut extrusion_ok = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "w" => width = Some(value.parse()?),
+                "h" => height = Some(value.parse()?),
+                "fill" => fill_mode = Some(value.parse()?),
+                "stroke" => stroke = Some(parse_xml_bool(value)?),
+                "extrusionOk" => extrusion_ok = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut commands = Vec::new();
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "close" => commands.push(Path2DCommand::Close),
+                "moveTo" => {
+                    let pt_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    commands.push(Path2DCommand::MoveTo(AdjPoint2D::from_xml_element(pt_node)?));
+                }
+                "lnTo" => {
+                    let pt_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    commands.push(Path2DCommand::LineTo(AdjPoint2D::from_xml_element(pt_node)?));
+                }
+                "arcTo" => commands.push(Path2DCommand::ArcTo(Path2DArcTo::from_xml_element(child_node)?)),
+                "quadBezTo" => {
+                    let pt1_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt2_node = child_node.child_nodes.get(1).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    commands.push(Path2DCommand::QuadBezierTo(
+                        AdjPoint2D::from_xml_element(pt1_node)?,
+                        AdjPoint2D::from_xml_element(pt2_node)?,
+                    ));
+                }
+                "cubicBezTo" => {
+                    let pt1_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt2_node = child_node.child_nodes.get(1).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt3_node = child_node.child_nodes.get(2).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    commands.push(Path2DCommand::CubicBezTo(
+                        AdjPoint2D::from_xml_element(pt1_node)?,
+                        AdjPoint2D::from_xml_element(pt2_node)?,
+                        AdjPoint2D::from_xml_element(pt3_node)?,
+                    ));
+                }
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            width,
+            height,
+            fill_mode,
+            stroke,
+            extrusion_ok,
+            commands,
+        })
+
+/*
+    <xsd:choice minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="close" type="CT_Path2DClose" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="moveTo" type="CT_Path2DMoveTo" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="lnTo" type="CT_Path2DLineTo" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="arcTo" type="CT_Path2DArcTo" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="quadBezTo" type="CT_Path2DQuadBezierTo" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="cubicBezTo" type="CT_Path2DCubicBezierTo" minOccurs="1" maxOccurs="1"/>
+    </xsd:choice>
+    <xsd:attribute name="w" type="ST_PositiveCoordinate" use="optional" default="0"/>
+    <xsd:attribute name="h" type="ST_PositiveCoordinate" use="optional" default="0"/>
+    <xsd:attribute name="fill" type="ST_PathFillMode" use="optional" default="norm"/>
+    <xsd:attribute name="stroke" type="xsd:boolean" use="optional" default="true"/>
+    <xsd:attribute name="extrusionOk" type="xsd:boolean" use="optional" default="true"/>
+*/
+    }
 }
 
 pub struct CustomGeometry2D {
@@ -4017,6 +4243,29 @@ impl CustomGeometry2D {
 pub struct PresetGeometry2D {
     pub adjust_value_list: Vec<GeomGuide>,
     pub preset: ShapeType,
+}
+
+impl PresetGeometry2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new("prst"))?;
+        let preset = preset_attr.parse()?;
+        let mut adjust_value_list = Vec::new();
+
+        for child_node in xml_node.child_nodes {
+            match child_node.local_name() {
+                "avLst" => {
+                    for av_node in &child_node.child_nodes {
+                        adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
+                    }
+                }
+            }
+        }
+
+        Ok(Self {
+            preset,
+            adjust_value_list,
+        })
+    }
 }
 
 pub struct ShapeProperties {
