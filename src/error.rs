@@ -53,7 +53,7 @@ impl Error for MissingChildNodeError {
 }
 
 /// Error indicating that an xml element is not a member of a given element group
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct NotGroupMemberError {
     node_name: String,
     group: &'static str,
@@ -140,7 +140,7 @@ impl Error for LimitViolationError {
 }
 
 /// Chained error type for all possible xml error
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum XmlError {
     Attribute(MissingAttributeError),
     ChildNode(MissingChildNodeError),

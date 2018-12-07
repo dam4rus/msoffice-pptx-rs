@@ -1,5 +1,5 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
-use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
+use ::xml::{XmlNode, parse_xml_bool};
 use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, XmlError};
 use ::relationship::RelationshipId;
 use ::zip::read::ZipFile;
@@ -2023,6 +2023,30 @@ pub struct Point2D {
     pub y: Coordinate,
 }
 
+impl Point2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut x = None;
+        let mut y = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "x" => x = Some(value.parse()?),
+                "y" => y = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let x = x.ok_or_else(|| MissingAttributeError::new("x"))?;
+        let y = y.ok_or_else(|| MissingAttributeError::new("y"))?;
+
+        Ok(Self {
+            x,
+            y,
+        })
+    }
+
+}
+
 /// PositiveSize2D
 pub struct PositiveSize2D {
     pub width: PositiveCoordinate,
@@ -2030,16 +2054,9 @@ pub struct PositiveSize2D {
 }
 
 impl PositiveSize2D {
-    fn new(width: PositiveCoordinate, height: PositiveCoordinate) -> PositiveSize2D {
-        PositiveSize2D {
-            width: width,
-            height: height,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<PositiveSize2D> {
-        let mut opt_width: Option<PositiveCoordinate> = None;
-        let mut opt_height: Option<PositiveCoordinate> = None;
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut opt_width = None;
+        let mut opt_height = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
@@ -3586,6 +3603,7 @@ impl NonVisualDrawingProps {
     }
 }
 
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Locking {
     pub no_grouping: Option<bool>, // false
     pub no_select: Option<bool>, // false
@@ -3599,9 +3617,49 @@ pub struct Locking {
     pub no_change_shape_type: Option<bool>, // false
 }
 
+impl Locking {
+    pub fn try_attribute_parse(&mut self, attr: &str, value: &str) -> Result<()> {
+        match attr {
+            "noGrp" => self.no_grouping = Some(parse_xml_bool(value)?),
+            "noSelect" => self.no_select = Some(parse_xml_bool(value)?),
+            "noRot" => self.no_rotate = Some(parse_xml_bool(value)?),
+            "noChangeAspect" => self.no_change_aspect_ratio = Some(parse_xml_bool(value)?),
+            "noMove" => self.no_move = Some(parse_xml_bool(value)?),
+            "noResize" => self.no_resize = Some(parse_xml_bool(value)?),
+            "noEditPoints" => self.no_edit_points = Some(parse_xml_bool(value)?),
+            "noAdjustHandles" => self.no_adjust_handles = Some(parse_xml_bool(value)?),
+            "noChangeArrowheads" => self.no_change_arrowheads = Some(parse_xml_bool(value)?),
+            "noChangeShapeType" => self.no_change_shape_type = Some(parse_xml_bool(value)?),
+            _ => (),
+        }
+
+        Ok(())
+    }
+}
+
 pub struct ShapeLocking {
     pub locking: Locking,
     pub no_text_edit: Option<bool>, // false
+}
+
+impl ShapeLocking {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut locking: Locking = Default::default();
+        let mut no_text_edit = None;
+
+        for (attr, value) in &xml_node.attributes {
+            if attr.as_str() == "noTextEdit" {
+                no_text_edit = Some(parse_xml_bool(value)?);
+            } else {
+                locking.try_attribute_parse(attr, value)?;
+            }
+        }
+
+        Ok(Self {
+            locking,
+            no_text_edit,
+        })
+    }
 }
 
 pub struct GroupLocking {
@@ -3662,14 +3720,47 @@ pub struct ConnectorLocking {
     pub locking: Locking,
 }
 
+impl ConnectorLocking {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut locking: Locking = Default::default();
+
+        for (attr, value) in &xml_node.attributes {
+            locking.try_attribute_parse(attr, value)?;
+        }
+
+        Ok(Self {
+            locking,
+        })
+    }
+}
+
 pub struct PictureLocking {
     pub locking: Locking,
     pub no_crop: Option<bool>, // false
 }
 
 pub struct NonVisualDrawingShapeProps {
-    pub shape_locks: Option<ShapeLocking>,
     pub is_text_box: Option<bool>, // false
+    pub shape_locks: Option<ShapeLocking>,
+}
+
+impl NonVisualDrawingShapeProps {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let is_text_box = match xml_node.attribute("txBox") {
+            Some(attr) => Some(parse_xml_bool(attr)?),
+            None => None,
+        };
+
+        let shape_locks = match xml_node.child_nodes.get(0) {
+            Some(sp_lock_node) => Some(ShapeLocking::from_xml_element(sp_lock_node)?),
+            None => None,
+        };
+
+        Ok(Self {
+            is_text_box,
+            shape_locks,
+        })
+    }
 }
 
 pub struct NonVisualGroupDrawingShapeProps {
@@ -3703,6 +3794,29 @@ pub struct NonVisualConnectorProperties {
     pub end_connection: Option<Connection>,
 }
 
+impl NonVisualConnectorProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut connector_locks = None;
+        let mut start_connection = None;
+        let mut end_connection = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cxnSpLocks" => connector_locks = Some(ConnectorLocking::from_xml_element(child_node)?),
+                "stCxn" => start_connection = Some(Connection::from_xml_element(child_node)?),
+                "endCxn" => end_connection = Some(Connection::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            connector_locks,
+            start_connection,
+            end_connection,
+        })
+    }
+}
+
 pub struct NonVisualPictureProperties {
     pub picture_locks: Option<PictureLocking>,
     pub prefer_relative_resize: Option<bool>, // true
@@ -3711,6 +3825,29 @@ pub struct NonVisualPictureProperties {
 pub struct Connection {
     pub id: DrawingElementId,
     pub shape_index: u32,
+}
+
+impl Connection {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut id = None;
+        let mut shape_index = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "id" => id = Some(value.parse()?),
+                "idx" => shape_index = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+        let shape_index = shape_index.ok_or_else(|| MissingAttributeError::new("idx"))?;
+
+        Ok(Self {
+            id,
+            shape_index,
+        })
+    }
 }
 
 pub struct EmbeddedWAVAudioFile {
@@ -3752,29 +3889,136 @@ pub enum Media {
 }
 
 pub struct Transform2D {
-    pub offset: Option<Point2D>,
-    pub extents:  Option<PositiveSize2D>,
     pub rotate_angle: Option<Angle>, // 0
     pub flip_horizontal: Option<bool>, // false
     pub flip_vertical: Option<bool>, // false
+    pub offset: Option<Point2D>,
+    pub extents:  Option<PositiveSize2D>,
+}
+
+impl Transform2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut rotate_angle = None;
+        let mut flip_horizontal = None;
+        let mut flip_vertical = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "rot" => rotate_angle = Some(value.parse()?),
+                "flipH" => flip_horizontal = Some(parse_xml_bool(value)?),
+                "flipV" => flip_vertical = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut offset = None;
+        let mut extents = None;
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "off" => offset = Some(Point2D::from_xml_element(child_node)?),
+                "ext" => extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            rotate_angle,
+            flip_horizontal,
+            flip_vertical,
+            offset,
+            extents,
+        })
+    }
 }
 
 pub struct GroupTransform2D {
+    pub rotate_angle: Option<Angle>, // 0
+    pub flip_horizontal: Option<bool>, // false
+    pub flip_vertical: Option<bool>, // false
     pub offset: Option<Point2D>,
     pub extents:  Option<PositiveSize2D>,
     pub child_offset: Option<Point2D>,
     pub child_extents: Option<PositiveSize2D>,
-    pub rotate_angle: Option<Angle>, // 0
-    pub flip_horizontal: Option<bool>, // false
-    pub flip_vertical: Option<bool>, // false
+}
+
+impl GroupTransform2D {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut rotate_angle = None;
+        let mut flip_horizontal = None;
+        let mut flip_vertical = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "rot" => rotate_angle = Some(value.parse()?),
+                "flipH" => flip_horizontal = Some(parse_xml_bool(value)?),
+                "flipV" => flip_vertical = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut offset = None;
+        let mut extents = None;
+        let mut child_offset = None;
+        let mut child_extents = None;
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "off" => offset = Some(Point2D::from_xml_element(child_node)?),
+                "ext" => extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                "chOff" => child_offset = Some(Point2D::from_xml_element(child_node)?),
+                "chExt" => child_extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            rotate_angle,
+            flip_horizontal,
+            flip_vertical,
+            offset,
+            extents,
+            child_offset,
+            child_extents,
+        })
+    }
 }
 
 pub struct GroupShapeProperties {
+    pub black_and_white_mode: Option<BlackWhiteMode>,
     pub transform: Option<GroupTransform2D>,
     pub fill_properties: Option<FillProperties>,
     pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
-    pub black_and_white_mode: Option<BlackWhiteMode>,
+}
+
+impl GroupShapeProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let black_and_white_mode = match xml_node.attribute("bwMode") {
+            Some(attr) => Some(attr.parse()?),
+            None => None,
+        };
+
+        let mut transform = None;
+        let mut fill_properties = None;
+        let mut effect_properties = None;
+
+        for child_node in &xml_node.child_nodes {
+            let child_local_name = child_node.local_name();
+            if child_local_name == "xfrm" {
+                transform = Some(GroupTransform2D::from_xml_element(child_node)?);
+            } else if FillProperties::is_choice_member(child_local_name) {
+                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
+            // } else if EffectProperties::is_choice_member(child_local_name) {
+            //     effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+            }
+        }
+
+        Ok(Self {
+            black_and_white_mode,
+            transform,
+            fill_properties,
+            effect_properties,
+        })
+    }
 }
 
 pub enum Geometry {
@@ -3928,6 +4172,37 @@ pub struct GeomRect {
     pub top: AdjCoordinate,
     pub right: AdjCoordinate,
     pub bottom: AdjCoordinate,
+}
+
+impl GeomRect {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut left = None;
+        let mut top = None;
+        let mut right = None;
+        let mut bottom = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "l" => left = Some(value.parse()?),
+                "t" => top = Some(value.parse()?),
+                "r" => right = Some(value.parse()?),
+                "b" => bottom = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let left = left.ok_or_else(|| MissingAttributeError::new("l"))?;
+        let top = top.ok_or_else(|| MissingAttributeError::new("l"))?;
+        let right = right.ok_or_else(|| MissingAttributeError::new("l"))?;
+        let bottom = bottom.ok_or_else(|| MissingAttributeError::new("l"))?;
+
+        Ok(Self {
+            left,
+            top,
+            right,
+            bottom,
+        })
+    }
 }
 
 pub struct XYAdjustHandle {
@@ -4216,12 +4491,12 @@ impl CustomGeometry2D {
                 }
                 "cxnLst" => {
                     for cxn_node in &child_node.child_nodes {
-                        connection_site_list.push(ConnectionSite::from_xml_element(connection_site_list)?);
+                        connection_site_list.push(ConnectionSite::from_xml_element(cxn_node)?);
                     }
                 }
                 "rect" => rect = Some(GeomRect::from_xml_element(child_node)?),
                 "pathLst" => {
-                    for path_node in child_node.child_nodes {
+                    for path_node in &child_node.child_nodes {
                         path_list.push(Path2D::from_xml_element(path_node)?);
                     }
                 }
@@ -4295,14 +4570,14 @@ impl ShapeProperties {
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
             if Geometry::is_choice_member(child_local_name) {
-                geometry = Some(Geometry::from_xml_element(child_node))?;
+                geometry = Some(Geometry::from_xml_element(child_node)?);
             } else if FillProperties::is_choice_member(child_local_name) {
-                fill_properties = Some(FillProperties::from_xml_element(child_node))?;
+                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
             //} else if EffectProperties::is_choice_member(child_local_name) {
             //    effect_properties = Some(EffectProperties::from_xml_element(child_node))?;
             } else {
                 match child_node.local_name() {
-                    "xfrm" => transform = Some(Transform2D::from_xml_element(child_node)),
+                    "xfrm" => transform = Some(Transform2D::from_xml_element(child_node)?),
                 }
             }
         }
@@ -4325,9 +4600,57 @@ pub struct ShapeStyle {
     pub font_reference: FontReference,
 }
 
+impl ShapeStyle {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut line_reference = None;
+        let mut fill_reference = None;
+        let mut effect_reference = None;
+        let mut font_reference = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "lnRef" => line_reference = Some(StyleMatrixReference::from_xml_element(child_node)?),
+                "fillRef" => fill_reference = Some(StyleMatrixReference::from_xml_element(child_node)?),
+                "effectRef" => effect_reference = Some(StyleMatrixReference::from_xml_element(child_node)?),
+                "fontRef" => font_reference = Some(FontReference::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let line_reference = line_reference.ok_or_else(|| MissingChildNodeError::new("lnRef"))?;
+        let fill_reference = fill_reference.ok_or_else(|| MissingChildNodeError::new("fillRef"))?;
+        let effect_reference = effect_reference.ok_or_else(|| MissingChildNodeError::new("effectRef"))?;
+        let font_reference = font_reference.ok_or_else(|| MissingChildNodeError::new("fontRef"))?;
+
+        Ok(Self {
+            line_reference,
+            fill_reference,
+            effect_reference,
+            font_reference,
+        })
+    }
+}
+
 pub struct FontReference {
-    pub color: Option<Color>,
     pub index: FontCollectionIndex,
+    pub color: Option<Color>,
+}
+
+impl FontReference {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let index_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new("idx"))?;
+        let index = index_attr.parse()?;
+
+        let color = match xml_node.child_nodes.get(0) {
+            Some(clr_node) => Some(Color::from_xml_element(clr_node)?),
+            None => None,
+        };
+
+        Ok(Self {
+            index,
+            color,
+        })
+    }
 }
 
 pub struct GraphicalObject {

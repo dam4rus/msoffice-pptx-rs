@@ -112,22 +112,6 @@ impl XmlNode {
     }
 }
 
-/// Parse an xml attribute.
-/// On success it returns `Some` with the parsed value, on failure it prints the error and returns `None`
-pub fn parse_optional_xml_attribute<T>(attr: &str) -> Option<T>
-where
-    T: std::str::FromStr,
-    T::Err: std::fmt::Debug + std::fmt::Display,
-{
-    match attr.parse::<T>() {
-        Ok(value) => Some(value),
-        Err(err) => {
-            println!("{}", err);
-            None
-        }
-    }
-}
-
 pub fn parse_xml_bool(value: &str) -> Result<bool, ::error::ParseBoolError> {
     match value {
         "true" | "1" => Ok(true),

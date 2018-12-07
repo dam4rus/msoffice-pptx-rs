@@ -1,6 +1,6 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
-use ::xml::{XmlNode, parse_optional_xml_attribute, parse_xml_bool};
+use ::xml::{XmlNode, parse_xml_bool};
 use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError, ParseBoolError};
 use ::zip::read::ZipFile;
 use ::zip::result::ZipError;
@@ -733,7 +733,8 @@ impl GroupShape {
                 "grpSpPr" => opt_group_shape_props = Some(::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
                 "sp" => shape_array.push(ShapeGroup::Shape(Shape::from_xml_element(child_node)?)),
                 "grpSp" => shape_array.push(ShapeGroup::GroupShape(GroupShape::from_xml_element(child_node)?)),
-                "graphicFrame" => shape_array.push(ShapeGroup::GraphicFrame(GraphicalObjectFrame::from_xml_element(child_node)?)),
+                // TODO implement GraphicalObjectFrame
+                //"graphicFrame" => shape_array.push(ShapeGroup::GraphicFrame(GraphicalObjectFrame::from_xml_element(child_node)?)),
                 "cxnSp" => shape_array.push(ShapeGroup::Connector(Connector::from_xml_element(child_node)?)),
                 "pic" => shape_array.push(ShapeGroup::Picture(Picture::from_xml_element(child_node)?)),
                 "contentPart" => {
@@ -812,23 +813,133 @@ pub struct Connector {
     pub shape_style: Option<::drawingml::ShapeStyle>,
 }
 
+impl Connector {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut non_visual_props = None;
+        let mut shape_props = None;
+        let mut shape_style = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "nvCxnSpPr" => non_visual_props = Some(ConnectorNonVisual::from_xml_element(child_node)?),
+                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
+                "style" => shape_style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvCxnSpPr"))?;
+        let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new("nvCxnSpPr"))?;
+
+        Ok(Self {
+            non_visual_props,
+            shape_props,
+            shape_style,
+        })
+    }
+}
+
 pub struct ConnectorNonVisual {
     pub drawing_props: ::drawingml::NonVisualDrawingProps,
     pub connector_props: ::drawingml::NonVisualConnectorProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
+impl ConnectorNonVisual {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut drawing_props = None;
+        let mut connector_props = None;
+        let mut app_props = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvCxnSpPr" => connector_props = Some(::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?),
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
+        let connector_props = connector_props.ok_or_else(|| MissingChildNodeError::new("cNvCxnSpPr"))?;
+        let app_props = app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
+
+        Ok(Self {
+            drawing_props,
+            connector_props,
+            app_props,
+        })
+    }
+}
+
 pub struct Picture {
     pub non_visual_props: PictureNonVisual,
     pub blip_fill: ::drawingml::BlipFillProperties,
-    pub shape_propers: ::drawingml::ShapeProperties,
+    pub shape_props: ::drawingml::ShapeProperties,
     pub shape_style: Option<::drawingml::ShapeStyle>,
+}
+
+impl Picture {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut non_visual_props = None;
+        let mut blip_fill = None;
+        let mut shape_props = None;
+        let mut shape_style = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "nvPicPr" => non_visual_props = Some(PictureNonVisual::from_xml_element(child_node)?),
+                "blipFill" => blip_fill = Some(::drawingml::BlipFillProperties::from_xml_element(child_node)?),
+                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
+                "style" => shape_style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvPicPr"))?;
+        let blip_fill = blip_fill.ok_or_else(|| MissingChildNodeError::new("blipFill"))?;
+        let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new("spPr"))?;
+
+        Ok(Self {
+            non_visual_props,
+            blip_fill,
+            shape_props,
+            shape_style,
+        })
+    }
 }
 
 pub struct PictureNonVisual {
     pub drawing_props: ::drawingml::NonVisualDrawingProps,
     pub picture_props: ::drawingml::NonVisualPictureProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
+}
+
+impl PictureNonVisual {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut drawing_props = None;
+        let mut picture_props = None;
+        let mut app_props = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvPicPr" => picture_props = Some(::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?),
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
+        let picture_props = picture_props.ok_or_else(|| MissingChildNodeError::new("cNvPicPr"))?;
+        let app_props = app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
+
+        Ok(Self {
+            drawing_props,
+            picture_props,
+            app_props,
+        })
+    }
 }
 
 pub struct CommonSlideData {
