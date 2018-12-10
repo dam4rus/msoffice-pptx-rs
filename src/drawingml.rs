@@ -1433,6 +1433,69 @@ pub struct ColorMapping {
     pub followed_hyperlink: ColorSchemeIndex,
 }
 
+impl ColorMapping {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut background1 = None;
+        let mut text1 = None;
+        let mut background2 = None;
+        let mut text2 = None;
+        let mut accent1 = None;
+        let mut accent2 = None;
+        let mut accent3 = None;
+        let mut accent4 = None;
+        let mut accent5 = None;
+        let mut accent6 = None;
+        let mut hyperlink = None;
+        let mut followed_hyperlink = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "bg1" => background1 = Some(value.parse()?),
+                "tx1" => text1 = Some(value.parse()?),
+                "bg2" => background2 = Some(value.parse()?),
+                "tx2" => text2 = Some(value.parse()?),
+                "accent1" => accent1 = Some(value.parse()?),
+                "accent2" => accent2 = Some(value.parse()?),
+                "accent3" => accent3 = Some(value.parse()?),
+                "accent4" => accent4 = Some(value.parse()?),
+                "accent5" => accent5 = Some(value.parse()?),
+                "accent6" => accent6 = Some(value.parse()?),
+                "hlink" => hyperlink = Some(value.parse()?),
+                "folHlink" => followed_hyperlink = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let background1 = background1.ok_or_else(|| MissingAttributeError::new("bg1"))?;
+        let text1 = text1.ok_or_else(|| MissingAttributeError::new("tx1"))?;
+        let background2 = background2.ok_or_else(|| MissingAttributeError::new("bg2"))?;
+        let text2 = text2.ok_or_else(|| MissingAttributeError::new("tx2"))?;
+        let accent1 = accent1.ok_or_else(|| MissingAttributeError::new("accent1"))?;
+        let accent2 = accent2.ok_or_else(|| MissingAttributeError::new("accent2"))?;
+        let accent3 = accent3.ok_or_else(|| MissingAttributeError::new("accent3"))?;
+        let accent4 = accent4.ok_or_else(|| MissingAttributeError::new("accent4"))?;
+        let accent5 = accent5.ok_or_else(|| MissingAttributeError::new("accent5"))?;
+        let accent6 = accent6.ok_or_else(|| MissingAttributeError::new("accent6"))?;
+        let hyperlink = hyperlink.ok_or_else(|| MissingAttributeError::new("hlink"))?;
+        let followed_hyperlink = followed_hyperlink.ok_or_else(|| MissingAttributeError::new("folHlink"))?;
+
+        Ok(Self {
+            background1,
+            text1,
+            background2,
+            text2,
+            accent1,
+            accent2,
+            accent3,
+            accent4,
+            accent5,
+            accent6,
+            hyperlink,
+            followed_hyperlink,
+        })
+    }
+}
+
 pub struct ColorScheme {
     pub name: String,
     pub dark1: Color,
@@ -1697,8 +1760,53 @@ pub struct TileInfoProperties {
     pub alignment: Option<RectAlignment>,
 }
 
+impl TileInfoProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut translate_x = None;
+        let mut translate_y = None;
+        let mut scale_x = None;
+        let mut scale_y = None;
+        let mut flip_mode = None;
+        let mut alignment = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "tx" => translate_x = Some(value.parse()?),
+                "ty" => translate_y = Some(value.parse()?),
+                "sx" => scale_x = Some(value.parse()?),
+                "sy" => scale_y = Some(value.parse()?),
+                "flip" => flip_mode = Some(value.parse()?),
+                "algn" => alignment = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            translate_x,
+            translate_y,
+            scale_x,
+            scale_y,
+            flip_mode,
+            alignment,
+        })
+    }
+}
+
 pub struct StretchInfoProperties {
     pub fill_rect: Option<RelativeRect>,
+}
+
+impl StretchInfoProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let fill_rect = match xml_node.child_nodes.get(0) {
+            Some(rect_node) => Some(RelativeRect::from_xml_element(rect_node)?),
+            None => None,
+        };
+
+        Ok(Self {
+            fill_rect,
+        })
+    }
 }
 
 pub enum FillModeProperties {
@@ -1706,12 +1814,70 @@ pub enum FillModeProperties {
     Stretch(StretchInfoProperties),
 }
 
+impl FillModeProperties {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "tile" | "stretch" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "tile" => Ok(FillModeProperties::Tile(TileInfoProperties::from_xml_element(xml_node)?)),
+            "stretch" => Ok(FillModeProperties::Stretch(StretchInfoProperties::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_FillModeProperties").into()),
+        }
+    }
+}
+
 pub struct BlipFillProperties {
+    pub dpi: Option<u32>,
+    pub rotate_with_shape: Option<bool>,
     pub blip: Option<Blip>,
     pub source_rect: Option<RelativeRect>,
     pub fill_mode_properties: Option<FillModeProperties>,
-    pub dpi: Option<u32>,
-    pub rotate_with_shape: Option<bool>,
+}
+
+impl BlipFillProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut dpi = None;
+        let mut rotate_with_shape = None;
+        
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "dpi" => dpi = Some(value.parse()?),
+                "rotWithShape" => rotate_with_shape = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut blip = None;
+        let mut source_rect = None;
+        let mut fill_mode_properties = None;
+
+        for child_node in &xml_node.child_nodes {
+            let child_local_name = child_node.local_name();
+
+            if FillModeProperties::is_choice_member(child_local_name) {
+                fill_mode_properties = Some(FillModeProperties::from_xml_element(child_node)?);
+            } else {
+                match child_local_name {
+                    "blip" => blip = Some(Blip::from_xml_element(child_node)?),
+                    "srcRect" => source_rect = Some(RelativeRect::from_xml_element(child_node)?),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(Self {
+            dpi,
+            rotate_with_shape,
+            blip,
+            source_rect,
+            fill_mode_properties,
+        })
+    }
 }
 
 pub struct PatternFillProperties {
@@ -3739,6 +3905,25 @@ pub struct PictureLocking {
     pub no_crop: Option<bool>, // false
 }
 
+impl PictureLocking {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut locking: Locking = Default::default();
+        let mut no_crop = None;
+        for (attr, value) in &xml_node.attributes {
+            if attr.as_str() == "noCrop" {
+                no_crop = Some(parse_xml_bool(value)?);
+            } else {
+                locking.try_attribute_parse(attr, value)?;
+            }
+        }
+
+        Ok(Self {
+            locking,
+            no_crop,
+        })
+    }
+}
+
 pub struct NonVisualDrawingShapeProps {
     pub is_text_box: Option<bool>, // false
     pub shape_locks: Option<ShapeLocking>,
@@ -3818,8 +4003,27 @@ impl NonVisualConnectorProperties {
 }
 
 pub struct NonVisualPictureProperties {
-    pub picture_locks: Option<PictureLocking>,
     pub prefer_relative_resize: Option<bool>, // true
+    pub picture_locks: Option<PictureLocking>,
+}
+
+impl NonVisualPictureProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let prefer_relative_resize = match xml_node.attribute("preferRelativeResize") {
+            Some(attr) => Some(parse_xml_bool(attr)?),
+            None => None,
+        };
+
+        let picture_locks = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(PictureLocking::from_xml_element(node)?),
+            None => None,
+        };
+
+        Ok(Self {
+            prefer_relative_resize,
+            picture_locks,
+        })
+    }
 }
 
 pub struct Connection {

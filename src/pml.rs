@@ -970,14 +970,15 @@ impl CommonSlideData {
                 "bg" => background = Some(Background::from_xml_element(child_node)?),
                 "spTree" => opt_shape_tree = Some(GroupShape::from_xml_element(child_node)?),
                 "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
-                "controls" => {
-                    for control_node in child_node.child_nodes {
-                        match control_node.local_name() {
-                            "control" => control_list.push(Control::from_xml_element(control_node)?),
-                            _ => (),
-                        }
-                    }
-                }
+                // TODO implement
+                // "controls" => {
+                //     for control_node in child_node.child_nodes {
+                //         match control_node.local_name() {
+                //             "control" => control_list.push(Control::from_xml_element(control_node)?),
+                //             _ => (),
+                //         }
+                //     }
+                // }
                 _ => (),
             }
         }
@@ -1722,7 +1723,6 @@ impl Presentation {
         let mut xml_string = String::new();
         presentation_file.read_to_string(&mut xml_string)?;
 
-        let mut presentation = Self::new();
         let root = XmlNode::from_str(xml_string.as_str())?;
         Self::from_xml_element(&root)
     }
