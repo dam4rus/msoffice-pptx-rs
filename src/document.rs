@@ -1,5 +1,6 @@
 use ::std::collections::{ HashMap };
 use ::std::path::{Path, PathBuf};
+use ::std::ffi::{OsStr};
 use ::std::fs::File;
 use ::zip::ZipArchive;
 use ::docprops::{AppInfo, Core};
@@ -23,9 +24,11 @@ impl PPTXDocument {
         let pptx_file = File::open(&pptx_path)?;
         let mut zipper = ZipArchive::new(&pptx_file)?;
 
+        println!("parsing docProps/app.xml");
         let app = AppInfo::from_zip(&mut zipper).ok();
+        println!("parsing docProps/core.xml");
         let core = Core::from_zip(&mut zipper).ok();
-        println!("parsing presentation.xml");
+        println!("parsing ppt/presentation.xml");
         let presentation = ::pml::Presentation::from_zip(&mut zipper).ok();
         let mut theme_map = HashMap::new();
         let mut slide_master_map = HashMap::new();
@@ -54,6 +57,10 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slideMasters") {
+                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                    continue;
+                }
+
                 println!("parsing slide master file: {}", zip_file.name());
 
                 match ::pml::SlideMaster::from_zip_file(&mut zip_file) {
@@ -63,6 +70,10 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slideLayouts") {
+                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                    continue;
+                }
+
                 println!("parsing slide layout file: {}", zip_file.name());
 
                 match ::pml::SlideLayout::from_zip_file(&mut zip_file) {
@@ -72,6 +83,10 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slides") {
+                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                    continue;
+                }
+
                 println!("parsing slide file: {}", zip_file.name());
 
                 match ::pml::Slide::from_zip_file(&mut zip_file) {
@@ -84,8 +99,6 @@ impl PPTXDocument {
                 medias.push(file_path);
             }
         }
-
-        //::drawingml::OfficeStyleSheet::
 
         Ok(Self {
             file_path: PathBuf::from(pptx_path),

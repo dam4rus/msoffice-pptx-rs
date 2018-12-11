@@ -35,10 +35,10 @@ impl XmlNode {
             match xml_reader.read_event(&mut buffer) {
                 Ok(Event::Start(ref element)) => {
                     let mut root_node = Self::from_quick_xml_element(element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
-                    root_node.child_nodes = Self::parse_child_elements(element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
+                    root_node.child_nodes = Self::parse_child_elements(&mut root_node, element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
                     return Ok(root_node);
                 },
-                Ok(quick_xml::events::Event::Eof) => break,
+                Ok(Event::Eof) => break,
                 _ => (),
             }
 
@@ -74,12 +74,11 @@ impl XmlNode {
             }
         }
 
-        let mut buffer = Vec::new();
-        node.text = xml_reader.read_text(name, &mut buffer).ok();
         Ok(node)
     }
 
     fn parse_child_elements(
+        xml_node: &mut Self,
         xml_element: &BytesStart,
         xml_reader: &mut Reader<&[u8]>,
     ) -> Result<Vec<Self>, ::std::str::Utf8Error> {
@@ -88,19 +87,25 @@ impl XmlNode {
         let mut buffer = Vec::new();
         loop {
             match xml_reader.read_event(&mut buffer) {
-                Ok(quick_xml::events::Event::Start(ref element)) => {
+                Ok(Event::Start(ref element)) => {
                     let mut node = Self::from_quick_xml_element(element, xml_reader)?;
-                    node.child_nodes = Self::parse_child_elements(element, xml_reader)?;
+                    node.child_nodes = Self::parse_child_elements(&mut node, element, xml_reader)?;
                     child_nodes.push(node);
                 },
-                Ok(quick_xml::events::Event::Empty(ref element)) => {
+                Ok(Event::Text(text)) => {
+                    xml_node.text = text.unescape_and_decode(xml_reader).ok();
+                }
+                Ok(Event::Empty(ref element)) => {
                     let node = Self::from_quick_xml_element(element, xml_reader)?;
                     child_nodes.push(node);
                 },
-                Ok(quick_xml::events::Event::End(ref element)) => {
+                Ok(Event::End(ref element)) => {
                     if element.name() == xml_element.name() {
                         break;
                     }
+                }
+                Ok(Event::Eof) => {
+                    break;
                 }
                 _ => (),
             }

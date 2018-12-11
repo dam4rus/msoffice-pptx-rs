@@ -1940,7 +1940,6 @@ impl Presentation {
         let mut modify_verifier = None;
 
         for child_node in &xml_node.child_nodes {
-            println!("parsing child_node: {}", child_node);
             match child_node.local_name() {
                 "sldMasterIdLst" => {
                     for slide_master_id_node in &child_node.child_nodes {
