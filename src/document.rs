@@ -1,10 +1,8 @@
 use ::std::collections::{ HashMap };
 use ::std::path::{Path, PathBuf};
 use ::std::fs::File;
-use ::std::io::Read;
 use ::zip::ZipArchive;
 use ::docprops::{AppInfo, Core};
-use ::xml::XmlNode;
 
 
 /// Document
@@ -64,7 +62,24 @@ impl PPTXDocument {
                     }
                     Err(err) => println!("{}", err),
                 }
-                
+            } else if file_path.starts_with("ppt/slideLayouts") {
+                println!("parsing slide layout file: {}", zip_file.name());
+
+                match ::pml::SlideLayout::from_zip_file(&mut zip_file) {
+                    Ok(slide) => {
+                        slide_layout_map.insert(file_path, slide);
+                    }
+                    Err(err) => println!("{}", err),
+                }
+            } else if file_path.starts_with("ppt/slides") {
+                println!("parsing slide file: {}", zip_file.name());
+
+                match ::pml::Slide::from_zip_file(&mut zip_file) {
+                    Ok(slide) => {
+                        slide_map.insert(file_path, slide);
+                    }
+                    Err(err) => println!("{}", err),
+                }
             } else if file_path.starts_with("ppt/media") {
                 medias.push(file_path);
             }

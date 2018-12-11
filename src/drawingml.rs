@@ -1,6 +1,6 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
 use ::xml::{XmlNode, parse_xml_bool};
-use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, XmlError};
+use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit};
 use ::relationship::RelationshipId;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
@@ -1589,6 +1589,23 @@ impl ColorScheme {
 pub enum ColorMappingOverride {
     UseMasterColorMapping,
     OverrideColorMapping(ColorMapping),
+}
+
+impl ColorMappingOverride {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "masterClrMapping" | "overrideClrMapping" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "masterClrMapping" => Ok(ColorMappingOverride::UseMasterColorMapping),
+            "overrideClrMapping" => Ok(ColorMappingOverride::OverrideColorMapping(ColorMapping::from_xml_element(xml_node)?)),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "CT_ColorMappingOverride").into()),
+        }
+    }
 }
 
 pub struct ColorSchemeAndMapping {
@@ -3439,6 +3456,7 @@ impl TextBody {
                 "bodyPr" => body_properties = Some(TextBodyProperties::from_xml_element(child_node)?),
                 "lstStyle" => list_style = Some(TextListStyle::from_xml_element(child_node)?),
                 "p" => paragraph_array.push(TextParagraph::from_xml_element(child_node)?),
+                _ => (),
             }
         }
 
@@ -3954,7 +3972,7 @@ pub struct NonVisualGroupDrawingShapeProps {
 
 impl NonVisualGroupDrawingShapeProps {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let locks = None;
+        let mut locks = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
@@ -4353,7 +4371,7 @@ impl AdjPoint2D {
         let mut x = None;
         let mut y = None;
 
-        for (attr, value) in xml_node.attributes {
+        for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "x" => x = Some(value.parse()?),
                 "y" => y = Some(value.parse()?),
@@ -4730,12 +4748,10 @@ impl PresetGeometry2D {
         let preset = preset_attr.parse()?;
         let mut adjust_value_list = Vec::new();
 
-        for child_node in xml_node.child_nodes {
-            match child_node.local_name() {
-                "avLst" => {
-                    for av_node in &child_node.child_nodes {
-                        adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
-                    }
+        for child_node in &xml_node.child_nodes {
+            if child_node.local_name() == "avLst" {
+                for av_node in &child_node.child_nodes {
+                    adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
                 }
             }
         }
@@ -4779,10 +4795,8 @@ impl ShapeProperties {
                 fill_properties = Some(FillProperties::from_xml_element(child_node)?);
             //} else if EffectProperties::is_choice_member(child_local_name) {
             //    effect_properties = Some(EffectProperties::from_xml_element(child_node))?;
-            } else {
-                match child_node.local_name() {
-                    "xfrm" => transform = Some(Transform2D::from_xml_element(child_node)?),
-                }
+            } else if child_local_name == "xfrm" {
+                transform = Some(Transform2D::from_xml_element(child_node)?);
             }
         }
 

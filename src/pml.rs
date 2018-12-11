@@ -1,9 +1,8 @@
 use ::std::io::{ Read, Seek };
 use ::relationship::RelationshipId;
 use ::xml::{XmlNode, parse_xml_bool};
-use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError, ParseBoolError};
+use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use ::zip::read::ZipFile;
-use ::zip::result::ZipError;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -519,8 +518,8 @@ pub struct Background {
 
 impl Background {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let opt_background = None;
-        let black_and_white_mode = None;
+        let mut background = None;
+        let mut black_and_white_mode = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
@@ -531,11 +530,11 @@ impl Background {
 
         for child_node in &xml_node.child_nodes {
             if BackgroundGroup::is_choice_member(child_node.local_name()) {
-                opt_background = Some(BackgroundGroup::from_xml_element(child_node)?);
+                background = Some(BackgroundGroup::from_xml_element(child_node)?);
             }
         }
 
-        let background = opt_background.ok_or_else(|| MissingChildNodeError::new("bgPr|bgRef"))?;
+        let background = background.ok_or_else(|| MissingChildNodeError::new("bgPr|bgRef"))?;
 
         Ok(Self{
             background,
@@ -554,11 +553,11 @@ pub struct Placeholder {
 
 impl Placeholder {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let placeholder_type = None;
-        let orientation = None;
-        let size = None;
-        let index = None;
-        let has_custom_prompt = None;
+        let mut placeholder_type = None;
+        let mut orientation = None;
+        let mut size = None;
+        let mut index = None;
+        let mut has_custom_prompt = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
@@ -591,10 +590,10 @@ pub struct ApplicationNonVisualDrawingProps {
 
 impl ApplicationNonVisualDrawingProps {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let is_photo = None;
-        let is_user_drawn = None;
-        let placeholder = None;
-        let media = None;
+        let mut is_photo = None;
+        let mut is_user_drawn = None;
+        let mut placeholder = None;
+        let mut media = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
@@ -1057,6 +1056,27 @@ pub struct SlideLayoutIdListEntry {
     pub relationship_id: RelationshipId,
 }
 
+impl SlideLayoutIdListEntry {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut id = None;
+        let mut relationship_id = None;
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "id" => id = Some(value.parse()?),
+                "r:id" => relationship_id = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+
+        Ok(Self {
+            id,
+            relationship_id,
+        })
+    }
+}
+
 pub struct SlideMasterIdListEntry {
     pub id: Option<SlideMasterId>,
     pub relationship_id: RelationshipId,
@@ -1074,6 +1094,29 @@ pub struct SlideMasterTextStyles {
     pub title_styles: Option<::drawingml::TextListStyle>,
     pub body_styles: Option<::drawingml::TextListStyle>,
     pub other_styles: Option<::drawingml::TextListStyle>,
+}
+
+impl SlideMasterTextStyles {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut title_styles = None;
+        let mut body_styles = None;
+        let mut other_styles = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "titleStyle" => title_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
+                "bodyStyle" => body_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
+                "otherStyle" => other_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(Self {
+            title_styles,
+            body_styles,
+            other_styles,
+        })
+    }
 }
 
 pub struct OrientationTransition {
@@ -1461,12 +1504,6 @@ pub struct TLByHslColorTransform {
     pub l: ::drawingml::FixedPercentage,
 }
 
-pub struct ChildSlideData {
-    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
-    pub show_master_shapes: Option<bool>, // true
-    pub show_master_placholder_animations: Option<bool>, // true
-}
-
 pub struct SlideMaster {
     pub common_slide_data: CommonSlideData,
     pub color_mapping: ::drawingml::ColorMapping,
@@ -1509,16 +1546,14 @@ impl SlideMaster {
                 "cSld" => opt_common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
                 "clrMap" => opt_color_mapping = Some(::drawingml::ColorMapping::from_xml_element(child_node)?),
                 "sldLayoutIdLst" => {
-                    for slide_layout_id_node in child_node.child_nodes {
-                        match slide_layout_id_node.local_name() {
-                            "sldLayoutId" => slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?),
-                            _ => (),
-                        }
+                    for slide_layout_id_node in &child_node.child_nodes {
+                        slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
                     }
                 }
-                "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
-                "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
-                "hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
+                // TODO implement
+                //"transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
+                //"timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
+                //"hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
                 "txStyles" => text_styles = Some(SlideMasterTextStyles::from_xml_element(child_node)?),
                 _ => (),
             }
@@ -1541,23 +1576,152 @@ impl SlideMaster {
 }
 
 pub struct SlideLayout {
-    pub common_slide_data: CommonSlideData,
-    pub child_slide_data: Option<ChildSlideData>,
-    pub transition: Option<SlideTransition>,
-    pub timing: Option<SlideTiming>,
-    pub header_footer: Option<HeaderFooter>,
     pub matching_name: Option<String>, // ""
     pub slide_layout_type: Option<SlideLayoutType>, // cust
     pub preserve: Option<bool>, //false
     pub is_user_drawn: Option<bool>, // false
+    pub show_master_shapes: Option<bool>, // true
+    pub show_master_placeholder_animations: Option<bool>, // true
+    pub common_slide_data: CommonSlideData,
+    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
+    pub transition: Option<SlideTransition>,
+    pub timing: Option<SlideTiming>,
+    pub header_footer: Option<HeaderFooter>,
+}
+
+impl SlideLayout {
+    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+        let mut xml_string = String::new();
+        zip_file.read_to_string(&mut xml_string)?;
+        let xml_node = XmlNode::from_str(xml_string.as_str())?;
+
+        Self::from_xml_element(&xml_node)
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut matching_name = None;
+        let mut slide_layout_type = None;
+        let mut preserve = None;
+        let mut is_user_drawn = None;
+        let mut show_master_shapes = None;
+        let mut show_master_placeholder_animations = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "matchingName" => matching_name = Some(value.clone()),
+                "type" => slide_layout_type = Some(value.parse()?),
+                "preserve" => preserve = Some(parse_xml_bool(value)?),
+                "userDrawn" => is_user_drawn = Some(parse_xml_bool(value)?),
+                "showMasterSp" => show_master_shapes = Some(parse_xml_bool(value)?),
+                "showMasterPhAnim" => show_master_placeholder_animations = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut common_slide_data = None;
+        let mut color_mapping_override = None;
+        let mut transition = None;
+        let mut timing = None;
+        let mut header_footer = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cSld" => common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
+                "clrMapOvr" => {
+                    let clr_map_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new("masterClrMapping|overrideClrMapping"))?;
+                    color_mapping_override = Some(::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                }
+                // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
+                // "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
+                // "hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let common_slide_data = common_slide_data.ok_or_else(|| MissingChildNodeError::new("cSld"))?;
+
+        Ok(Self {
+            matching_name,
+            slide_layout_type,
+            preserve,
+            is_user_drawn,
+            show_master_shapes,
+            show_master_placeholder_animations,
+            common_slide_data,
+            color_mapping_override,
+            transition,
+            timing,
+            header_footer,
+        })
+    }
 }
 
 pub struct Slide {
+    pub show: Option<bool>, // true
+    pub show_master_shapes: Option<bool>, // true
+    pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: CommonSlideData,
-    pub child_slide_data: Option<ChildSlideData>,
+    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
     pub transition: Option<SlideTransition>,
     pub timing: Option<SlideTiming>,
-    pub show: Option<bool>, // true
+}
+
+impl Slide {
+    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+        let mut xml_string = String::new();
+        zip_file.read_to_string(&mut xml_string)?;
+        let xml_node = XmlNode::from_str(xml_string.as_str())?;
+
+        Self::from_xml_element(&xml_node)
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut show = None;
+        let mut show_master_shapes = None;
+        let mut show_master_placeholder_animations = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "show" => show = Some(parse_xml_bool(value)?),
+                "showMasterSp" => show_master_shapes = Some(parse_xml_bool(value)?),
+                "showMasterPhAnim" => show_master_placeholder_animations = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        let mut common_slide_data = None;
+        let mut color_mapping_override = None;
+        let mut transition = None;
+        let mut timing = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "cSld" => common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
+                "clrMapOvr" => {
+                    let clr_map_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new("masterClrMapping|overrideClrMapping"))?;
+                    color_mapping_override = Some(::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                }
+                // TODO implement
+                // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
+                // "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let common_slide_data = common_slide_data.ok_or_else(|| MissingChildNodeError::new("cSld"))?;
+        
+        Ok(Self {
+            show,
+            show_master_shapes,
+            show_master_placeholder_animations,
+            common_slide_data,
+            color_mapping_override,
+            transition,
+            timing,
+        })
+    }
 }
 
 /// EmbeddedFontListEntry
