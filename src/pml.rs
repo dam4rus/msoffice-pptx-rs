@@ -1869,13 +1869,13 @@ pub struct Presentation {
     pub slide_size: Option<SlideSize>,
     pub notes_size: Option<::drawingml::PositiveSize2D>,
     pub smart_tags: Option<RelationshipId>,
-    pub embedded_font_list: Vec<EmbeddedFontListEntry>,
+    pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
     pub custom_show_list: Vec<CustomShow>,
     pub photo_album: Option<PhotoAlbum>,
     pub customer_data_list: Option<CustomerDataList>,
-    pub kinsoku: Option<Kinsoku>,
-    pub default_text_style: Option<::drawingml::TextListStyle>,
-    pub modify_verifier: Option<ModifyVerifier>,
+    pub kinsoku: Option<Box<Kinsoku>>,
+    pub default_text_style: Option<Box<::drawingml::TextListStyle>>,
+    pub modify_verifier: Option<Box<ModifyVerifier>>,
 }
 
 impl Presentation {
@@ -2030,7 +2030,7 @@ impl Presentation {
                 }
                 "embeddedFontLst" => {
                     for embedded_font_node in &child_node.child_nodes {
-                        embedded_font_list.push(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?);
+                        embedded_font_list.push(Box::new(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?));
                     }
                 }
                 "custShowLst" => {
@@ -2079,13 +2079,13 @@ impl Presentation {
                     let invalid_start_chars = invalid_start_chars.ok_or_else(|| MissingAttributeError::new("invalStChars"))?;
                     let invalid_end_chars = invalid_end_chars.ok_or_else(|| MissingAttributeError::new("invalEndChars"))?;
 
-                    kinsoku = Some(Kinsoku {
+                    kinsoku = Some(Box::new(Kinsoku {
                         language,
                         invalid_start_chars,
                         invalid_end_chars,
-                    });
+                    }));
                 }
-                "defaultTextStyle" => default_text_style = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
+                "defaultTextStyle" => default_text_style = Some(Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }

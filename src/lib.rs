@@ -27,22 +27,22 @@ mod tests {
 
         let document = PPTXDocument::from_file(&sample_pptx_path).unwrap();
 
-        if let Some(app_info) = document.app {
-            assert_eq!(app_info.app_name.unwrap(), "Microsoft Office PowerPoint");
-            assert_eq!(app_info.app_version.unwrap(), "12.0000");
+        if let Some(ref app_info) = document.app {
+            assert_eq!(app_info.app_name.as_ref().unwrap(), "Microsoft Office PowerPoint");
+            assert_eq!(app_info.app_version.as_ref().unwrap(), "12.0000");
         }
 
-        if let Some(core) = document.core {
-            assert_eq!(core.title.unwrap(), "Sample PowerPoint File");
-            assert_eq!(core.creator.unwrap(), "James Falkofske");
-            assert_eq!(core.last_modified_by.unwrap(), "James Falkofske");
-            assert_eq!(core.revision.unwrap(), 2);
-            assert_eq!(core.created_time.unwrap(), "2009-05-06T22:06:09Z");
-            assert_eq!(core.modified_time.unwrap(), "2009-05-06T22:13:30Z");
+        if let Some(ref core) = document.core {
+            assert_eq!(core.title.as_ref().unwrap(), "Sample PowerPoint File");
+            assert_eq!(core.creator.as_ref().unwrap(), "James Falkofske");
+            assert_eq!(core.last_modified_by.as_ref().unwrap(), "James Falkofske");
+            assert_eq!(*core.revision.as_ref().unwrap(), 2);
+            assert_eq!(core.created_time.as_ref().unwrap(), "2009-05-06T22:06:09Z");
+            assert_eq!(core.modified_time.as_ref().unwrap(), "2009-05-06T22:13:30Z");
         }
 
         // presentation test
-        if let Some(presentation) = document.presentation {
+        if let Some(ref presentation) = document.presentation {
             let master_id = presentation.slide_master_id_list.get(0).unwrap();
             assert_eq!(master_id.id.unwrap(), 2147483684);
             assert_eq!(master_id.relationship_id, "rId1");
@@ -55,125 +55,130 @@ mod tests {
             assert_eq!(slide_id_1.id, 257);
             assert_eq!(slide_id_1.relationship_id, "rId3");
 
-            let slide_size = presentation.slide_size.unwrap();
+            let slide_size = presentation.slide_size.as_ref().unwrap();
             assert_eq!(slide_size.width, 9144000);
             assert_eq!(slide_size.height, 6858000);
-            assert_eq!(slide_size.size_type.unwrap(), ::pml::SlideSizeType::Screen4x3);
+            assert_eq!(*slide_size.size_type.as_ref().unwrap(), ::pml::SlideSizeType::Screen4x3);
 
-            let notes_size = presentation.notes_size.unwrap();
+            let notes_size = presentation.notes_size.as_ref().unwrap();
             assert_eq!(notes_size.width, 6858000);
             assert_eq!(notes_size.height, 9144000);
 
-            let def_text_style = presentation.default_text_style.unwrap();
-            let def_par_props = def_text_style.def_paragraph_props.unwrap();
-            assert_eq!(def_par_props.default_run_properties.unwrap().language.unwrap(), "en-US");
+            let def_text_style = presentation.default_text_style.as_ref().unwrap();
+            let def_par_props = def_text_style.def_paragraph_props.as_ref().unwrap();
+            assert_eq!(def_par_props.default_run_properties.as_ref().unwrap().language.as_ref().unwrap(), "en-US");
 
-            let lvl1_ppr = def_text_style.lvl1_paragraph_props.unwrap();
+            let lvl1_ppr = def_text_style.lvl1_paragraph_props.as_ref().unwrap();
             assert_eq!(lvl1_ppr.margin_left.unwrap(), 0);
-            assert_eq!(lvl1_ppr.align.unwrap(), ::drawingml::TextAlignType::Left);
+            assert_eq!(*lvl1_ppr.align.as_ref().unwrap(), ::drawingml::TextAlignType::Left);
             assert_eq!(lvl1_ppr.default_tab_size.unwrap(), 914400);
             assert_eq!(lvl1_ppr.rtl.unwrap(), false);
             assert_eq!(lvl1_ppr.east_asian_line_break.unwrap(), true);
             assert_eq!(lvl1_ppr.latin_line_break.unwrap(), false);
             assert_eq!(lvl1_ppr.hanging_punctuations.unwrap(), true);
 
-            let lvl1_def_rpr = lvl1_ppr.default_run_properties.unwrap();
+            let lvl1_def_rpr = lvl1_ppr.default_run_properties.as_ref().unwrap();
             assert_eq!(lvl1_def_rpr.font_size.unwrap(), 1800);
             assert_eq!(lvl1_def_rpr.kerning.unwrap(), 1200);
 
-            assert_eq!(lvl1_def_rpr.latin_font.unwrap().typeface, "+mn-lt");
-            assert_eq!(lvl1_def_rpr.east_asian_font.unwrap().typeface, "+mn-ea");
-            assert_eq!(lvl1_def_rpr.complex_script_font.unwrap().typeface, "+mn-cs");
+            assert_eq!(lvl1_def_rpr.latin_font.as_ref().unwrap().typeface, "+mn-lt");
+            assert_eq!(lvl1_def_rpr.east_asian_font.as_ref().unwrap().typeface, "+mn-ea");
+            assert_eq!(lvl1_def_rpr.complex_script_font.as_ref().unwrap().typeface, "+mn-cs");
         }
 
-        for (path, theme) in document.theme_map {
+        for (path, theme) in &document.theme_map {
             assert_eq!("ppt/theme/theme1.xml", path.to_str().unwrap());
 
             // color scheme test
-            let color_scheme = theme.theme_elements.color_scheme;
+            let color_scheme = &theme.theme_elements.color_scheme;
             assert_eq!(color_scheme.name, "Default Design 1");
 
             match color_scheme.dark1 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x000066),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x000066),
                 _ => panic!("theme1 dk1 color type mismatch"),
             }
             
             match color_scheme.light1 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xFFFFFF),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt1 color type mismatch"),
             }
             
             match color_scheme.dark2 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x003366),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x003366),
                 _ => panic!("theme1 dk2 color type mismatch"),
             }
             
             match color_scheme.light2 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xFFFFFF),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt2 color type mismatch"),
             }
             
             match color_scheme.accent1 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x8EB3C8),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x8EB3C8),
                 _ => panic!("theme1 accent1 color type mismatch"),
             }
             
             match color_scheme.accent2 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x6F97B3),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6F97B3),
                 _ => panic!("theme1 accent2 color type mismatch"),
             }
             
             match color_scheme.accent3 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xAAADB8),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xAAADB8),
                 _ => panic!("theme1 accent3 color type mismatch"),
             }
             
             match color_scheme.accent4 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xDADADA),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xDADADA),
                 _ => panic!("theme1 accent4 color type mismatch"),
             }
             
             match color_scheme.accent5 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0xC6D6E0),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xC6D6E0),
                 _ => panic!("theme1 accent5 color type mismatch"),
             }
             
             match color_scheme.accent6 {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x6488A2),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6488A2),
                 _ => panic!("theme1 accent6 color type mismatch"),
             }
             
             match color_scheme.hyperlink {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x556575),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x556575),
                 _ => panic!("theme1 hyperlink color type mismatch"),
             }
             
             match color_scheme.followed_hyperlink {
-                ::drawingml::Color::SRgbColor(clr) => assert_eq!(clr.value, 0x3D556F),
+                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x3D556F),
                 _ => panic!("theme1 followhyperlink type mismatch"),
             }
 
             // font_scheme test
-            let font_scheme = theme.theme_elements.font_scheme;
+            let font_scheme = &theme.theme_elements.font_scheme;
             assert_eq!(font_scheme.name, "Default Design");
 
-            let major_font = font_scheme.major_font;
+            let major_font = &font_scheme.major_font;
             assert_eq!(major_font.latin.typeface, "Tahoma");
             assert_eq!(major_font.east_asian.typeface, "");
             assert_eq!(major_font.complex_script.typeface, "");
 
-            let minor_font = font_scheme.minor_font;
+            let minor_font = &font_scheme.minor_font;
             assert_eq!(minor_font.latin.typeface, "Tahoma");
             assert_eq!(minor_font.east_asian.typeface, "");
             assert_eq!(minor_font.complex_script.typeface, "");
 
-            let format_scheme = theme.theme_elements.format_scheme;
-            assert_eq!(format_scheme.name.unwrap(), "Office");
+            let format_scheme = &theme.theme_elements.format_scheme;
+            assert_eq!(format_scheme.name.as_ref().unwrap(), "Office");
 
             // first fill style test
             let fill_style = &format_scheme.fill_style_list[0];
             match fill_style {
-                ::drawingml::FillProperties::SolidFill(::drawingml::Color::SchemeColor(clr)) => assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor),
+                ::drawingml::FillProperties::SolidFill(ref color) => {
+                    match *(*color) {
+                        ::drawingml::Color::SchemeColor(ref clr) => assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor),
+                        _ => panic!("fill[0] is invalid"),
+                    }
+                }
                 _ => panic!("fill[0] is invalid"),
             }
 
@@ -366,6 +371,36 @@ mod tests {
                 _ => panic!("bg fill style is not gradient"),
             }
         }
+    }
+
+    #[test]
+    fn test_sizes() {
+        println!("sizeof OfficeStyleSheet: {}", ::std::mem::size_of::<::drawingml::OfficeStyleSheet>());
+        println!("sizeof SlideMaster: {}", ::std::mem::size_of::<::pml::SlideMaster>());
+        println!("sizeof SlideLayout: {}", ::std::mem::size_of::<::pml::SlideLayout>());
+        println!("sizeof Slide: {}", ::std::mem::size_of::<::pml::Slide>());
+        println!("------");
+        println!("sizeof CustomColor: {}", ::std::mem::size_of::<::drawingml::CustomColor>());
+        println!("------");
+        println!("sizeof ColorScheme: {}", ::std::mem::size_of::<::drawingml::ColorScheme>());
+        println!("sizeof StyleMatrix: {}", ::std::mem::size_of::<::drawingml::StyleMatrix>());
+        println!("------");
+        println!("sizeof FontCollection: {}", ::std::mem::size_of::<::drawingml::FontCollection>());
+        println!("------");
+        println!("sizeof ShapeProperties: {}", ::std::mem::size_of::<::drawingml::ShapeProperties>());
+        println!("sizeof TextBodyProperties: {}", ::std::mem::size_of::<::drawingml::TextBodyProperties>());
+        println!("sizeof TextListStyle: {}", ::std::mem::size_of::<::drawingml::TextListStyle>());
+        println!("sizeof ShapeStyle: {}", ::std::mem::size_of::<::drawingml::ShapeStyle>());
+        println!("------");
+        println!("sizeof FillProperties: {}", ::std::mem::size_of::<::drawingml::FillProperties>());
+        println!("------");
+        println!("sizeof GradientFillProperties: {}", ::std::mem::size_of::<::drawingml::GradientFillProperties>());
+        println!("sizeof ShadeProperties: {}", ::std::mem::size_of::<::drawingml::ShadeProperties>());
+        println!("sizeof BlipFillProperties: {}", ::std::mem::size_of::<::drawingml::BlipFillProperties>());
+        println!("sizeof PatternFillProperties: {}", ::std::mem::size_of::<::drawingml::PatternFillProperties>());
+        println!("sizeof LineProperties: {}", ::std::mem::size_of::<::drawingml::LineProperties>());
+        println!("sizeof EffectProperties: {}", ::std::mem::size_of::<::drawingml::EffectProperties>());
+        println!("sizeof FillModeProperties: {}", ::std::mem::size_of::<::drawingml::FillModeProperties>());
     }
 
     #[test]

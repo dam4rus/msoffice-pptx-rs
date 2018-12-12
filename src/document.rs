@@ -9,13 +9,13 @@ use ::docprops::{AppInfo, Core};
 /// Document
 pub struct PPTXDocument {
     pub file_path: PathBuf,
-    pub app: Option<AppInfo>,
-    pub core: Option<Core>,
-    pub presentation: Option<::pml::Presentation>,
-    pub theme_map: HashMap<PathBuf, ::drawingml::OfficeStyleSheet>,
-    pub slide_master_map: HashMap<PathBuf, ::pml::SlideMaster>,
-    pub slide_layout_map: HashMap<PathBuf, ::pml::SlideLayout>,
-    pub slide_map: HashMap<PathBuf, ::pml::Slide>,
+    pub app: Option<Box<AppInfo>>,
+    pub core: Option<Box<Core>>,
+    pub presentation: Option<Box<::pml::Presentation>>,
+    pub theme_map: HashMap<PathBuf, Box<::drawingml::OfficeStyleSheet>>,
+    pub slide_master_map: HashMap<PathBuf, Box<::pml::SlideMaster>>,
+    pub slide_layout_map: HashMap<PathBuf, Box<::pml::SlideLayout>>,
+    pub slide_map: HashMap<PathBuf, Box<::pml::Slide>>,
     pub medias: Vec<PathBuf>,
 }
 
@@ -25,11 +25,11 @@ impl PPTXDocument {
         let mut zipper = ZipArchive::new(&pptx_file)?;
 
         println!("parsing docProps/app.xml");
-        let app = AppInfo::from_zip(&mut zipper).ok();
+        let app = AppInfo::from_zip(&mut zipper).map(|val| val.into()).ok();
         println!("parsing docProps/core.xml");
-        let core = Core::from_zip(&mut zipper).ok();
+        let core = Core::from_zip(&mut zipper).map(|val| val.into()).ok();
         println!("parsing ppt/presentation.xml");
-        let presentation = ::pml::Presentation::from_zip(&mut zipper).ok();
+        let presentation = ::pml::Presentation::from_zip(&mut zipper).map(|val| val.into()).ok();
         let mut theme_map = HashMap::new();
         let mut slide_master_map = HashMap::new();
         let mut slide_layout_map = HashMap::new();
@@ -50,7 +50,7 @@ impl PPTXDocument {
             let file_path = PathBuf::from(zip_file.name());
             if file_path.starts_with("ppt/theme") {
                 println!("parsing theme file: {}", zip_file.name());
-                match ::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file) {
+                match ::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file).map(|val| val.into()) {
                     Ok(theme) => {
                         theme_map.insert(file_path, theme);
                     }
@@ -63,7 +63,7 @@ impl PPTXDocument {
 
                 println!("parsing slide master file: {}", zip_file.name());
 
-                match ::pml::SlideMaster::from_zip_file(&mut zip_file) {
+                match ::pml::SlideMaster::from_zip_file(&mut zip_file).map(|val| val.into()) {
                     Ok(slide) => {
                         slide_master_map.insert(file_path, slide);
                     }
@@ -76,7 +76,7 @@ impl PPTXDocument {
 
                 println!("parsing slide layout file: {}", zip_file.name());
 
-                match ::pml::SlideLayout::from_zip_file(&mut zip_file) {
+                match ::pml::SlideLayout::from_zip_file(&mut zip_file).map(|val| val.into()) {
                     Ok(slide) => {
                         slide_layout_map.insert(file_path, slide);
                     }
@@ -89,7 +89,7 @@ impl PPTXDocument {
 
                 println!("parsing slide file: {}", zip_file.name());
 
-                match ::pml::Slide::from_zip_file(&mut zip_file) {
+                match ::pml::Slide::from_zip_file(&mut zip_file).map(|val| val.into()) {
                     Ok(slide) => {
                         slide_map.insert(file_path, slide);
                     }

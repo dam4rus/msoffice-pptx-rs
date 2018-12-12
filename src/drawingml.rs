@@ -1609,7 +1609,7 @@ impl ColorMappingOverride {
 }
 
 pub struct ColorSchemeAndMapping {
-    pub color_scheme: ColorScheme,
+    pub color_scheme: Box<ColorScheme>,
     pub color_mapping: Option<ColorMapping>,
 }
 
@@ -1905,10 +1905,10 @@ pub struct PatternFillProperties {
 
 pub enum FillProperties {
     NoFill,
-    SolidFill(Color),
-    GradientFill(GradientFillProperties),
-    BlipFill(BlipFillProperties),
-    PatternFill(PatternFillProperties),
+    SolidFill(Box<Color>),
+    GradientFill(Box<GradientFillProperties>),
+    BlipFill(Box<BlipFillProperties>),
+    PatternFill(Box<PatternFillProperties>),
     GroupFill
 }
 
@@ -1926,9 +1926,9 @@ impl FillProperties {
             "noFill" => Ok(FillProperties::NoFill),
             "solidFill" => {
                 let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
-                Ok(FillProperties::SolidFill(Color::from_xml_element(&child_node)?))
+                Ok(FillProperties::SolidFill(Box::new(Color::from_xml_element(&child_node)?)))
             }
-            "gradFill" => Ok(FillProperties::GradientFill(GradientFillProperties::from_xml_element(xml_node)?)),
+            "gradFill" => Ok(FillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))),
             // TODO: implement
             // <xsd:element name="blipFill" type="CT_BlipFillProperties" minOccurs="1" maxOccurs="1"/>
             // <xsd:element name="pattFill" type="CT_PatternFillProperties" minOccurs="1" maxOccurs="1"/>
@@ -3093,25 +3093,6 @@ impl TextCharacterProperties {
             hyperlink_click,
             hyperlink_mouse_over,
         })
-
-        /*
-          <xsd:complexType name="CT_TextCharacterProperties">
-    <xsd:sequence>
-      <xsd:element name="ln" type="CT_LineProperties" minOccurs="0" maxOccurs="1"/>
-      <xsd:group ref="EG_FillProperties" minOccurs="0" maxOccurs="1"/>
-      <xsd:group ref="EG_EffectProperties" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="highlight" type="CT_Color" minOccurs="0" maxOccurs="1"/>
-      <xsd:group ref="EG_TextUnderlineLine" minOccurs="0" maxOccurs="1"/>
-      <xsd:group ref="EG_TextUnderlineFill" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="sym" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="hlinkClick" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="hlinkMouseOver" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
-      <xsd:element name="rtl" type="CT_Boolean" minOccurs="0"/>
-      <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
-    </xsd:sequence>
-
-  </xsd:complexType>
-        */
     }
 }
 
@@ -3383,16 +3364,16 @@ impl TextField {
 
 /// TextListStyle
 pub struct TextListStyle {
-    pub def_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl1_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl2_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl3_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl4_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl5_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl6_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl7_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl8_paragraph_props: Option<TextParagraphProperties>,
-    pub lvl9_paragraph_props: Option<TextParagraphProperties>,
+    pub def_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl1_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl2_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl3_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl4_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl5_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl6_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl7_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl8_paragraph_props: Option<Box<TextParagraphProperties>>,
+    pub lvl9_paragraph_props: Option<Box<TextParagraphProperties>>,
 }
 
 impl TextListStyle {
@@ -3410,16 +3391,16 @@ impl TextListStyle {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "defPPr" => def_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl1pPr" => lvl1_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl2pPr" => lvl2_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl3pPr" => lvl3_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl4pPr" => lvl4_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl5pPr" => lvl5_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl6pPr" => lvl6_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl7pPr" => lvl7_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl8pPr" => lvl8_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                "lvl9pPr" => lvl9_paragraph_props = Some(TextParagraphProperties::from_xml_element(child_node)?),
+                "defPPr" => def_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl1pPr" => lvl1_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl2pPr" => lvl2_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl3pPr" => lvl3_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl4pPr" => lvl4_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl5pPr" => lvl5_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl6pPr" => lvl6_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl7pPr" => lvl7_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl8pPr" => lvl8_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "lvl9pPr" => lvl9_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -3657,8 +3638,8 @@ impl PresetTextShape {
 }
 
 pub struct FontScheme {
-    pub major_font: FontCollection,
-    pub minor_font: FontCollection,
+    pub major_font: Box<FontCollection>,
+    pub minor_font: Box<FontCollection>,
     pub name: String,
 }
 
@@ -3677,8 +3658,8 @@ impl FontScheme {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "majorFont" => opt_major_font = Some(FontCollection::from_xml_element(child_node)?),
-                "minorFont" => opt_minor_font = Some(FontCollection::from_xml_element(child_node)?),
+                "majorFont" => opt_major_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
+                "minorFont" => opt_minor_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -4681,7 +4662,7 @@ pub struct CustomGeometry2D {
     pub guide_list: Vec<GeomGuide>,
     pub adjust_handle_list: Vec<AdjustHandle>,
     pub connection_site_list: Vec<ConnectionSite>,
-    pub rect: Option<GeomRect>,
+    pub rect: Option<Box<GeomRect>>,
     pub path_list: Vec<Path2D>,
 }
 
@@ -4716,7 +4697,7 @@ impl CustomGeometry2D {
                         connection_site_list.push(ConnectionSite::from_xml_element(cxn_node)?);
                     }
                 }
-                "rect" => rect = Some(GeomRect::from_xml_element(child_node)?),
+                "rect" => rect = Some(Box::new(GeomRect::from_xml_element(child_node)?)),
                 "pathLst" => {
                     for path_node in &child_node.child_nodes {
                         path_list.push(Path2D::from_xml_element(path_node)?);
@@ -4914,7 +4895,7 @@ pub struct AnimationChartBuildProperties {
 
 pub struct OfficeStyleSheet {
     pub name: Option<String>, // ""
-    pub theme_elements: BaseStyles,
+    pub theme_elements: Box<BaseStyles>,
     pub object_defaults: Option<ObjectStyleDefaults>,
     pub extra_color_scheme_list: Vec<ColorSchemeAndMapping>,
     pub custom_color_list: Vec<CustomColor>,
@@ -4945,7 +4926,7 @@ impl OfficeStyleSheet {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "themeElements" => opt_theme_elements = Some(BaseStyles::from_xml_element(child_node)?),
+                "themeElements" => opt_theme_elements = Some(Box::new(BaseStyles::from_xml_element(child_node)?)),
                 // TODO: parse optional elements
                 _ => (),
             }
@@ -4964,9 +4945,9 @@ impl OfficeStyleSheet {
 }
 
 pub struct BaseStyles {
-    pub color_scheme: ColorScheme,
-    pub font_scheme: FontScheme,
-    pub format_scheme: StyleMatrix,
+    pub color_scheme: Box<ColorScheme>,
+    pub font_scheme: Box<FontScheme>,
+    pub format_scheme: Box<StyleMatrix>,
 }
 
 impl BaseStyles {
@@ -4977,9 +4958,9 @@ impl BaseStyles {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "clrScheme" => opt_color_scheme = Some(ColorScheme::from_xml_element(child_node)?),
-                "fontScheme" => opt_font_scheme = Some(FontScheme::from_xml_element(child_node)?),
-                "fmtScheme" => opt_format_scheme = Some(StyleMatrix::from_xml_element(child_node)?),
+                "clrScheme" => opt_color_scheme = Some(Box::new(ColorScheme::from_xml_element(child_node)?)),
+                "fontScheme" => opt_font_scheme = Some(Box::new(FontScheme::from_xml_element(child_node)?)),
+                "fmtScheme" => opt_format_scheme = Some(Box::new(StyleMatrix::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -5079,14 +5060,14 @@ impl StyleMatrix {
 }
 
 pub struct ObjectStyleDefaults {
-    pub shape_definition: Option<DefaultShapeDefinition>,
-    pub line_definition: Option<DefaultShapeDefinition>,
-    pub text_definition: Option<DefaultShapeDefinition>,
+    pub shape_definition: Option<Box<DefaultShapeDefinition>>,
+    pub line_definition: Option<Box<DefaultShapeDefinition>>,
+    pub text_definition: Option<Box<DefaultShapeDefinition>>,
 }
 
 pub struct DefaultShapeDefinition {
-    pub shape_properties: ShapeProperties,
-    pub text_body_properties: TextBodyProperties,
-    pub text_list_style: TextListStyle,
-    pub shape_style: Option<ShapeStyle>,
+    pub shape_properties: Box<ShapeProperties>,
+    pub text_body_properties: Box<TextBodyProperties>,
+    pub text_list_style: Box<TextListStyle>,
+    pub shape_style: Option<Box<ShapeStyle>>,
 }
