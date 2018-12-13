@@ -490,8 +490,8 @@ impl BackgroundProperties {
 }
 
 pub enum BackgroundGroup {
-    Properties(BackgroundProperties),
-    Reference(::drawingml::StyleMatrixReference),
+    Properties(Box<BackgroundProperties>),
+    Reference(Box<::drawingml::StyleMatrixReference>),
 }
 
 impl BackgroundGroup {
@@ -504,8 +504,8 @@ impl BackgroundGroup {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
-            "bgRef" => Ok(BackgroundGroup::Reference(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
+            "bgPr" => Ok(BackgroundGroup::Properties(Box::new(BackgroundProperties::from_xml_element(xml_node)?))),
+            "bgRef" => Ok(BackgroundGroup::Reference(Box::new(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
     }
@@ -583,8 +583,8 @@ impl Placeholder {
 pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
-    pub placeholder: Option<Placeholder>,
-    pub media: Option<::drawingml::Media>,
+    pub placeholder: Option<Box<Placeholder>>,
+    pub media: Option<Box<::drawingml::Media>>,
     //pub customer_data_list: Option<CustomerDataList>,
 }
 
@@ -610,7 +610,7 @@ impl ApplicationNonVisualDrawingProps {
             //     media = ::drawingml::Media::from_xml_element(child_node)?;
             // } else {
             match child_node.local_name() {
-                "ph" => placeholder = Some(Placeholder::from_xml_element(child_node)?),
+                "ph" => placeholder = Some(Box::new(Placeholder::from_xml_element(child_node)?)),
                 "custDataLst" => (), // TODO implement
                 _ => (),
             }
@@ -627,20 +627,20 @@ impl ApplicationNonVisualDrawingProps {
 }
 
 pub enum ShapeGroup {
-    Shape(Shape),
-    GroupShape(GroupShape),
-    GraphicFrame(GraphicalObjectFrame),
-    Connector(Connector),
-    Picture(Picture),
+    Shape(Box<Shape>),
+    GroupShape(Box<GroupShape>),
+    GraphicFrame(Box<GraphicalObjectFrame>),
+    Connector(Box<Connector>),
+    Picture(Box<Picture>),
     ContentPart(RelationshipId),
 }
 
 pub struct Shape {
     pub use_bg_fill: Option<bool>, // false
-    pub non_visual_props: ShapeNonVisual,
-    pub shape_props: ::drawingml::ShapeProperties,
-    pub style: Option<::drawingml::ShapeStyle>,
-    pub text_body: Option<::drawingml::TextBody>,
+    pub non_visual_props: Box<ShapeNonVisual>,
+    pub shape_props: Box<::drawingml::ShapeProperties>,
+    pub style: Option<Box<::drawingml::ShapeStyle>>,
+    pub text_body: Option<Box<::drawingml::TextBody>>,
 }
 
 impl Shape {
@@ -660,10 +660,10 @@ impl Shape {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvSpPr" => non_visual_props = Some(ShapeNonVisual::from_xml_element(child_node)?),
-                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
-                "style" => style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
-                "txBody" => text_body = Some(::drawingml::TextBody::from_xml_element(child_node)?),
+                "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
+                "spPr" => shape_props = Some(Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "style" => style = Some(Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "txBody" => text_body = Some(Box::new(::drawingml::TextBody::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -682,9 +682,9 @@ impl Shape {
 }
 
 pub struct ShapeNonVisual {
-    pub drawing_props: ::drawingml::NonVisualDrawingProps,
-    pub shape_drawing_props: ::drawingml::NonVisualDrawingShapeProps,
-    pub app_props: ApplicationNonVisualDrawingProps,
+    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
+    pub shape_drawing_props: Box<::drawingml::NonVisualDrawingShapeProps>,
+    pub app_props: Box<ApplicationNonVisualDrawingProps>,
 }
 
 impl ShapeNonVisual {
@@ -695,9 +695,9 @@ impl ShapeNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
-                "cNvSpPr" => shape_drawing_props = Some(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
-                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvPr" => drawing_props = Some(Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)),
+                "cNvSpPr" => shape_drawing_props = Some(Box::new(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)),
+                "nvPr" => app_props = Some(Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -715,27 +715,27 @@ impl ShapeNonVisual {
 }
 
 pub struct GroupShape {
-    pub non_visual_props: GroupShapeNonVisual,
-    pub group_shape_props: ::drawingml::GroupShapeProperties,
+    pub non_visual_props: Box<GroupShapeNonVisual>,
+    pub group_shape_props: Box<::drawingml::GroupShapeProperties>,
     pub shape_array: Vec<ShapeGroup>,
 }
 
 impl GroupShape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_non_visual_props = None;
-        let mut opt_group_shape_props = None;
+        let mut non_visual_props = None;
+        let mut group_shape_props = None;
         let mut shape_array = Vec::new();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvGrpSpPr" => opt_non_visual_props = Some(GroupShapeNonVisual::from_xml_element(child_node)?),
-                "grpSpPr" => opt_group_shape_props = Some(::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
-                "sp" => shape_array.push(ShapeGroup::Shape(Shape::from_xml_element(child_node)?)),
-                "grpSp" => shape_array.push(ShapeGroup::GroupShape(GroupShape::from_xml_element(child_node)?)),
+                "nvGrpSpPr" => non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?)),
+                "grpSpPr" => group_shape_props = Some(Box::new(::drawingml::GroupShapeProperties::from_xml_element(child_node)?)),
+                "sp" => shape_array.push(ShapeGroup::Shape(Box::new(Shape::from_xml_element(child_node)?))),
+                "grpSp" => shape_array.push(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(child_node)?))),
                 // TODO implement GraphicalObjectFrame
                 //"graphicFrame" => shape_array.push(ShapeGroup::GraphicFrame(GraphicalObjectFrame::from_xml_element(child_node)?)),
-                "cxnSp" => shape_array.push(ShapeGroup::Connector(Connector::from_xml_element(child_node)?)),
-                "pic" => shape_array.push(ShapeGroup::Picture(Picture::from_xml_element(child_node)?)),
+                "cxnSp" => shape_array.push(ShapeGroup::Connector(Box::new(Connector::from_xml_element(child_node)?))),
+                "pic" => shape_array.push(ShapeGroup::Picture(Box::new(Picture::from_xml_element(child_node)?))),
                 "contentPart" => {
                     let attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
                     shape_array.push(ShapeGroup::ContentPart(attr.clone()));
@@ -744,8 +744,8 @@ impl GroupShape {
             }
         }
 
-        let non_visual_props = opt_non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvGrpSpPr"))?;
-        let group_shape_props = opt_group_shape_props.ok_or_else(|| MissingChildNodeError::new("grpSpPr"))?;
+        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new("nvGrpSpPr"))?;
+        let group_shape_props = group_shape_props.ok_or_else(|| MissingChildNodeError::new("grpSpPr"))?;
 
         Ok(Self {
             non_visual_props,
@@ -756,35 +756,35 @@ impl GroupShape {
 }
 
 pub struct GroupShapeNonVisual {
-    pub drawing_props: ::drawingml::NonVisualDrawingProps,
-    pub group_drawing_props: ::drawingml::NonVisualGroupDrawingShapeProps,
-    pub app_props: ApplicationNonVisualDrawingProps,
+    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
+    pub group_drawing_props: Box<::drawingml::NonVisualGroupDrawingShapeProps>,
+    pub app_props: Box<ApplicationNonVisualDrawingProps>,
 }
 
 impl GroupShapeNonVisual {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_drawing_props = None;
-        let mut opt_group_drawing_props = None;
-        let mut opt_app_props = None;
+        let mut drawing_props = None;
+        let mut group_drawing_props = None;
+        let mut app_props = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => opt_drawing_props = Some(
-                    ::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?
+                "cNvPr" => drawing_props = Some(
+                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
-                "cNvGrpSpPr" => opt_group_drawing_props = Some(
-                    ::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
+                "cNvGrpSpPr" => group_drawing_props = Some(
+                    Box::new(::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?)
                 ),
-                "nvPr" => opt_app_props = Some(
-                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
+                "nvPr" => app_props = Some(
+                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 _ => (),
             }
         }
 
-        let drawing_props = opt_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
-        let group_drawing_props = opt_group_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvGrpSpPr"))?;
-        let app_props = opt_app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
+        let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvPr"))?;
+        let group_drawing_props = group_drawing_props.ok_or_else(|| MissingChildNodeError::new("cNvGrpSpPr"))?;
+        let app_props = app_props.ok_or_else(|| MissingChildNodeError::new("nvPr"))?;
         Ok(Self {
             drawing_props,
             group_drawing_props,
@@ -794,22 +794,22 @@ impl GroupShapeNonVisual {
 }
 
 pub struct GraphicalObjectFrame {
-    pub non_visual_props: GraphicalObjectFrameNonVisual,
-    pub transform: ::drawingml::Transform2D,
-    pub graphic: ::drawingml::GraphicalObject,
+    pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
+    pub transform: Box<::drawingml::Transform2D>,
+    pub graphic: Box<::drawingml::GraphicalObject>,
     pub black_white_mode: Option<::drawingml::BlackWhiteMode>,
 }
 
 pub struct GraphicalObjectFrameNonVisual {
-    pub drawing_props: ::drawingml::NonVisualDrawingProps,
-    pub graphic_frame_props: ::drawingml::NonVisualGraphicFrameProperties,
-    pub app_props: ApplicationNonVisualDrawingProps,
+    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
+    pub graphic_frame_props: Box<::drawingml::NonVisualGraphicFrameProperties>,
+    pub app_props: Box<ApplicationNonVisualDrawingProps>,
 }
 
 pub struct Connector {
-    pub non_visual_props: ConnectorNonVisual,
-    pub shape_props: ::drawingml::ShapeProperties,
-    pub shape_style: Option<::drawingml::ShapeStyle>,
+    pub non_visual_props: Box<ConnectorNonVisual>,
+    pub shape_props: Box<::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<::drawingml::ShapeStyle>>,
 }
 
 impl Connector {
@@ -820,9 +820,15 @@ impl Connector {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvCxnSpPr" => non_visual_props = Some(ConnectorNonVisual::from_xml_element(child_node)?),
-                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
-                "style" => shape_style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
+                "nvCxnSpPr" => non_visual_props = Some(
+                    Box::new(ConnectorNonVisual::from_xml_element(child_node)?)
+                ),
+                "spPr" => shape_props = Some(
+                    Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)
+                ),
+                "style" => shape_style = Some(
+                    Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)
+                ),
                 _ => (),
             }
         }
@@ -839,9 +845,9 @@ impl Connector {
 }
 
 pub struct ConnectorNonVisual {
-    pub drawing_props: ::drawingml::NonVisualDrawingProps,
-    pub connector_props: ::drawingml::NonVisualConnectorProperties,
-    pub app_props: ApplicationNonVisualDrawingProps,
+    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
+    pub connector_props: Box<::drawingml::NonVisualConnectorProperties>,
+    pub app_props: Box<ApplicationNonVisualDrawingProps>,
 }
 
 impl ConnectorNonVisual {
@@ -852,9 +858,15 @@ impl ConnectorNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
-                "cNvCxnSpPr" => connector_props = Some(::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?),
-                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvPr" => drawing_props = Some(
+                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
+                ),
+                "cNvCxnSpPr" => connector_props = Some(
+                    Box::new(::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
+                ),
+                "nvPr" => app_props = Some(
+                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
+                ),
                 _ => (),
             }
         }
@@ -872,10 +884,10 @@ impl ConnectorNonVisual {
 }
 
 pub struct Picture {
-    pub non_visual_props: PictureNonVisual,
-    pub blip_fill: ::drawingml::BlipFillProperties,
-    pub shape_props: ::drawingml::ShapeProperties,
-    pub shape_style: Option<::drawingml::ShapeStyle>,
+    pub non_visual_props: Box<PictureNonVisual>,
+    pub blip_fill: Box<::drawingml::BlipFillProperties>,
+    pub shape_props: Box<::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<::drawingml::ShapeStyle>>,
 }
 
 impl Picture {
@@ -887,10 +899,18 @@ impl Picture {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvPicPr" => non_visual_props = Some(PictureNonVisual::from_xml_element(child_node)?),
-                "blipFill" => blip_fill = Some(::drawingml::BlipFillProperties::from_xml_element(child_node)?),
-                "spPr" => shape_props = Some(::drawingml::ShapeProperties::from_xml_element(child_node)?),
-                "style" => shape_style = Some(::drawingml::ShapeStyle::from_xml_element(child_node)?),
+                "nvPicPr" => non_visual_props = Some(
+                    Box::new(PictureNonVisual::from_xml_element(child_node)?)
+                ),
+                "blipFill" => blip_fill = Some(
+                    Box::new(::drawingml::BlipFillProperties::from_xml_element(child_node)?)
+                ),
+                "spPr" => shape_props = Some(
+                    Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)
+                ),
+                "style" => shape_style = Some(
+                    Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)
+                ),
                 _ => (),
             }
         }
@@ -909,9 +929,9 @@ impl Picture {
 }
 
 pub struct PictureNonVisual {
-    pub drawing_props: ::drawingml::NonVisualDrawingProps,
-    pub picture_props: ::drawingml::NonVisualPictureProperties,
-    pub app_props: ApplicationNonVisualDrawingProps,
+    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
+    pub picture_props: Box<::drawingml::NonVisualPictureProperties>,
+    pub app_props: Box<ApplicationNonVisualDrawingProps>,
 }
 
 impl PictureNonVisual {
@@ -922,9 +942,15 @@ impl PictureNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?),
-                "cNvPicPr" => picture_props = Some(::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?),
-                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
+                "cNvPr" => drawing_props = Some(
+                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
+                ),
+                "cNvPicPr" => picture_props = Some(
+                    Box::new(::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
+                ),
+                "nvPr" => app_props = Some(
+                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
+                ),
                 _ => (),
             }
         }
@@ -943,10 +969,10 @@ impl PictureNonVisual {
 
 pub struct CommonSlideData {
     pub name: Option<String>,
-    pub background: Option<Background>,
-    pub shape_tree: GroupShape,
-    pub customer_data_list: Option<CustomerDataList>,
-    pub control_list: Vec<Control>,
+    pub background: Option<Box<Background>>,
+    pub shape_tree: Box<GroupShape>,
+    pub customer_data_list: Option<Box<CustomerDataList>>,
+    pub control_list: Vec<Box<Control>>,
 }
 
 impl CommonSlideData {
@@ -966,9 +992,15 @@ impl CommonSlideData {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "bg" => background = Some(Background::from_xml_element(child_node)?),
-                "spTree" => opt_shape_tree = Some(GroupShape::from_xml_element(child_node)?),
-                "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
+                "bg" => background = Some(
+                    Box::new(Background::from_xml_element(child_node)?)
+                ),
+                "spTree" => opt_shape_tree = Some(
+                    Box::new(GroupShape::from_xml_element(child_node)?)
+                ),
+                "custDataList" => customer_data_list = Some(
+                    Box::new(CustomerDataList::from_xml_element(child_node)?)
+                ),
                 // TODO implement
                 // "controls" => {
                 //     for control_node in child_node.child_nodes {
