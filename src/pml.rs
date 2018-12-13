@@ -452,8 +452,8 @@ pub struct IndexRange {
 
 pub struct BackgroundProperties {
     pub shade_to_title: Option<bool>, // false
-    pub fill: ::drawingml::FillProperties,
-    pub effect: Option<::drawingml::EffectProperties>,
+    pub fill: Box<::drawingml::FillProperties>,
+    pub effect: Option<Box<::drawingml::EffectProperties>>,
 }
 
 impl BackgroundProperties {
@@ -471,7 +471,7 @@ impl BackgroundProperties {
 
         for child_node in &xml_node.child_nodes {
             if ::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
-                opt_fill = Some(::drawingml::FillProperties::from_xml_element(child_node)?);
+                opt_fill = Some(Box::new(::drawingml::FillProperties::from_xml_element(child_node)?));
             }
             // TODO: implement EffectProperties
             // else if ::drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
