@@ -36,7 +36,7 @@ impl PPTXDocument {
         let mut slide_map = HashMap::new();
         let mut medias = Vec::new();
 
-        println!("");
+        println!();
 
         for i in 0..zipper.len() {
             let mut zip_file = match zipper.by_index(i) {
@@ -57,7 +57,7 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slideMasters") {
-                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
                     continue;
                 }
 
@@ -70,7 +70,7 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slideLayouts") {
-                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
                     continue;
                 }
 
@@ -83,7 +83,7 @@ impl PPTXDocument {
                     Err(err) => println!("{}", err),
                 }
             } else if file_path.starts_with("ppt/slides") {
-                if file_path.extension().unwrap_or("".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
                     continue;
                 }
 

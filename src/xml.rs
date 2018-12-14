@@ -34,7 +34,7 @@ impl XmlNode {
         loop {
             match xml_reader.read_event(&mut buffer) {
                 Ok(Event::Start(ref element)) => {
-                    let mut root_node = Self::from_quick_xml_element(element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
+                    let mut root_node = Self::from_quick_xml_element(element).map_err(|_| InvalidXmlError::new())?;
                     root_node.child_nodes = Self::parse_child_elements(&mut root_node, element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
                     return Ok(root_node);
                 },
@@ -59,10 +59,7 @@ impl XmlNode {
         self.attributes.get(attr_name)
     }
 
-    fn from_quick_xml_element(
-        xml_element: &quick_xml::events::BytesStart,
-        xml_reader: &mut Reader<&[u8]>,
-    ) -> Result<Self, ::std::str::Utf8Error> {
+    fn from_quick_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<Self, ::std::str::Utf8Error> {
         let name = ::std::str::from_utf8(xml_element.name())?;
         let mut node = Self::new(name);
 
@@ -88,7 +85,7 @@ impl XmlNode {
         loop {
             match xml_reader.read_event(&mut buffer) {
                 Ok(Event::Start(ref element)) => {
-                    let mut node = Self::from_quick_xml_element(element, xml_reader)?;
+                    let mut node = Self::from_quick_xml_element(element)?;
                     node.child_nodes = Self::parse_child_elements(&mut node, element, xml_reader)?;
                     child_nodes.push(node);
                 },
@@ -96,7 +93,7 @@ impl XmlNode {
                     xml_node.text = text.unescape_and_decode(xml_reader).ok();
                 }
                 Ok(Event::Empty(ref element)) => {
-                    let node = Self::from_quick_xml_element(element, xml_reader)?;
+                    let node = Self::from_quick_xml_element(element)?;
                     child_nodes.push(node);
                 },
                 Ok(Event::End(ref element)) => {

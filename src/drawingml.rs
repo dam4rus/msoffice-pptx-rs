@@ -1,12 +1,10 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
 use ::xml::{XmlNode, parse_xml_bool};
-use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit};
+use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, AdjustParseError};
 use ::relationship::RelationshipId;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
 use ::std::str::FromStr;
-use ::std::error::Error;
-use ::std::fmt::{Display, Formatter};
 
 pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
 
@@ -1186,7 +1184,6 @@ pub struct ScRgbColor {
 }
 
 impl ScRgbColor {
-
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<ScRgbColor> {
         let mut opt_r = None;
         let mut opt_g = None;
@@ -1384,12 +1381,12 @@ impl SchemeColor {
 
 /// Color
 pub enum Color {
-    ScRgbColor(ScRgbColor),
-    SRgbColor(SRgbColor),
-    HslColor(HslColor),
-    SystemColor(SystemColor),
-    SchemeColor(SchemeColor),
-    PresetColor(PresetColor),
+    ScRgbColor(Box<ScRgbColor>),
+    SRgbColor(Box<SRgbColor>),
+    HslColor(Box<HslColor>),
+    SystemColor(Box<SystemColor>),
+    SchemeColor(Box<SchemeColor>),
+    PresetColor(Box<PresetColor>),
 }
 
 impl Color {
@@ -1402,12 +1399,24 @@ impl Color {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Color> {
         match xml_node.local_name() {
-            "scrgbClr" => Ok(Color::ScRgbColor(ScRgbColor::from_xml_element(xml_node)?)),
-            "srgbClr" => Ok(Color::SRgbColor(SRgbColor::from_xml_element(xml_node)?)),
-            "hslClr" => Ok(Color::HslColor(HslColor::from_xml_element(xml_node)?)),
-            "sysClr" => Ok(Color::SystemColor(SystemColor::from_xml_element(xml_node)?)),
-            "schemeClr" => Ok(Color::SchemeColor(SchemeColor::from_xml_element(xml_node)?)),
-            "prstClr" => Ok(Color::PresetColor(PresetColor::from_xml_element(xml_node)?)),
+            "scrgbClr" => Ok(
+                Color::ScRgbColor(Box::new(ScRgbColor::from_xml_element(xml_node)?))
+            ),
+            "srgbClr" => Ok(
+                Color::SRgbColor(Box::new(SRgbColor::from_xml_element(xml_node)?))
+            ),
+            "hslClr" => Ok(
+                Color::HslColor(Box::new(HslColor::from_xml_element(xml_node)?))
+            ),
+            "sysClr" => Ok(
+                Color::SystemColor(Box::new(SystemColor::from_xml_element(xml_node)?))
+            ),
+            "schemeClr" => Ok(
+                Color::SchemeColor(Box::new(SchemeColor::from_xml_element(xml_node)?))
+            ),
+            "prstClr" => Ok(
+                Color::PresetColor(Box::new(PresetColor::from_xml_element(xml_node)?))
+            ),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_ColorChoice").into()),
         }
     }
@@ -1514,59 +1523,53 @@ pub struct ColorScheme {
 
 impl ColorScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_name = None;
-        let mut opt_dk1 = None;
-        let mut opt_lt1 = None;
-        let mut opt_dk2 = None;
-        let mut opt_lt2 = None;
-        let mut opt_accent1 = None;
-        let mut opt_accent2 = None;
-        let mut opt_accent3 = None;
-        let mut opt_accent4 = None;
-        let mut opt_accent5 = None;
-        let mut opt_accent6 = None;
-        let mut opt_hyperlink = None;
-        let mut opt_follow_hyperlink = None;
-        
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "name" => opt_name = Some(value.clone()),
-                _ => (),
-            }
-        }
+        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new("name"))?;
+        let name = name_attr.clone();
+
+        let mut dk1 = None;
+        let mut lt1 = None;
+        let mut dk2 = None;
+        let mut lt2 = None;
+        let mut accent1 = None;
+        let mut accent2 = None;
+        let mut accent3 = None;
+        let mut accent4 = None;
+        let mut accent5 = None;
+        let mut accent6 = None;
+        let mut hyperlink = None;
+        let mut follow_hyperlink = None;
 
         for child_node in &xml_node.child_nodes {
             let scheme_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("scheme color value"))?;
             match child_node.local_name() {
-                "dk1" => opt_dk1 = Some(Color::from_xml_element(&scheme_node)?),
-                "lt1" => opt_lt1 = Some(Color::from_xml_element(&scheme_node)?),
-                "dk2" => opt_dk2 = Some(Color::from_xml_element(&scheme_node)?),
-                "lt2" => opt_lt2 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent1" => opt_accent1 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent2" => opt_accent2 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent3" => opt_accent3 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent4" => opt_accent4 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent5" => opt_accent5 = Some(Color::from_xml_element(&scheme_node)?),
-                "accent6" => opt_accent6 = Some(Color::from_xml_element(&scheme_node)?),
-                "hlink" => opt_hyperlink = Some(Color::from_xml_element(&scheme_node)?),
-                "folHlink" => opt_follow_hyperlink = Some(Color::from_xml_element(&scheme_node)?),
+                "dk1" => dk1 = Some(Color::from_xml_element(&scheme_node)?),
+                "lt1" => lt1 = Some(Color::from_xml_element(&scheme_node)?),
+                "dk2" => dk2 = Some(Color::from_xml_element(&scheme_node)?),
+                "lt2" => lt2 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent1" => accent1 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent2" => accent2 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent3" => accent3 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent4" => accent4 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent5" => accent5 = Some(Color::from_xml_element(&scheme_node)?),
+                "accent6" => accent6 = Some(Color::from_xml_element(&scheme_node)?),
+                "hlink" => hyperlink = Some(Color::from_xml_element(&scheme_node)?),
+                "folHlink" => follow_hyperlink = Some(Color::from_xml_element(&scheme_node)?),
                 _ => (),
             }
         }
 
-        let name = opt_name.ok_or_else(|| MissingAttributeError::new("name"))?;
-        let dark1 = opt_dk1.ok_or_else(|| MissingChildNodeError::new("dk1"))?;
-        let light1 = opt_lt1.ok_or_else(|| MissingChildNodeError::new("lt1"))?;
-        let dark2 = opt_dk2.ok_or_else(|| MissingChildNodeError::new("dk2"))?;
-        let light2 = opt_lt2.ok_or_else(|| MissingChildNodeError::new("lt2"))?;
-        let accent1 = opt_accent1.ok_or_else(|| MissingChildNodeError::new("accent1"))?;
-        let accent2 = opt_accent2.ok_or_else(|| MissingChildNodeError::new("accent2"))?;
-        let accent3 = opt_accent3.ok_or_else(|| MissingChildNodeError::new("accent3"))?;
-        let accent4 = opt_accent4.ok_or_else(|| MissingChildNodeError::new("accent4"))?;
-        let accent5 = opt_accent5.ok_or_else(|| MissingChildNodeError::new("accent5"))?;
-        let accent6 = opt_accent6.ok_or_else(|| MissingChildNodeError::new("accent6"))?;
-        let hyperlink = opt_hyperlink.ok_or_else(|| MissingChildNodeError::new("hlink"))?;
-        let followed_hyperlink = opt_follow_hyperlink.ok_or_else(|| MissingChildNodeError::new("folHlink"))?;
+        let dark1 = dk1.ok_or_else(|| MissingChildNodeError::new("dk1"))?;
+        let light1 = lt1.ok_or_else(|| MissingChildNodeError::new("lt1"))?;
+        let dark2 = dk2.ok_or_else(|| MissingChildNodeError::new("dk2"))?;
+        let light2 = lt2.ok_or_else(|| MissingChildNodeError::new("lt2"))?;
+        let accent1 = accent1.ok_or_else(|| MissingChildNodeError::new("accent1"))?;
+        let accent2 = accent2.ok_or_else(|| MissingChildNodeError::new("accent2"))?;
+        let accent3 = accent3.ok_or_else(|| MissingChildNodeError::new("accent3"))?;
+        let accent4 = accent4.ok_or_else(|| MissingChildNodeError::new("accent4"))?;
+        let accent5 = accent5.ok_or_else(|| MissingChildNodeError::new("accent5"))?;
+        let accent6 = accent6.ok_or_else(|| MissingChildNodeError::new("accent6"))?;
+        let hyperlink = hyperlink.ok_or_else(|| MissingChildNodeError::new("hlink"))?;
+        let followed_hyperlink = follow_hyperlink.ok_or_else(|| MissingChildNodeError::new("folHlink"))?;
 
         Ok(Self {
             name,
@@ -1587,8 +1590,8 @@ impl ColorScheme {
 }
 
 pub enum ColorMappingOverride {
-    UseMasterColorMapping,
-    OverrideColorMapping(ColorMapping),
+    UseMaster,
+    Override(Box<ColorMapping>),
 }
 
 impl ColorMappingOverride {
@@ -1601,8 +1604,10 @@ impl ColorMappingOverride {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "masterClrMapping" => Ok(ColorMappingOverride::UseMasterColorMapping),
-            "overrideClrMapping" => Ok(ColorMappingOverride::OverrideColorMapping(ColorMapping::from_xml_element(xml_node)?)),
+            "masterClrMapping" => Ok(ColorMappingOverride::UseMaster),
+            "overrideClrMapping" => Ok(
+                ColorMappingOverride::Override(Box::new(ColorMapping::from_xml_element(xml_node)?))
+            ),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "CT_ColorMappingOverride").into()),
         }
     }
@@ -1610,7 +1615,7 @@ impl ColorMappingOverride {
 
 pub struct ColorSchemeAndMapping {
     pub color_scheme: Box<ColorScheme>,
-    pub color_mapping: Option<ColorMapping>,
+    pub color_mapping: Option<Box<ColorMapping>>,
 }
 
 /// GradientStop
@@ -1669,26 +1674,19 @@ pub struct PathShadeProperties {
 
 impl PathShadeProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut fill_to_rect = None;
-        let mut path = None;
+        let path = match xml_node.attribute("path") {
+            Some(val) => Some(val.parse()?),
+            None => None,
+        };
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "path" => path = Some(value.parse::<PathShadeType>()?),
-                _ => (),
-            }
-        }
-
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "fillToRect" => fill_to_rect = Some(RelativeRect::from_xml_element(child_node)?),
-                _ => (),
-            }
-        }
+        let fill_to_rect = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(RelativeRect::from_xml_element(node)?),
+            None => None,
+        };
 
         Ok(Self {
-            fill_to_rect,
             path,
+            fill_to_rect,
         })
     }
 }
@@ -1827,8 +1825,8 @@ impl StretchInfoProperties {
 }
 
 pub enum FillModeProperties {
-    Tile(TileInfoProperties),
-    Stretch(StretchInfoProperties),
+    Tile(Box<TileInfoProperties>),
+    Stretch(Box<StretchInfoProperties>),
 }
 
 impl FillModeProperties {
@@ -1841,8 +1839,8 @@ impl FillModeProperties {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "tile" => Ok(FillModeProperties::Tile(TileInfoProperties::from_xml_element(xml_node)?)),
-            "stretch" => Ok(FillModeProperties::Stretch(StretchInfoProperties::from_xml_element(xml_node)?)),
+            "tile" => Ok(FillModeProperties::Tile(Box::new(TileInfoProperties::from_xml_element(xml_node)?))),
+            "stretch" => Ok(FillModeProperties::Stretch(Box::new(StretchInfoProperties::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_FillModeProperties").into()),
         }
     }
@@ -1851,7 +1849,7 @@ impl FillModeProperties {
 pub struct BlipFillProperties {
     pub dpi: Option<u32>,
     pub rotate_with_shape: Option<bool>,
-    pub blip: Option<Blip>,
+    pub blip: Option<Box<Blip>>,
     pub source_rect: Option<RelativeRect>,
     pub fill_mode_properties: Option<FillModeProperties>,
 }
@@ -1880,7 +1878,7 @@ impl BlipFillProperties {
                 fill_mode_properties = Some(FillModeProperties::from_xml_element(child_node)?);
             } else {
                 match child_local_name {
-                    "blip" => blip = Some(Blip::from_xml_element(child_node)?),
+                    "blip" => blip = Some(Box::new(Blip::from_xml_element(child_node)?)),
                     "srcRect" => source_rect = Some(RelativeRect::from_xml_element(child_node)?),
                     _ => (),
                 }
@@ -1905,7 +1903,7 @@ pub struct PatternFillProperties {
 
 pub enum FillProperties {
     NoFill,
-    SolidFill(Box<Color>),
+    SolidFill(Color),
     GradientFill(Box<GradientFillProperties>),
     BlipFill(Box<BlipFillProperties>),
     PatternFill(Box<PatternFillProperties>),
@@ -1926,7 +1924,7 @@ impl FillProperties {
             "noFill" => Ok(FillProperties::NoFill),
             "solidFill" => {
                 let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
-                Ok(FillProperties::SolidFill(Box::new(Color::from_xml_element(&child_node)?)))
+                Ok(FillProperties::SolidFill(Color::from_xml_element(&child_node)?))
             }
             "gradFill" => Ok(FillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))),
             // TODO: implement
@@ -1942,8 +1940,8 @@ impl FillProperties {
 pub enum LineFillProperties {
     NoFill,
     SolidFill(Color),
-    GradientFill(GradientFillProperties),
-    PatternFill(PatternFillProperties),
+    GradientFill(Box<GradientFillProperties>),
+    PatternFill(Box<PatternFillProperties>),
 }
 
 impl LineFillProperties {
@@ -1966,7 +1964,9 @@ impl LineFillProperties {
 
                 Ok(LineFillProperties::SolidFill(Color::from_xml_element(child_node)?))
             },
-            "gradFill" => Ok(LineFillProperties::GradientFill(GradientFillProperties::from_xml_element(xml_node)?)),
+            "gradFill" => Ok(
+                LineFillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))
+            ),
             // TODO: implement pattFill
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_LineFillProperties").into()),
         }
@@ -2413,7 +2413,6 @@ pub struct ColorReplaceEffect {
     pub color: Color,
 }
 
-
 pub struct LuminanceEffect {
     pub bright: Option<FixedPercentage>,
     pub contrast: Option<FixedPercentage>,
@@ -2510,6 +2509,7 @@ pub struct TransformEffect {
     pub skew_y: Option<FixedAngle>, // 0
 }
 
+// TODO maybe Box ReflectionEffect variant (sizeof==120)
 pub enum Effect {
     Cont(EffectContainer),
     EffectReference(String),
@@ -2555,8 +2555,8 @@ pub struct EffectList {
 }
 
 pub enum EffectProperties {
-    EffectList(EffectList),
-    EffectContainer(EffectContainer),
+    EffectList(Box<EffectList>),
+    EffectContainer(Box<EffectContainer>),
 }
 
 pub struct EffectStyleItem {
@@ -2617,36 +2617,6 @@ pub struct Blip {
 
 impl Blip {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        /*
-        <xsd:complexType name="CT_Blip">
-    <xsd:sequence>
-      <xsd:choice minOccurs="0" maxOccurs="unbounded">
-        <xsd:element name="alphaBiLevel" type="CT_AlphaBiLevelEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="alphaCeiling" type="CT_AlphaCeilingEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="alphaFloor" type="CT_AlphaFloorEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="alphaInv" type="CT_AlphaInverseEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="alphaMod" type="CT_AlphaModulateEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="alphaModFix" type="CT_AlphaModulateFixedEffect" minOccurs="1"
-          maxOccurs="1"/>
-        <xsd:element name="alphaRepl" type="CT_AlphaReplaceEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="biLevel" type="CT_BiLevelEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="blur" type="CT_BlurEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="clrChange" type="CT_ColorChangeEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="clrRepl" type="CT_ColorReplaceEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="duotone" type="CT_DuotoneEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="fillOverlay" type="CT_FillOverlayEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="grayscl" type="CT_GrayscaleEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="hsl" type="CT_HSLEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="lum" type="CT_LuminanceEffect" minOccurs="1" maxOccurs="1"/>
-        <xsd:element name="tint" type="CT_TintEffect" minOccurs="1" maxOccurs="1"/>
-      </xsd:choice>
-      <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
-    </xsd:sequence>
-    <xsd:attributeGroup ref="AG_Blob"/>
-    <xsd:attribute name="cstate" type="ST_BlipCompression" use="optional" default="none"/>
-  </xsd:complexType>
-        */
-
         let mut embed_rel_id = None;
         let mut linked_rel_id = None;
         let mut compression = None;
@@ -2848,7 +2818,7 @@ pub enum TextBullet {
     None,
     AutoNumbered(TextAutonumberedBullet),
     Character(String),
-    Picture(Blip),
+    Picture(Box<Blip>),
 }
 
 impl TextBullet {
@@ -2869,8 +2839,10 @@ impl TextBullet {
             }
             "buBlip" => {
                 match xml_node.child_nodes.get(0) {
-                    Some(child_node) => Ok(TextBullet::Picture(Blip::from_xml_element(child_node)?)),
-                    None => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBullet").into()), // TODO: return correct error
+                    Some(child_node) => Ok(
+                        TextBullet::Picture(Box::new(Blip::from_xml_element(child_node)?))
+                    ),
+                    None => Err(MissingChildNodeError::new("EG_TextBullet").into()),
                 }
             },
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBullet").into()),
@@ -2935,12 +2907,54 @@ impl TextTabStop {
 
 pub enum TextUnderlineLine {
     FollowText,
-    Line(Option<LineProperties>),
+    Line(Option<Box<LineProperties>>),
+}
+
+impl TextUnderlineLine {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "uLnTx" | "uLn" => true,
+            _ => false
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "uLnTx" => Ok(TextUnderlineLine::FollowText),
+            "uLn" => {
+                Ok(TextUnderlineLine::Line(match xml_node.child_nodes.get(0) {
+                    Some(node) => Some(Box::new(LineProperties::from_xml_element(node)?)),
+                    None => None,
+                }))
+            }
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextUnderlineLine").into())
+        }
+    }
 }
 
 pub enum TextUnderlineFill {
     FollowText,
     Fill(FillProperties),
+}
+
+impl TextUnderlineFill {
+    pub fn is_choice_member(name: &str) -> bool {
+        match name {
+            "uFillTx" | "uFill" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "uFillTx" => Ok(TextUnderlineFill::FollowText),
+            "uFill" => {
+                let fill_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("EG_FillProperties"))?;
+                Ok(TextUnderlineFill::Fill(FillProperties::from_xml_element(fill_node)?))
+            }
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextUnderlineFill").into()),
+        }
+    }
 }
 
 pub struct Hyperlink {
@@ -2953,6 +2967,52 @@ pub struct Hyperlink {
     pub highlight_click: Option<bool>, // false
     pub end_sound: Option<bool>, // false
     pub sound: Option<EmbeddedWAVAudioFile>,
+}
+
+impl Hyperlink {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut relationship_id = None;
+        let mut invalid_url = None;
+        let mut action = None;
+        let mut target_frame = None;
+        let mut tooltip = None;
+        let mut history = None;
+        let mut highlight_click = None;
+        let mut end_sound = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "r:id" => relationship_id = Some(value.clone()),
+                "invalidUrl" => invalid_url = Some(value.clone()),
+                "action" => action = Some(value.clone()),
+                "tgtFrame" => target_frame = Some(value.clone()),
+                "tooltip" => tooltip = Some(value.clone()),
+                "history" => history = Some(parse_xml_bool(value)?),
+                "highlightClick" => highlight_click = Some(parse_xml_bool(value)?),
+                "endSnd" => end_sound = Some(parse_xml_bool(value)?),
+                _ => ()
+            }
+        }
+
+        let sound = None;
+        // TODO implement
+        // let sound = match xml_node.child_nodes.get(0) {
+        //     Some(node) => Some(EmbeddedWAVAudioFile::from_xml_element(node)?),
+        //     None => None,
+        // };
+
+        Ok(Self {
+            relationship_id,
+            invalid_url,
+            action,
+            target_frame,
+            tooltip,
+            history,
+            highlight_click,
+            end_sound,
+            sound,
+        })
+    }
 }
 
 /// TextCharacterProperties
@@ -2976,7 +3036,7 @@ pub struct TextCharacterProperties {
     pub smarttag_clean: Option<bool>, // true
     pub smarttag_id: Option<u32>, // 0
     pub bookmark_link_target: Option<String>,
-    pub line_properties: Option<LineProperties>,
+    pub line_properties: Option<Box<LineProperties>>,
     pub fill_properties: Option<FillProperties>,
     pub effect_properties: Option<EffectProperties>,
     pub highlight_color: Option<Color>,
@@ -2986,8 +3046,9 @@ pub struct TextCharacterProperties {
     pub east_asian_font: Option<TextFont>,
     pub complex_script_font: Option<TextFont>,
     pub symbol_font: Option<TextFont>,
-    pub hyperlink_click: Option<Hyperlink>,
-    pub hyperlink_mouse_over: Option<Hyperlink>,
+    pub hyperlink_click: Option<Box<Hyperlink>>,
+    pub hyperlink_mouse_over: Option<Box<Hyperlink>>,
+    pub rtl: Option<bool>
 }
 
 impl TextCharacterProperties {
@@ -3049,14 +3110,39 @@ impl TextCharacterProperties {
         let mut symbol_font = None;
         let mut hyperlink_click = None;
         let mut hyperlink_mouse_over = None;
+        let mut rtl = None;
 
         for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "ln" => line_properties = Some(LineProperties::from_xml_element(child_node)?),
-                "latin" => latin_font = Some(TextFont::from_xml_element(child_node)?),
-                "ea" => east_asian_font = Some(TextFont::from_xml_element(child_node)?),
-                "cs" => complex_script_font = Some(TextFont::from_xml_element(child_node)?),
-                _ => (),
+            let child_local_name = child_node.local_name();
+            if FillProperties::is_choice_member(child_local_name) {
+                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
+            // TODO implement
+            //} else if EffectProperties::is_choice_member(child_local_name) {
+            //    effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+            } else if TextUnderlineLine::is_choice_member(child_local_name) {
+                text_underline_line = Some(TextUnderlineLine::from_xml_element(child_node)?);
+            } else if TextUnderlineFill::is_choice_member(child_local_name) {
+                text_underline_fill = Some(TextUnderlineFill::from_xml_element(child_node)?);
+            } else {
+                match child_local_name {
+                    "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
+                    "highlight" => {
+                        let color_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("CT_Color"))?;
+                        highlight_color = Some(Color::from_xml_element(color_node)?);
+                    }
+                    "latin" => latin_font = Some(TextFont::from_xml_element(child_node)?),
+                    "ea" => east_asian_font = Some(TextFont::from_xml_element(child_node)?),
+                    "cs" => complex_script_font = Some(TextFont::from_xml_element(child_node)?),
+                    "hlinkClick" => hyperlink_click = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                    "hlinkMouseOver" => hyperlink_mouse_over = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                    "rtl" => {
+                        rtl = match child_node.text {
+                            Some(ref s) => Some(parse_xml_bool(s)?),
+                            None => None,
+                        }
+                    }
+                    _ => (),
+                }
             }
         }
 
@@ -3092,6 +3178,7 @@ impl TextCharacterProperties {
             symbol_font,
             hyperlink_click,
             hyperlink_mouse_over,
+            rtl,
         })
     }
 }
@@ -3117,7 +3204,7 @@ pub struct TextParagraphProperties {
     pub bullet_typeface: Option<TextBulletTypeface>,
     pub bullet: Option<TextBullet>,
     pub tab_stop_list: Vec<TextTabStop>,
-    pub default_run_properties: Option<TextCharacterProperties>,
+    pub default_run_properties: Option<Box<TextCharacterProperties>>,
 }
 
 impl TextParagraphProperties {
@@ -3185,7 +3272,9 @@ impl TextParagraphProperties {
                         space_after = Some(TextSpacing::from_xml_element(space_after_node)?);
                     },
                     "tabLst" => tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
-                    "defRPr" => default_run_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                    "defRPr" => default_run_properties = Some(
+                        Box::new(TextCharacterProperties::from_xml_element(child_node)?)
+                    ),
                     _ => (),
                 }
             }
@@ -3217,9 +3306,9 @@ impl TextParagraphProperties {
 }
 
 pub struct TextParagraph {
-    pub properties: Option<TextParagraphProperties>,
+    pub properties: Option<Box<TextParagraphProperties>>,
     pub text_run_list: Vec<TextRun>,
-    pub end_paragraph_char_properties: Option<TextCharacterProperties>,
+    pub end_paragraph_char_properties: Option<Box<TextCharacterProperties>>,
 }
 
 impl TextParagraph {
@@ -3234,8 +3323,12 @@ impl TextParagraph {
                 text_run_list.push(TextRun::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
-                    "pPr" => properties = Some(TextParagraphProperties::from_xml_element(child_node)?),
-                    "endParaRPr" => end_paragraph_char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                    "pPr" => properties = Some(
+                        Box::new(TextParagraphProperties::from_xml_element(child_node)?)
+                    ),
+                    "endParaRPr" => end_paragraph_char_properties = Some(
+                        Box::new(TextCharacterProperties::from_xml_element(child_node)?)
+                    ),
                     _ => (),
                 }
             }
@@ -3250,9 +3343,9 @@ impl TextParagraph {
 }
 
 pub enum TextRun {
-    RegularTextRun(RegularTextRun),
-    LineBreak(TextLineBreak),
-    TextField(TextField),
+    RegularTextRun(Box<RegularTextRun>),
+    LineBreak(Box<TextLineBreak>),
+    TextField(Box<TextField>),
 }
 
 impl TextRun {
@@ -3265,16 +3358,16 @@ impl TextRun {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "r" => Ok(TextRun::RegularTextRun(RegularTextRun::from_xml_element(xml_node)?)),
-            "br" => Ok(TextRun::LineBreak(TextLineBreak::from_xml_element(xml_node)?)),
-            "fld" => Ok(TextRun::TextField(TextField::from_xml_element(xml_node)?)),
+            "r" => Ok(TextRun::RegularTextRun(Box::new(RegularTextRun::from_xml_element(xml_node)?))),
+            "br" => Ok(TextRun::LineBreak(Box::new(TextLineBreak::from_xml_element(xml_node)?))),
+            "fld" => Ok(TextRun::TextField(Box::new(TextField::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextRun").into()),
         }
     }
 }
 
 pub struct RegularTextRun {
-    pub char_properties: Option<TextCharacterProperties>,
+    pub char_properties: Option<Box<TextCharacterProperties>>,
     pub text: String,
 }
 
@@ -3285,7 +3378,7 @@ impl RegularTextRun {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "rPr" => char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
+                "rPr" => char_properties = Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?)),
                 "t" => text = child_node.text.clone(),
                 _ => (),
             }
@@ -3300,13 +3393,13 @@ impl RegularTextRun {
 }
 
 pub struct TextLineBreak {
-    pub char_properties: Option<TextCharacterProperties>,
+    pub char_properties: Option<Box<TextCharacterProperties>>,
 }
 
 impl TextLineBreak {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let char_properties = match xml_node.child_nodes.get(0) {
-            Some(node) => Some(TextCharacterProperties::from_xml_element(node)?),
+            Some(node) => Some(Box::new(TextCharacterProperties::from_xml_element(node)?)),
             None => None,
         };
 
@@ -3319,8 +3412,8 @@ impl TextLineBreak {
 pub struct TextField {
     pub id: Guid,
     pub field_type: Option<String>,
-    pub char_properties: Option<TextCharacterProperties>,
-    pub paragraph_properties: Option<TextParagraph>,
+    pub char_properties: Option<Box<TextCharacterProperties>>,
+    pub paragraph_properties: Option<Box<TextParagraph>>,
     pub text: Option<String>,
 }
 
@@ -3345,8 +3438,8 @@ impl TextField {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "rPr" => char_properties = Some(TextCharacterProperties::from_xml_element(child_node)?),
-                "pPr" => paragraph_properties = Some(TextParagraph::from_xml_element(child_node)?),
+                "rPr" => char_properties = Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?)),
+                "pPr" => paragraph_properties = Some(Box::new(TextParagraph::from_xml_element(child_node)?)),
                 "t" => text = child_node.text.clone(),
                 _ => (),
             }
@@ -3421,9 +3514,9 @@ impl TextListStyle {
 }
 
 pub struct TextBody {
-    pub body_properties: TextBodyProperties,
-    pub list_style: Option<TextListStyle>,
-    pub paragraph_array: Vec<TextParagraph>,
+    pub body_properties: Box<TextBodyProperties>,
+    pub list_style: Option<Box<TextListStyle>>,
+    pub paragraph_array: Vec<Box<TextParagraph>>,
 }
 
 impl TextBody {
@@ -3434,9 +3527,9 @@ impl TextBody {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "bodyPr" => body_properties = Some(TextBodyProperties::from_xml_element(child_node)?),
-                "lstStyle" => list_style = Some(TextListStyle::from_xml_element(child_node)?),
-                "p" => paragraph_array.push(TextParagraph::from_xml_element(child_node)?),
+                "bodyPr" => body_properties = Some(Box::new(TextBodyProperties::from_xml_element(child_node)?)),
+                "lstStyle" => list_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?)),
+                "p" => paragraph_array.push(Box::new(TextParagraph::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -3471,7 +3564,7 @@ pub struct TextBodyProperties {
     pub force_antialias: Option<bool>,
     pub upright: Option<bool>,
     pub compatible_line_spacing: Option<bool>,
-    pub preset_text_warp: Option<PresetTextShape>,
+    pub preset_text_warp: Option<Box<PresetTextShape>>,
     pub auto_fit_type: Option<TextAutoFit>,
     //pub scene_3d: Option<Scene3D>,
     //pub text_3d: Option<Text3D>,
@@ -3528,13 +3621,11 @@ impl TextBodyProperties {
         let mut auto_fit_type = None;
 
         for child_node in &xml_node.child_nodes {
-            if TextAutoFit::is_choice_member(child_node.local_name()) {
+            let child_local_name = child_node.local_name();
+            if TextAutoFit::is_choice_member(child_local_name) {
                 auto_fit_type = Some(TextAutoFit::from_xml_element(child_node)?);
-            } else {
-                match child_node.local_name() {
-                    "prstTxWarp" => preset_text_warp = Some(PresetTextShape::from_xml_element(child_node)?),
-                    _ => (),
-                }
+            } else if child_local_name == "prstTxWarp" {
+                preset_text_warp = Some(Box::new(PresetTextShape::from_xml_element(child_node)?));
             }
         }
 
@@ -3638,35 +3729,28 @@ impl PresetTextShape {
 }
 
 pub struct FontScheme {
+    pub name: String,
     pub major_font: Box<FontCollection>,
     pub minor_font: Box<FontCollection>,
-    pub name: String,
 }
 
 impl FontScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_name = None;
-        let mut opt_major_font = None;
-        let mut opt_minor_font = None;
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "name" => opt_name = Some(value.clone()),
-                _ => (),
-            }
-        }
+        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new("name"))?;
+        let name = name_attr.clone();
+        let mut major_font = None;
+        let mut minor_font = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "majorFont" => opt_major_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
-                "minorFont" => opt_minor_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
+                "majorFont" => major_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
+                "minorFont" => minor_font = Some(Box::new(FontCollection::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
 
-        let name = opt_name.ok_or_else(|| MissingAttributeError::new("name"))?;
-        let major_font = opt_major_font.ok_or_else(|| MissingChildNodeError::new("majorFont"))?;
-        let minor_font = opt_minor_font.ok_or_else(|| MissingChildNodeError::new("minorFont"))?;
+        let major_font = major_font.ok_or_else(|| MissingChildNodeError::new("majorFont"))?;
+        let minor_font = minor_font.ok_or_else(|| MissingChildNodeError::new("minorFont"))?;
 
         Ok(Self {
             name,
@@ -3719,8 +3803,8 @@ pub struct NonVisualDrawingProps {
     pub description: Option<String>,
     pub hidden: Option<bool>, // false
     pub title: Option<String>,
-    pub hyperlink_click: Option<Hyperlink>,
-    pub hyperlink_hover: Option<Hyperlink>,
+    pub hyperlink_click: Option<Box<Hyperlink>>,
+    pub hyperlink_hover: Option<Box<Hyperlink>>,
 }
 
 impl NonVisualDrawingProps {
@@ -3744,14 +3828,13 @@ impl NonVisualDrawingProps {
             }
         }
 
-        // TODO: implement
-        // for child_node in &xml_node.child_nodes {
-        //     match child_node.local_name() {
-        //         "hlinkClick" => hyperlink_click = Some(Hyperlink::from_xml_element(child_node)?),
-        //         "hlinkHover" => hyperlink_hover = Some(Hyperlink::from_xml_element(child_node)?),
-        //         _ => (),
-        //     }
-        // }
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "hlinkClick" => hyperlink_click = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                "hlinkHover" => hyperlink_hover = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                _ => (),
+            }
+        }
 
         let id = opt_id.ok_or_else(|| MissingAttributeError::new("id"))?;
         let name = opt_name.ok_or_else(|| MissingAttributeError::new("name"))?;
@@ -3953,15 +4036,11 @@ pub struct NonVisualGroupDrawingShapeProps {
 
 impl NonVisualGroupDrawingShapeProps {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut locks = None;
-
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "grpSpLocks" => locks = Some(GroupLocking::from_xml_element(child_node)?),
-                _ => (),
-            }
-        }
-
+        let locks = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(GroupLocking::from_xml_element(node)?),
+            None => None,
+        };
+        
         Ok(Self {
             locks,
         })
@@ -4187,7 +4266,7 @@ impl GroupTransform2D {
 
 pub struct GroupShapeProperties {
     pub black_and_white_mode: Option<BlackWhiteMode>,
-    pub transform: Option<GroupTransform2D>,
+    pub transform: Option<Box<GroupTransform2D>>,
     pub fill_properties: Option<FillProperties>,
     pub effect_properties: Option<EffectProperties>,
     //pub scene_3d: Option<Scene3D>,
@@ -4207,7 +4286,7 @@ impl GroupShapeProperties {
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
             if child_local_name == "xfrm" {
-                transform = Some(GroupTransform2D::from_xml_element(child_node)?);
+                transform = Some(Box::new(GroupTransform2D::from_xml_element(child_node)?));
             } else if FillProperties::is_choice_member(child_local_name) {
                 fill_properties = Some(FillProperties::from_xml_element(child_node)?);
             // } else if EffectProperties::is_choice_member(child_local_name) {
@@ -4225,8 +4304,8 @@ impl GroupShapeProperties {
 }
 
 pub enum Geometry {
-    Custom(CustomGeometry2D),
-    Preset(PresetGeometry2D),
+    Custom(Box<CustomGeometry2D>),
+    Preset(Box<PresetGeometry2D>),
 }
 
 impl Geometry {
@@ -4239,8 +4318,8 @@ impl Geometry {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "custGeom" => Ok(Geometry::Custom(CustomGeometry2D::from_xml_element(xml_node)?)),
-            "prstGeom" => Ok(Geometry::Preset(PresetGeometry2D::from_xml_element(xml_node)?)),
+            "custGeom" => Ok(Geometry::Custom(Box::new(CustomGeometry2D::from_xml_element(xml_node)?))),
+            "prstGeom" => Ok(Geometry::Preset(Box::new(PresetGeometry2D::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Geometry").into()),
         }
     }
@@ -4274,8 +4353,8 @@ impl GeomGuide {
 }
 
 pub enum AdjustHandle {
-    XY(XYAdjustHandle),
-    Polar(PolarAdjustHandle),
+    XY(Box<XYAdjustHandle>),
+    Polar(Box<PolarAdjustHandle>),
 }
 
 impl AdjustHandle {
@@ -4288,8 +4367,8 @@ impl AdjustHandle {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "ahXY" => Ok(AdjustHandle::XY(XYAdjustHandle::from_xml_element(xml_node)?)),
-            "ahPolar" => Ok(AdjustHandle::Polar(PolarAdjustHandle::from_xml_element(xml_node)?)),
+            "ahXY" => Ok(AdjustHandle::XY(Box::new(XYAdjustHandle::from_xml_element(xml_node)?))),
+            "ahPolar" => Ok(AdjustHandle::Polar(Box::new(PolarAdjustHandle::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "AdjustHandle").into()),
         }
     }
@@ -4298,21 +4377,6 @@ impl AdjustHandle {
 pub enum AdjCoordinate {
     Coordinate(Coordinate),
     GeomGuideName(GeomGuideName),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum AdjustParseError {}
-
-impl Display for AdjustParseError {
-    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
-        write!(f, "AdjCoordinate or AdjAngle parse error")
-    }
-}
-
-impl Error for AdjustParseError {
-    fn description(&self) -> &str {
-        "Adjust parse error"
-    }
 }
 
 impl FromStr for AdjCoordinate {
@@ -4638,22 +4702,6 @@ impl Path2D {
             extrusion_ok,
             commands,
         })
-
-/*
-    <xsd:choice minOccurs="0" maxOccurs="unbounded">
-      <xsd:element name="close" type="CT_Path2DClose" minOccurs="1" maxOccurs="1"/>
-      <xsd:element name="moveTo" type="CT_Path2DMoveTo" minOccurs="1" maxOccurs="1"/>
-      <xsd:element name="lnTo" type="CT_Path2DLineTo" minOccurs="1" maxOccurs="1"/>
-      <xsd:element name="arcTo" type="CT_Path2DArcTo" minOccurs="1" maxOccurs="1"/>
-      <xsd:element name="quadBezTo" type="CT_Path2DQuadBezierTo" minOccurs="1" maxOccurs="1"/>
-      <xsd:element name="cubicBezTo" type="CT_Path2DCubicBezierTo" minOccurs="1" maxOccurs="1"/>
-    </xsd:choice>
-    <xsd:attribute name="w" type="ST_PositiveCoordinate" use="optional" default="0"/>
-    <xsd:attribute name="h" type="ST_PositiveCoordinate" use="optional" default="0"/>
-    <xsd:attribute name="fill" type="ST_PathFillMode" use="optional" default="norm"/>
-    <xsd:attribute name="stroke" type="xsd:boolean" use="optional" default="true"/>
-    <xsd:attribute name="extrusionOk" type="xsd:boolean" use="optional" default="true"/>
-*/
     }
 }
 
@@ -4663,7 +4711,7 @@ pub struct CustomGeometry2D {
     pub adjust_handle_list: Vec<AdjustHandle>,
     pub connection_site_list: Vec<ConnectionSite>,
     pub rect: Option<Box<GeomRect>>,
-    pub path_list: Vec<Path2D>,
+    pub path_list: Vec<Box<Path2D>>,
 }
 
 impl CustomGeometry2D {
@@ -4700,7 +4748,7 @@ impl CustomGeometry2D {
                 "rect" => rect = Some(Box::new(GeomRect::from_xml_element(child_node)?)),
                 "pathLst" => {
                     for path_node in &child_node.child_nodes {
-                        path_list.push(Path2D::from_xml_element(path_node)?);
+                        path_list.push(Box::new(Path2D::from_xml_element(path_node)?));
                     }
                 }
                 _ => (),
@@ -4746,11 +4794,11 @@ impl PresetGeometry2D {
 
 pub struct ShapeProperties {
     pub black_and_white_mode: Option<BlackWhiteMode>,
-    pub transform: Option<Transform2D>,
+    pub transform: Option<Box<Transform2D>>,
     pub geometry: Option<Geometry>,
     pub fill_properties: Option<FillProperties>,
-    pub line_properties: Option<LineProperties>,
-    pub effect_properties: Option<EffectProperties>,
+    pub line_properties: Option<Box<LineProperties>>,
+    pub effect_properties: Option<Box<EffectProperties>>,
     //pub scene_3d: Option<Scene3D>,
     //pub shape_3d: Option<Shape3D>,
 }
@@ -4776,8 +4824,12 @@ impl ShapeProperties {
                 fill_properties = Some(FillProperties::from_xml_element(child_node)?);
             //} else if EffectProperties::is_choice_member(child_local_name) {
             //    effect_properties = Some(EffectProperties::from_xml_element(child_node))?;
-            } else if child_local_name == "xfrm" {
-                transform = Some(Transform2D::from_xml_element(child_node)?);
+            } else {
+                match child_local_name {
+                    "xfrm" => transform = Some(Box::new(Transform2D::from_xml_element(child_node)?)),
+                    "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
+                    _ => (),
+                }
             }
         }
 
@@ -4909,30 +4961,23 @@ impl OfficeStyleSheet {
 
         match Self::from_xml_element(&xml_node) {
             Ok(v) => Ok(v),
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err),
         }
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut name = None;
-        let mut opt_theme_elements = None;
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "name" => name = Some(value.clone()),
-                _ => (),
-            }
-        }
+        let name = xml_node.attribute("name").cloned();
+        let mut theme_elements = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "themeElements" => opt_theme_elements = Some(Box::new(BaseStyles::from_xml_element(child_node)?)),
+                "themeElements" => theme_elements = Some(Box::new(BaseStyles::from_xml_element(child_node)?)),
                 // TODO: parse optional elements
                 _ => (),
             }
         }
 
-        let theme_elements = opt_theme_elements.ok_or_else(|| MissingChildNodeError::new("themeElements"))?;
+        let theme_elements = theme_elements.ok_or_else(|| MissingChildNodeError::new("themeElements"))?;
 
         Ok(Self {
             name,
@@ -4946,28 +4991,28 @@ impl OfficeStyleSheet {
 
 pub struct BaseStyles {
     pub color_scheme: Box<ColorScheme>,
-    pub font_scheme: Box<FontScheme>,
+    pub font_scheme: FontScheme,
     pub format_scheme: Box<StyleMatrix>,
 }
 
 impl BaseStyles {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_color_scheme = None;
-        let mut opt_font_scheme = None;
-        let mut opt_format_scheme = None;
+        let mut color_scheme = None;
+        let mut font_scheme = None;
+        let mut format_scheme = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "clrScheme" => opt_color_scheme = Some(Box::new(ColorScheme::from_xml_element(child_node)?)),
-                "fontScheme" => opt_font_scheme = Some(Box::new(FontScheme::from_xml_element(child_node)?)),
-                "fmtScheme" => opt_format_scheme = Some(Box::new(StyleMatrix::from_xml_element(child_node)?)),
+                "clrScheme" => color_scheme = Some(Box::new(ColorScheme::from_xml_element(child_node)?)),
+                "fontScheme" => font_scheme = Some(FontScheme::from_xml_element(child_node)?),
+                "fmtScheme" => format_scheme = Some(Box::new(StyleMatrix::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
 
-        let color_scheme = opt_color_scheme.ok_or_else(|| MissingChildNodeError::new("clrScheme"))?;
-        let font_scheme = opt_font_scheme.ok_or_else(|| MissingChildNodeError::new("fontScheme"))?;
-        let format_scheme = opt_format_scheme.ok_or_else(|| MissingChildNodeError::new("fmtScheme"))?;
+        let color_scheme = color_scheme.ok_or_else(|| MissingChildNodeError::new("clrScheme"))?;
+        let font_scheme = font_scheme.ok_or_else(|| MissingChildNodeError::new("fontScheme"))?;
+        let format_scheme = format_scheme.ok_or_else(|| MissingChildNodeError::new("fmtScheme"))?;
 
         Ok(Self {
             color_scheme,
@@ -4980,25 +5025,18 @@ impl BaseStyles {
 pub struct StyleMatrix {
     pub name: Option<String>, // ""
     pub fill_style_list: Vec<FillProperties>, // minOccurs: 3
-    pub line_style_list: Vec<LineProperties>, // minOccurs: 3
+    pub line_style_list: Vec<Box<LineProperties>>, // minOccurs: 3
     pub effect_style_list: Vec<EffectStyleItem>, // minOccurs: 3
     pub bg_fill_style_list: Vec<FillProperties>, // minOccurs: 3
 }
 
 impl StyleMatrix {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut name = None;
+        let name = xml_node.attribute("name").cloned();
         let mut fill_style_list = Vec::new();
         let mut line_style_list = Vec::new();
         let mut effect_style_list = Vec::new();
         let mut bg_fill_style_list = Vec::new();
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "name" => name = Some(value.clone()),
-                _ => (),
-            }
-        }
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
@@ -5009,7 +5047,7 @@ impl StyleMatrix {
                 }
                 "lnStyleLst" => {
                     for line_style_node in &child_node.child_nodes {
-                        line_style_list.push(LineProperties::from_xml_element(line_style_node)?);
+                        line_style_list.push(Box::new(LineProperties::from_xml_element(line_style_node)?));
                     }
                 }
                 // TODO: effect_style_list

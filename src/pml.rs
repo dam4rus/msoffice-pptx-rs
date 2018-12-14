@@ -452,26 +452,22 @@ pub struct IndexRange {
 
 pub struct BackgroundProperties {
     pub shade_to_title: Option<bool>, // false
-    pub fill: Box<::drawingml::FillProperties>,
-    pub effect: Option<Box<::drawingml::EffectProperties>>,
+    pub fill: ::drawingml::FillProperties,
+    pub effect: Option<::drawingml::EffectProperties>,
 }
 
 impl BackgroundProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut shade_to_title = None;
-        let mut opt_fill = None;
-        let mut effect = None;
+        let shade_to_title = match xml_node.attribute("shadeToTitle") {
+            Some(val) => Some(parse_xml_bool(val)?),
+            None => None
+        };
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "shadeToTitle" => shade_to_title = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
+        let mut fill = None;
 
         for child_node in &xml_node.child_nodes {
             if ::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
-                opt_fill = Some(Box::new(::drawingml::FillProperties::from_xml_element(child_node)?));
+                fill = Some(::drawingml::FillProperties::from_xml_element(child_node)?);
             }
             // TODO: implement EffectProperties
             // else if ::drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
@@ -479,19 +475,19 @@ impl BackgroundProperties {
             //}
         }
 
-        let fill = opt_fill.ok_or_else(|| MissingChildNodeError::new("EG_FillProperties"))?;
+        let fill = fill.ok_or_else(|| MissingChildNodeError::new("EG_FillProperties"))?;
 
         Ok(Self {
             shade_to_title,
             fill,
-            effect,
+            effect: None,
         })
     }
 }
 
 pub enum BackgroundGroup {
-    Properties(Box<BackgroundProperties>),
-    Reference(Box<::drawingml::StyleMatrixReference>),
+    Properties(BackgroundProperties),
+    Reference(::drawingml::StyleMatrixReference),
 }
 
 impl BackgroundGroup {
@@ -504,37 +500,27 @@ impl BackgroundGroup {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "bgPr" => Ok(BackgroundGroup::Properties(Box::new(BackgroundProperties::from_xml_element(xml_node)?))),
-            "bgRef" => Ok(BackgroundGroup::Reference(Box::new(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?))),
+            "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
+            "bgRef" => Ok(BackgroundGroup::Reference(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
     }
 }
 
 pub struct Background {
-    pub background: BackgroundGroup,
     pub black_and_white_mode: Option<::drawingml::BlackWhiteMode>, // white
+    pub background: BackgroundGroup,
 }
 
 impl Background {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut background = None;
-        let mut black_and_white_mode = None;
+        let black_and_white_mode = match xml_node.attribute("bwMode") {
+            Some(val) => Some(val.parse()?),
+            None => None,
+        };
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "bwMode" => black_and_white_mode = Some(value.parse::<::drawingml::BlackWhiteMode>()?),
-                _ => (),
-            }
-        }
-
-        for child_node in &xml_node.child_nodes {
-            if BackgroundGroup::is_choice_member(child_node.local_name()) {
-                background = Some(BackgroundGroup::from_xml_element(child_node)?);
-            }
-        }
-
-        let background = background.ok_or_else(|| MissingChildNodeError::new("bgPr|bgRef"))?;
+        let background_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("EG_Background"))?;
+        let background = BackgroundGroup::from_xml_element(background_node)?;
 
         Ok(Self{
             background,
@@ -583,8 +569,8 @@ impl Placeholder {
 pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
-    pub placeholder: Option<Box<Placeholder>>,
-    pub media: Option<Box<::drawingml::Media>>,
+    pub placeholder: Option<Placeholder>,
+    pub media: Option<::drawingml::Media>,
     //pub customer_data_list: Option<CustomerDataList>,
 }
 
@@ -593,7 +579,7 @@ impl ApplicationNonVisualDrawingProps {
         let mut is_photo = None;
         let mut is_user_drawn = None;
         let mut placeholder = None;
-        let mut media = None;
+        //let mut media = None;
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
@@ -604,13 +590,13 @@ impl ApplicationNonVisualDrawingProps {
         }
 
         for child_node in &xml_node.child_nodes {
-            let local_name = child_node.local_name();
+            //let local_name = child_node.local_name();
             // TODO implement
             // if ::drawingml::Media::is_choice_member(local_name) {
             //     media = ::drawingml::Media::from_xml_element(child_node)?;
             // } else {
             match child_node.local_name() {
-                "ph" => placeholder = Some(Box::new(Placeholder::from_xml_element(child_node)?)),
+                "ph" => placeholder = Some(Placeholder::from_xml_element(child_node)?),
                 "custDataLst" => (), // TODO implement
                 _ => (),
             }
@@ -621,7 +607,7 @@ impl ApplicationNonVisualDrawingProps {
             is_photo,
             is_user_drawn,
             placeholder,
-            media,
+            media: None,
         })
     }
 }
@@ -640,30 +626,27 @@ pub struct Shape {
     pub non_visual_props: Box<ShapeNonVisual>,
     pub shape_props: Box<::drawingml::ShapeProperties>,
     pub style: Option<Box<::drawingml::ShapeStyle>>,
-    pub text_body: Option<Box<::drawingml::TextBody>>,
+    pub text_body: Option<::drawingml::TextBody>,
 }
 
 impl Shape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut use_bg_fill = None;
+        let use_bg_fill = match xml_node.attribute("useBgFill") {
+            Some(val) => Some(parse_xml_bool(val)?),
+            None => None,
+        };
+
         let mut non_visual_props = None;
         let mut shape_props = None;
         let mut style = None;
         let mut text_body = None;
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "useBgFill" => use_bg_fill = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
                 "spPr" => shape_props = Some(Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)),
                 "style" => style = Some(Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)),
-                "txBody" => text_body = Some(Box::new(::drawingml::TextBody::from_xml_element(child_node)?)),
+                "txBody" => text_body = Some(::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -683,8 +666,8 @@ impl Shape {
 
 pub struct ShapeNonVisual {
     pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub shape_drawing_props: Box<::drawingml::NonVisualDrawingShapeProps>,
-    pub app_props: Box<ApplicationNonVisualDrawingProps>,
+    pub shape_drawing_props: ::drawingml::NonVisualDrawingShapeProps,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 impl ShapeNonVisual {
@@ -696,8 +679,8 @@ impl ShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => drawing_props = Some(Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)),
-                "cNvSpPr" => shape_drawing_props = Some(Box::new(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)),
-                "nvPr" => app_props = Some(Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)),
+                "cNvSpPr" => shape_drawing_props = Some(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -716,7 +699,7 @@ impl ShapeNonVisual {
 
 pub struct GroupShape {
     pub non_visual_props: Box<GroupShapeNonVisual>,
-    pub group_shape_props: Box<::drawingml::GroupShapeProperties>,
+    pub group_shape_props: ::drawingml::GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
 }
 
@@ -729,7 +712,7 @@ impl GroupShape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvGrpSpPr" => non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?)),
-                "grpSpPr" => group_shape_props = Some(Box::new(::drawingml::GroupShapeProperties::from_xml_element(child_node)?)),
+                "grpSpPr" => group_shape_props = Some(::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
                 "sp" => shape_array.push(ShapeGroup::Shape(Box::new(Shape::from_xml_element(child_node)?))),
                 "grpSp" => shape_array.push(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(child_node)?))),
                 // TODO implement GraphicalObjectFrame
@@ -757,8 +740,8 @@ impl GroupShape {
 
 pub struct GroupShapeNonVisual {
     pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub group_drawing_props: Box<::drawingml::NonVisualGroupDrawingShapeProps>,
-    pub app_props: Box<ApplicationNonVisualDrawingProps>,
+    pub group_drawing_props: ::drawingml::NonVisualGroupDrawingShapeProps,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 impl GroupShapeNonVisual {
@@ -773,10 +756,10 @@ impl GroupShapeNonVisual {
                     Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvGrpSpPr" => group_drawing_props = Some(
-                    Box::new(::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?)
+                    ::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
-                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
+                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
                 ),
                 _ => (),
             }
@@ -796,14 +779,14 @@ impl GroupShapeNonVisual {
 pub struct GraphicalObjectFrame {
     pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
     pub transform: Box<::drawingml::Transform2D>,
-    pub graphic: Box<::drawingml::GraphicalObject>,
+    pub graphic: ::drawingml::GraphicalObject,
     pub black_white_mode: Option<::drawingml::BlackWhiteMode>,
 }
 
 pub struct GraphicalObjectFrameNonVisual {
     pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub graphic_frame_props: Box<::drawingml::NonVisualGraphicFrameProperties>,
-    pub app_props: Box<ApplicationNonVisualDrawingProps>,
+    pub graphic_frame_props: ::drawingml::NonVisualGraphicFrameProperties,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct Connector {
@@ -846,8 +829,8 @@ impl Connector {
 
 pub struct ConnectorNonVisual {
     pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub connector_props: Box<::drawingml::NonVisualConnectorProperties>,
-    pub app_props: Box<ApplicationNonVisualDrawingProps>,
+    pub connector_props: ::drawingml::NonVisualConnectorProperties,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 impl ConnectorNonVisual {
@@ -862,10 +845,10 @@ impl ConnectorNonVisual {
                     Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvCxnSpPr" => connector_props = Some(
-                    Box::new(::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
+                    ::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
-                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
+                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
                 ),
                 _ => (),
             }
@@ -930,8 +913,8 @@ impl Picture {
 
 pub struct PictureNonVisual {
     pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub picture_props: Box<::drawingml::NonVisualPictureProperties>,
-    pub app_props: Box<ApplicationNonVisualDrawingProps>,
+    pub picture_props: ::drawingml::NonVisualPictureProperties,
+    pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 impl PictureNonVisual {
@@ -946,10 +929,10 @@ impl PictureNonVisual {
                     Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvPicPr" => picture_props = Some(
-                    Box::new(::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
+                    ::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
-                    Box::new(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?)
+                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
                 ),
                 _ => (),
             }
@@ -971,36 +954,23 @@ pub struct CommonSlideData {
     pub name: Option<String>,
     pub background: Option<Box<Background>>,
     pub shape_tree: Box<GroupShape>,
-    pub customer_data_list: Option<Box<CustomerDataList>>,
-    pub control_list: Vec<Box<Control>>,
+    pub customer_data_list: Option<CustomerDataList>,
+    pub control_list: Vec<Control>,
 }
 
 impl CommonSlideData {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut name = None;
+        let name = xml_node.attribute("name").cloned();
         let mut background = None;
         let mut opt_shape_tree = None;
         let mut customer_data_list = None;
-        let mut control_list = Vec::new();
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "name" => name = Some(value.clone()),
-                _ => (),
-            }
-        }
+        //let mut control_list = Vec::new();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "bg" => background = Some(
-                    Box::new(Background::from_xml_element(child_node)?)
-                ),
-                "spTree" => opt_shape_tree = Some(
-                    Box::new(GroupShape::from_xml_element(child_node)?)
-                ),
-                "custDataList" => customer_data_list = Some(
-                    Box::new(CustomerDataList::from_xml_element(child_node)?)
-                ),
+                "bg" => background = Some(Box::new(Background::from_xml_element(child_node)?)),
+                "spTree" => opt_shape_tree = Some(Box::new(GroupShape::from_xml_element(child_node)?)),
+                "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 // TODO implement
                 // "controls" => {
                 //     for control_node in child_node.child_nodes {
@@ -1021,7 +991,7 @@ impl CommonSlideData {
             background,
             shape_tree,
             customer_data_list,
-            control_list,
+            control_list: Vec::new(),
         })
     }
 }
@@ -1059,8 +1029,8 @@ impl CustomerDataList {
 }
 
 pub struct Control {
-    pub picture: Option<Picture>,
-    pub ole_attributes: OleAttributes,
+    pub picture: Option<Box<Picture>>,
+    pub ole_attributes: Box<OleAttributes>,
 }
 
 pub struct OleAttributes {
@@ -1123,9 +1093,9 @@ pub struct HandoutMasterIdListEntry {
 }
 
 pub struct SlideMasterTextStyles {
-    pub title_styles: Option<::drawingml::TextListStyle>,
-    pub body_styles: Option<::drawingml::TextListStyle>,
-    pub other_styles: Option<::drawingml::TextListStyle>,
+    pub title_styles: Option<Box<::drawingml::TextListStyle>>,
+    pub body_styles: Option<Box<::drawingml::TextListStyle>>,
+    pub other_styles: Option<Box<::drawingml::TextListStyle>>,
 }
 
 impl SlideMasterTextStyles {
@@ -1136,9 +1106,15 @@ impl SlideMasterTextStyles {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "titleStyle" => title_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
-                "bodyStyle" => body_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
-                "otherStyle" => other_styles = Some(::drawingml::TextListStyle::from_xml_element(child_node)?),
+                "titleStyle" => title_styles = Some(
+                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                ),
+                "bodyStyle" => body_styles = Some(
+                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                ),
+                "otherStyle" => other_styles = Some(
+                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                ),
                 _ => (),
             }
         }
@@ -1232,10 +1208,10 @@ pub struct SlideTiming {
 }
 
 pub enum Build {
-    Paragraph(TLBuildParagraph),
-    Diagram(TLBuildDiagram),
-    OleChart(TLOleBuildChart),
-    Graphic(TLGraphicalObjectBuild),
+    Paragraph(Box<TLBuildParagraph>),
+    Diagram(Box<TLBuildDiagram>),
+    OleChart(Box<TLOleBuildChart>),
+    Graphic(Box<TLGraphicalObjectBuild>),
 }
 
 pub struct TLBuildParagraph {
@@ -1292,23 +1268,23 @@ pub enum TLGraphicalObjectBuildChoice {
 }
 
 pub enum TimeNodeGroup {
-    Parallel(TLCommonTimeNodeData),
-    Sequence(TLTimeNodeSequence),
-    Exclusive(TLCommonTimeNodeData),
-    Animate(TLAnimateBehavior),
-    AnimateColor(TLAnimateColorBehavior),
-    AnimateEffect(TLAnimateEffectBehavior),
-    AnimateMotion(TLAnimateMotionBehavior),
-    AnimateRotation(TLAnimateRotationBehavior),
-    AnimateScale(TLAnimateScaleBehavior),
-    Command(TLCommandBehavior),
-    Set(TLSetBehavior),
-    Audio(TLMediaNodeAudio),
-    Video(TLMediaNodeVideo),
+    Parallel(Box<TLCommonTimeNodeData>),
+    Sequence(Box<TLTimeNodeSequence>),
+    Exclusive(Box<TLCommonTimeNodeData>),
+    Animate(Box<TLAnimateBehavior>),
+    AnimateColor(Box<TLAnimateColorBehavior>),
+    AnimateEffect(Box<TLAnimateEffectBehavior>),
+    AnimateMotion(Box<TLAnimateMotionBehavior>),
+    AnimateRotation(Box<TLAnimateRotationBehavior>),
+    AnimateScale(Box<TLAnimateScaleBehavior>),
+    Command(Box<TLCommandBehavior>),
+    Set(Box<TLSetBehavior>),
+    Audio(Box<TLMediaNodeAudio>),
+    Video(Box<TLMediaNodeVideo>),
 }
 
 pub struct TLTimeNodeSequence {
-    pub common_time_node_data: TLCommonTimeNodeData,
+    pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub prev_condition_list: Vec<TLTimeCondition>,
     pub next_condition_list: Vec<TLTimeCondition>,
     pub concurrent: Option<bool>,
@@ -1317,7 +1293,7 @@ pub struct TLTimeNodeSequence {
 }
 
 pub struct TLAnimateBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub time_animate_value_list: Vec<TLTimeAnimateValue>,
     pub by: Option<String>,
     pub from: Option<String>,
@@ -1327,7 +1303,7 @@ pub struct TLAnimateBehavior {
 }
 
 pub struct TLAnimateColorBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLByAnimateColorTransform>,
     pub from: Option<::drawingml::Color>,
     pub to: Option<::drawingml::Color>,
@@ -1336,7 +1312,7 @@ pub struct TLAnimateColorBehavior {
 }
 
 pub struct TLAnimateEffectBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub progress: Option<TLAnimVariant>,
     pub transition: Option<TLAnimateEffectTransition>,
     pub filter: Option<String>,
@@ -1344,7 +1320,7 @@ pub struct TLAnimateEffectBehavior {
 }
 
 pub struct TLAnimateMotionBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLPoint>,
     pub from: Option<TLPoint>,
     pub to: Option<TLPoint>,
@@ -1357,14 +1333,14 @@ pub struct TLAnimateMotionBehavior {
 }
 
 pub struct TLAnimateRotationBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<::drawingml::Angle>,
     pub from: Option<::drawingml::Angle>,
     pub to: Option<::drawingml::Angle>,
 }
 
 pub struct TLAnimateScaleBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLPoint>,
     pub from: Option<TLPoint>,
     pub to: Option<TLPoint>,
@@ -1372,23 +1348,23 @@ pub struct TLAnimateScaleBehavior {
 }
 
 pub struct TLCommandBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub command_type: Option<TLCommandType>,
     pub command: Option<String>,
 }
 
 pub struct TLSetBehavior {
-    pub common_behavior_data: TLCommonBehaviorData,
+    pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub to: Option<TLAnimVariant>,
 }
 
 pub struct TLMediaNodeAudio {
-    pub common_media_node_data: TLCommonMediaNodeData,
+    pub common_media_node_data: Box<TLCommonMediaNodeData>,
     pub is_narration: Option<bool>, // false
 }
 
 pub struct TLMediaNodeVideo {
-    pub common_media_node_data: TLCommonMediaNodeData,
+    pub common_media_node_data: Box<TLCommonMediaNodeData>,
     pub fullscreen: Option<bool>, // false
 }
 
@@ -1412,7 +1388,7 @@ pub enum TLAnimVariant {
 }
 
 pub struct TLCommonBehaviorData {
-    pub common_time_node_data: TLCommonTimeNodeData,
+    pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
     pub attr_name_list: Vec<String>,
     pub additive: Option<TLBehaviorAdditiveType>,
@@ -1426,7 +1402,7 @@ pub struct TLCommonBehaviorData {
 }
 
 pub struct TLCommonMediaNodeData {
-    pub common_time_node_data: TLCommonTimeNodeData,
+    pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
     pub volume: Option<::drawingml::PositiveFixedPercentage>, // 50000
     pub mute: Option<bool>, // false
@@ -1537,14 +1513,14 @@ pub struct TLByHslColorTransform {
 }
 
 pub struct SlideMaster {
-    pub common_slide_data: CommonSlideData,
-    pub color_mapping: ::drawingml::ColorMapping,
+    pub preserve: Option<bool>, // false
+    pub common_slide_data: Box<CommonSlideData>,
+    pub color_mapping: Box<::drawingml::ColorMapping>,
     pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
-    pub transition: Option<SlideTransition>,
+    pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
     pub text_styles: Option<SlideMasterTextStyles>,
-    pub preserve: Option<bool>, // false
 }
 
 impl SlideMaster {
@@ -1557,26 +1533,23 @@ impl SlideMaster {
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut opt_common_slide_data = None;
-        let mut opt_color_mapping = None;
-        let mut slide_layout_id_list = Vec::new();
-        let mut transition = None;
-        let mut timing = None;
-        let mut header_footer = None;
-        let mut text_styles = None;
-        let mut preserve = None;
+        let preserve = match xml_node.attribute("preserve") {
+            Some(val) => Some(parse_xml_bool(val)?),
+            None => None,
+        };
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "preserve" => preserve = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
+        let mut common_slide_data = None;
+        let mut color_mapping = None;
+        let mut slide_layout_id_list = Vec::new();
+        //let mut transition = None;
+        //let mut timing = None;
+        //let mut header_footer = None;
+        let mut text_styles = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cSld" => opt_common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
-                "clrMap" => opt_color_mapping = Some(::drawingml::ColorMapping::from_xml_element(child_node)?),
+                "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
+                "clrMap" => color_mapping = Some(Box::new(::drawingml::ColorMapping::from_xml_element(child_node)?)),
                 "sldLayoutIdLst" => {
                     for slide_layout_id_node in &child_node.child_nodes {
                         slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
@@ -1591,16 +1564,16 @@ impl SlideMaster {
             }
         }
 
-        let common_slide_data = opt_common_slide_data.ok_or_else(|| XmlError::from(MissingChildNodeError::new("cSld")))?;
-        let color_mapping = opt_color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new("clrMap")))?;
+        let common_slide_data = common_slide_data.ok_or_else(|| XmlError::from(MissingChildNodeError::new("cSld")))?;
+        let color_mapping = color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new("clrMap")))?;
 
         Ok(Self {
             common_slide_data,
             color_mapping,
             slide_layout_id_list,
-            transition,
-            timing,
-            header_footer,
+            transition: None,
+            timing: None,
+            header_footer: None,
             text_styles,
             preserve,
         })
@@ -1614,9 +1587,9 @@ pub struct SlideLayout {
     pub is_user_drawn: Option<bool>, // false
     pub show_master_shapes: Option<bool>, // true
     pub show_master_placeholder_animations: Option<bool>, // true
-    pub common_slide_data: CommonSlideData,
+    pub common_slide_data: Box<CommonSlideData>,
     pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
-    pub transition: Option<SlideTransition>,
+    pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
 }
@@ -1652,18 +1625,19 @@ impl SlideLayout {
 
         let mut common_slide_data = None;
         let mut color_mapping_override = None;
-        let mut transition = None;
-        let mut timing = None;
-        let mut header_footer = None;
+        //let mut transition = None;
+        //let mut timing = None;
+        //let mut header_footer = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cSld" => common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
+                "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
                     let clr_map_node = child_node.child_nodes.get(0)
                         .ok_or_else(|| MissingChildNodeError::new("masterClrMapping|overrideClrMapping"))?;
                     color_mapping_override = Some(::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
+                // TODO implement
                 // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
                 // "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
                 // "hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
@@ -1682,9 +1656,9 @@ impl SlideLayout {
             show_master_placeholder_animations,
             common_slide_data,
             color_mapping_override,
-            transition,
-            timing,
-            header_footer,
+            transition: None,
+            timing: None,
+            header_footer: None,
         })
     }
 }
@@ -1693,9 +1667,9 @@ pub struct Slide {
     pub show: Option<bool>, // true
     pub show_master_shapes: Option<bool>, // true
     pub show_master_placeholder_animations: Option<bool>, // true
-    pub common_slide_data: CommonSlideData,
+    pub common_slide_data: Box<CommonSlideData>,
     pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
-    pub transition: Option<SlideTransition>,
+    pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
 }
 
@@ -1724,12 +1698,12 @@ impl Slide {
 
         let mut common_slide_data = None;
         let mut color_mapping_override = None;
-        let mut transition = None;
-        let mut timing = None;
+        //let mut transition = None;
+        //let mut timing = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cSld" => common_slide_data = Some(CommonSlideData::from_xml_element(child_node)?),
+                "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
                     let clr_map_node = child_node.child_nodes.get(0)
                         .ok_or_else(|| MissingChildNodeError::new("masterClrMapping|overrideClrMapping"))?;
@@ -1750,8 +1724,8 @@ impl Slide {
             show_master_placeholder_animations,
             common_slide_data,
             color_mapping_override,
-            transition,
-            timing,
+            transition: None,
+            timing: None,
         })
     }
 }
@@ -1831,14 +1805,11 @@ impl CustomShow {
         let mut slides = Vec::new();
 
         for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "sldLst" => {
-                    for slide_node in &child_node.child_nodes {
-                        let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
-                        slides.push(id_attr.clone());
-                    }
+            if child_node.local_name() == "sldLst" {
+                for slide_node in &child_node.child_nodes {
+                    let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    slides.push(id_attr.clone());
                 }
-                _ => (),
             }
         }
 
@@ -1969,7 +1940,7 @@ impl Presentation {
         let mut customer_data_list = None;
         let mut kinsoku = None;
         let mut default_text_style = None;
-        let mut modify_verifier = None;
+        //let mut modify_verifier = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
@@ -2122,17 +2093,6 @@ impl Presentation {
             }
         }
 
-/*
-		for (const MXmlNode2 &childNode : xmlNode)
-		{
-			//else if (childNode.name == mT("modifyVerifier"))
-			//	instance->modifyVerifier.reset(ModifyVerifier::FromXmlNode(childNode));
-			//else if (childNode.name == mT("extLst"))
-			//	instance->extLst.reset(ExtensionList::FromXmlNode(childNode));
-		}
-                            */
-
-
         Ok(Self {
             server_zoom,
             first_slide_num,
@@ -2159,7 +2119,7 @@ impl Presentation {
             customer_data_list,
             kinsoku,
             default_text_style,
-            modify_verifier,
+            modify_verifier: None,
         })
     }
 }

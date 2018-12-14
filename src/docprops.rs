@@ -9,14 +9,7 @@ pub struct AppInfo {
 }
 
 impl AppInfo {
-    fn new() -> AppInfo {
-        AppInfo {
-            app_name: None,
-            app_version: None,
-        }
-    }
-
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<AppInfo, Box<::std::error::Error>>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<::std::error::Error>>
     where
         R: Read + Seek
     {
@@ -26,16 +19,20 @@ impl AppInfo {
         app_xml_file.read_to_string(&mut xml_string)?;
         let root = XmlNode::from_str(&xml_string)?;
 
-        let mut app_info = AppInfo::new();
+        let mut app_name = None;
+        let mut app_version = None;
         for child_node in &root.child_nodes {
             match child_node.local_name() {
-                "Application" => app_info.app_name = child_node.text.as_ref().map(|ok| ok.clone()),
-                "AppVersion" => app_info.app_version = child_node.text.as_ref().map(|ok| ok.clone()),
+                "Application" => app_name = child_node.text.as_ref().cloned(),
+                "AppVersion" => app_version = child_node.text.as_ref().cloned(),
                 _ => (),
             }
         }
 
-        Ok(app_info)
+        Ok(Self {
+            app_name,
+            app_version,
+        })
     }
 }
 
@@ -51,18 +48,7 @@ pub struct Core {
 }
 
 impl Core {
-    fn new() -> Core {
-        Core {
-            title: None,
-            creator: None,
-            last_modified_by: None,
-            revision: None,
-            created_time: None,
-            modified_time: None,
-        }
-    }
-
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Core, Box<::std::error::Error>>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<::std::error::Error>>
     where
         R: Read + Seek
     {
@@ -71,20 +57,32 @@ impl Core {
         core_xml_file.read_to_string(&mut xml_string)?;
         let root = XmlNode::from_str(&xml_string)?;
 
-        let mut core = Core::new();
+        let mut title = None;
+        let mut creator = None;
+        let mut last_modified_by = None;
+        let mut revision = None;
+        let mut created_time = None;
+        let mut modified_time = None;
 
         for child_node in &root.child_nodes {
             match child_node.local_name() {
-                "title" => core.title = child_node.text.as_ref().map(|s| s.clone()),
-                "creator" => core.creator = child_node.text.as_ref().map(|s| s.clone()),
-                "lastModifiedBy" => core.last_modified_by = child_node.text.as_ref().map(|s| s.clone()),
-                "revision" => core.revision = child_node.text.as_ref().and_then(|s| s.parse::<i32>().ok()),
-                "created" => core.created_time = child_node.text.as_ref().map(|s| s.clone()),
-                "modified" => core.modified_time = child_node.text.as_ref().map(|s| s.clone()),
+                "title" => title = child_node.text.as_ref().cloned(),
+                "creator" => creator = child_node.text.as_ref().cloned(),
+                "lastModifiedBy" => last_modified_by = child_node.text.as_ref().cloned(),
+                "revision" => revision = child_node.text.as_ref().and_then(|s| s.parse().ok()),
+                "created" => created_time = child_node.text.as_ref().cloned(),
+                "modified" => modified_time = child_node.text.as_ref().cloned(),
                 _ => (),
             }
         }
 
-        Ok(core)
+        Ok(Self {
+            title,
+            creator,
+            last_modified_by,
+            revision,
+            created_time,
+            modified_time,
+        })
     }
 }

@@ -174,7 +174,7 @@ mod tests {
             let fill_style = &format_scheme.fill_style_list[0];
             match fill_style {
                 ::drawingml::FillProperties::SolidFill(ref color) => {
-                    match *(*color) {
+                    match color {
                         ::drawingml::Color::SchemeColor(ref clr) => assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor),
                         _ => panic!("fill[0] is invalid"),
                     }
@@ -371,36 +371,6 @@ mod tests {
                 _ => panic!("bg fill style is not gradient"),
             }
         }
-    }
-
-    #[test]
-    fn test_sizes() {
-        println!("sizeof OfficeStyleSheet: {}", ::std::mem::size_of::<::drawingml::OfficeStyleSheet>());
-        println!("sizeof SlideMaster: {}", ::std::mem::size_of::<::pml::SlideMaster>());
-        println!("sizeof SlideLayout: {}", ::std::mem::size_of::<::pml::SlideLayout>());
-        println!("sizeof Slide: {}", ::std::mem::size_of::<::pml::Slide>());
-        println!("------");
-        println!("sizeof CustomColor: {}", ::std::mem::size_of::<::drawingml::CustomColor>());
-        println!("------");
-        println!("sizeof ColorScheme: {}", ::std::mem::size_of::<::drawingml::ColorScheme>());
-        println!("sizeof StyleMatrix: {}", ::std::mem::size_of::<::drawingml::StyleMatrix>());
-        println!("------");
-        println!("sizeof FontCollection: {}", ::std::mem::size_of::<::drawingml::FontCollection>());
-        println!("------");
-        println!("sizeof ShapeProperties: {}", ::std::mem::size_of::<::drawingml::ShapeProperties>());
-        println!("sizeof TextBodyProperties: {}", ::std::mem::size_of::<::drawingml::TextBodyProperties>());
-        println!("sizeof TextListStyle: {}", ::std::mem::size_of::<::drawingml::TextListStyle>());
-        println!("sizeof ShapeStyle: {}", ::std::mem::size_of::<::drawingml::ShapeStyle>());
-        println!("------");
-        println!("sizeof FillProperties: {}", ::std::mem::size_of::<::drawingml::FillProperties>());
-        println!("------");
-        println!("sizeof GradientFillProperties: {}", ::std::mem::size_of::<::drawingml::GradientFillProperties>());
-        println!("sizeof ShadeProperties: {}", ::std::mem::size_of::<::drawingml::ShadeProperties>());
-        println!("sizeof BlipFillProperties: {}", ::std::mem::size_of::<::drawingml::BlipFillProperties>());
-        println!("sizeof PatternFillProperties: {}", ::std::mem::size_of::<::drawingml::PatternFillProperties>());
-        println!("sizeof LineProperties: {}", ::std::mem::size_of::<::drawingml::LineProperties>());
-        println!("sizeof EffectProperties: {}", ::std::mem::size_of::<::drawingml::EffectProperties>());
-        println!("sizeof FillModeProperties: {}", ::std::mem::size_of::<::drawingml::FillModeProperties>());
     }
 
     #[test]
