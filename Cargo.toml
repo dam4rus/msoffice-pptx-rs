@@ -2,6 +2,7 @@
 name = "msoffice_pptx"
 version = "0.1.0"
 authors = ["kalmar"]
+license = "MIT"
 
 [dependencies]
 quick-xml = "0.13.1"
