@@ -1,7 +1,8 @@
 [package]
 name = "msoffice_pptx"
 version = "0.1.0"
-authors = ["kalmar"]
+authors = ["Kalmár Róbert <rfrostkalmar@gmail.com>"]
+keywords = ["office", "pptx", "ppt"]
 license = "MIT"
 
 [dependencies]
