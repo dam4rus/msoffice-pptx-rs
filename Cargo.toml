@@ -1,9 +1,17 @@
 [package]
 name = "msoffice_pptx"
 version = "0.1.0"
+description = "pptx file format deserializer"
 authors = ["Kalmár Róbert <rfrostkalmar@gmail.com>"]
 keywords = ["office", "pptx", "ppt"]
 license = "MIT"
+repository = "https://github.com/dam4rus/msoffice-pptx-rs.git"
+homepage = "https://github.com/dam4rus/msoffice-pptx-rs"
+readme = "README.md"
+exclude = [
+    "tests/presentation.xml",
+    "tests/samplepptx.pptx",
+]
 
 [dependencies]
 quick-xml = "0.13.1"
