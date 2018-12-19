@@ -16,6 +16,9 @@ pub struct PPTXDocument {
     pub slide_master_map: HashMap<PathBuf, Box<::pml::SlideMaster>>,
     pub slide_layout_map: HashMap<PathBuf, Box<::pml::SlideLayout>>,
     pub slide_map: HashMap<PathBuf, Box<::pml::Slide>>,
+    pub slide_master_rels_map: HashMap<PathBuf, Vec<::relationship::Relationship>>,
+    pub slide_layout_rels_map: HashMap<PathBuf, Vec<::relationship::Relationship>>,
+    pub slide_rels_map: HashMap<PathBuf, Vec<::relationship::Relationship>>,
     pub medias: Vec<PathBuf>,
 }
 
@@ -34,6 +37,9 @@ impl PPTXDocument {
         let mut slide_master_map = HashMap::new();
         let mut slide_layout_map = HashMap::new();
         let mut slide_map = HashMap::new();
+        let mut slide_master_rels_map = HashMap::new();
+        let mut slide_layout_rels_map = HashMap::new();
+        let mut slide_rels_map = HashMap::new();
         let mut medias = Vec::new();
 
         println!();
@@ -56,6 +62,18 @@ impl PPTXDocument {
                     }
                     Err(err) => println!("{}", err),
                 }
+            } else if file_path.starts_with("ppt/slideMasters/_rels") {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                    continue;
+                }
+
+                println!("parsing slide master relationship file: {}", zip_file.name());
+                match ::relationship::relationships_from_zip_file(&mut zip_file) {
+                    Ok(vec) => {
+                        slide_master_rels_map.insert(file_path, vec);
+                    }
+                    Err(err) => println!("{}", err),
+                }
             } else if file_path.starts_with("ppt/slideMasters") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
                     continue;
@@ -69,6 +87,18 @@ impl PPTXDocument {
                     }
                     Err(err) => println!("{}", err),
                 }
+            } else if file_path.starts_with("ppt/slideLayouts/_rels") {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                    continue;
+                }
+
+                println!("parsing slide layout relationship file: {}", zip_file.name());
+                match ::relationship::relationships_from_zip_file(&mut zip_file) {
+                    Ok(vec) => {
+                        slide_layout_rels_map.insert(file_path, vec);
+                    }
+                    Err(err) => println!("{}", err),
+                }
             } else if file_path.starts_with("ppt/slideLayouts") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
                     continue;
@@ -79,6 +109,18 @@ impl PPTXDocument {
                 match ::pml::SlideLayout::from_zip_file(&mut zip_file).map(|val| val.into()) {
                     Ok(slide) => {
                         slide_layout_map.insert(file_path, slide);
+                    }
+                    Err(err) => println!("{}", err),
+                }
+            } else if file_path.starts_with("ppt/slides/_rels") {
+                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                    continue;
+                }
+
+                println!("parsing slide relationship file: {}", zip_file.name());
+                match ::relationship::relationships_from_zip_file(&mut zip_file) {
+                    Ok(vec) => {
+                        slide_rels_map.insert(file_path, vec);
                     }
                     Err(err) => println!("{}", err),
                 }
@@ -109,6 +151,9 @@ impl PPTXDocument {
             slide_master_map,
             slide_layout_map,
             slide_map,
+            slide_master_rels_map,
+            slide_layout_rels_map,
+            slide_rels_map,
             medias,
         })
     }

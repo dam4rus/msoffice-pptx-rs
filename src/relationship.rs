@@ -1,1 +1,54 @@
+use ::error::MissingAttributeError;
+use ::xml::XmlNode;
+use ::zip::read::ZipFile;
+use ::std::io::Read;
+
 pub type RelationshipId = String;
+
+pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
+
+pub struct Relationship {
+    pub id: String,
+    pub rel_type: String,
+    pub target: String,
+}
+
+impl Relationship {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut id = None;
+        let mut rel_type = None;
+        let mut target = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "Id" => id = Some(value.clone()),
+                "Type" => rel_type = Some(value.clone()),
+                "Target" => target = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let id = id.ok_or_else(|| MissingAttributeError::new("Id"))?;
+        let rel_type = rel_type.ok_or_else(|| MissingAttributeError::new("Type"))?;
+        let target = target.ok_or_else(|| MissingAttributeError::new("Target"))?;
+
+        Ok(Self {
+            id,
+            rel_type,
+            target,
+        })
+    }
+}
+
+pub fn relationships_from_zip_file(zip_file: &mut ZipFile) -> Result<Vec<Relationship>> {
+    let mut xml_string = String::new();
+    zip_file.read_to_string(&mut xml_string)?;
+    let xml_node = XmlNode::from_str(xml_string.as_str())?;
+    let mut relationships = Vec::new();
+
+    for child_node in &xml_node.child_nodes {
+        relationships.push(Relationship::from_xml_element(child_node)?);
+    }
+
+    Ok(relationships)
+}
