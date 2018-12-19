@@ -1540,7 +1540,9 @@ impl ColorScheme {
         let mut follow_hyperlink = None;
 
         for child_node in &xml_node.child_nodes {
-            let scheme_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("scheme color value"))?;
+            let scheme_node = child_node.child_nodes.get(0)
+                .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "scheme color value"))?;
+
             match child_node.local_name() {
                 "dk1" => dk1 = Some(Color::from_xml_element(&scheme_node)?),
                 "lt1" => lt1 = Some(Color::from_xml_element(&scheme_node)?),
@@ -1558,18 +1560,18 @@ impl ColorScheme {
             }
         }
 
-        let dark1 = dk1.ok_or_else(|| MissingChildNodeError::new("dk1"))?;
-        let light1 = lt1.ok_or_else(|| MissingChildNodeError::new("lt1"))?;
-        let dark2 = dk2.ok_or_else(|| MissingChildNodeError::new("dk2"))?;
-        let light2 = lt2.ok_or_else(|| MissingChildNodeError::new("lt2"))?;
-        let accent1 = accent1.ok_or_else(|| MissingChildNodeError::new("accent1"))?;
-        let accent2 = accent2.ok_or_else(|| MissingChildNodeError::new("accent2"))?;
-        let accent3 = accent3.ok_or_else(|| MissingChildNodeError::new("accent3"))?;
-        let accent4 = accent4.ok_or_else(|| MissingChildNodeError::new("accent4"))?;
-        let accent5 = accent5.ok_or_else(|| MissingChildNodeError::new("accent5"))?;
-        let accent6 = accent6.ok_or_else(|| MissingChildNodeError::new("accent6"))?;
-        let hyperlink = hyperlink.ok_or_else(|| MissingChildNodeError::new("hlink"))?;
-        let followed_hyperlink = follow_hyperlink.ok_or_else(|| MissingChildNodeError::new("folHlink"))?;
+        let dark1 = dk1.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "dk1"))?;
+        let light1 = lt1.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "lt1"))?;
+        let dark2 = dk2.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "dk2"))?;
+        let light2 = lt2.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "lt2"))?;
+        let accent1 = accent1.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent1"))?;
+        let accent2 = accent2.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent2"))?;
+        let accent3 = accent3.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent3"))?;
+        let accent4 = accent4.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent4"))?;
+        let accent5 = accent5.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent5"))?;
+        let accent6 = accent6.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent6"))?;
+        let hyperlink = hyperlink.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "hlink"))?;
+        let followed_hyperlink = follow_hyperlink.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "folHlink"))?;
 
         Ok(Self {
             name,
@@ -1629,7 +1631,7 @@ impl GradientStop {
         let pos_attr = xml_node.attribute("pos").ok_or_else(|| MissingAttributeError::new("pos"))?;
         let position = pos_attr.parse::<PositiveFixedPercentage>()?;
 
-        let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
+        let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
         if !Color::is_choice_member(child_node.local_name()) {
             return Err(NotGroupMemberError::new(child_node.name.clone(), "EG_Color").into());
         }
@@ -1923,7 +1925,8 @@ impl FillProperties {
         match xml_node.local_name() {
             "noFill" => Ok(FillProperties::NoFill),
             "solidFill" => {
-                let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
+                let child_node = xml_node.child_nodes.get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
                 Ok(FillProperties::SolidFill(Color::from_xml_element(&child_node)?))
             }
             "gradFill" => Ok(FillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))),
@@ -1957,7 +1960,9 @@ impl LineFillProperties {
         match xml_node.local_name() {
             "noFill" => Ok(LineFillProperties::NoFill),
             "solidFill" => {
-                let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
+                let child_node = xml_node.child_nodes.get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
+                
                 if !Color::is_choice_member(child_node.local_name()) {
                     return Err(NotGroupMemberError::new(child_node.name.clone(), "EG_Color").into());
                 }
@@ -2354,7 +2359,9 @@ pub struct AlphaModulateEffect {
 
 impl AlphaModulateEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<AlphaModulateEffect> {
-        let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("container"))?;
+        let child_node = xml_node.child_nodes.get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "container"))?;
+
         let container = EffectContainer::from_xml_element(child_node)?;
 
         Ok(Self {
@@ -2751,7 +2758,8 @@ impl TextBulletColor {
         match xml_node.local_name() {
             "buClrTx" => Ok(TextBulletColor::FollowText),
             "buClr" => {
-                let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("color"))?;
+                let child_node = xml_node.child_nodes.get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
                 Ok(TextBulletColor::Color(Color::from_xml_element(child_node)?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBulletColor").into()),
@@ -2842,7 +2850,7 @@ impl TextBullet {
                     Some(child_node) => Ok(
                         TextBullet::Picture(Box::new(Blip::from_xml_element(child_node)?))
                     ),
-                    None => Err(MissingChildNodeError::new("EG_TextBullet").into()),
+                    None => Err(MissingChildNodeError::new(xml_node.name.clone(), "EG_TextBullet").into()),
                 }
             },
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBullet").into()),
@@ -2949,7 +2957,8 @@ impl TextUnderlineFill {
         match xml_node.local_name() {
             "uFillTx" => Ok(TextUnderlineFill::FollowText),
             "uFill" => {
-                let fill_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("EG_FillProperties"))?;
+                let fill_node = xml_node.child_nodes.get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_FillProperties"))?;
                 Ok(TextUnderlineFill::Fill(FillProperties::from_xml_element(fill_node)?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextUnderlineFill").into()),
@@ -3127,7 +3136,8 @@ impl TextCharacterProperties {
                 match child_local_name {
                     "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
                     "highlight" => {
-                        let color_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("CT_Color"))?;
+                        let color_node = child_node.child_nodes.get(0)
+                            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_Color"))?;
                         highlight_color = Some(Color::from_xml_element(color_node)?);
                     }
                     "latin" => latin_font = Some(TextFont::from_xml_element(child_node)?),
@@ -3260,15 +3270,18 @@ impl TextParagraphProperties {
             } else {
                 match child_node.local_name() {
                     "lnSpc" => {
-                        let line_spacing_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("lnSpc child"))?;
+                        let line_spacing_node = child_node.child_nodes.get(0)
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "lnSpc child"))?;
                         line_spacing = Some(TextSpacing::from_xml_element(line_spacing_node)?);
                     }
                     "spcBef" => {
-                        let space_before_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("spcBef child"))?;
+                        let space_before_node = child_node.child_nodes.get(0)
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcBef child"))?;
                         space_before = Some(TextSpacing::from_xml_element(space_before_node)?);
                     }
                     "spcAft" => {
-                        let space_after_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("spcAft child"))?;
+                        let space_after_node = child_node.child_nodes.get(0)
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcAft child"))?;
                         space_after = Some(TextSpacing::from_xml_element(space_after_node)?);
                     },
                     "tabLst" => tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
@@ -3384,7 +3397,7 @@ impl RegularTextRun {
             }
         }
 
-        let text = text.ok_or_else(|| MissingChildNodeError::new("t"))?;
+        let text = text.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "t"))?;
         Ok(Self {
             char_properties,
             text,
@@ -3534,7 +3547,7 @@ impl TextBody {
             }
         }
 
-        let body_properties = body_properties.ok_or_else(|| MissingChildNodeError::new("bodyPr"))?;
+        let body_properties = body_properties.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "bodyPr"))?;
 
         Ok(Self {
             body_properties,
@@ -3749,8 +3762,8 @@ impl FontScheme {
             }
         }
 
-        let major_font = major_font.ok_or_else(|| MissingChildNodeError::new("majorFont"))?;
-        let minor_font = minor_font.ok_or_else(|| MissingChildNodeError::new("minorFont"))?;
+        let major_font = major_font.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "majorFont"))?;
+        let minor_font = minor_font.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "minorFont"))?;
 
         Ok(Self {
             name,
@@ -3784,9 +3797,9 @@ impl FontCollection {
             }
         }
 
-        let latin = opt_latin.ok_or_else(|| MissingChildNodeError::new("latin"))?;
-        let east_asian = opt_ea.ok_or_else(|| MissingChildNodeError::new("ea"))?;
-        let complex_script = opt_cs.ok_or_else(|| MissingChildNodeError::new("cs"))?;
+        let latin = opt_latin.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "latin"))?;
+        let east_asian = opt_ea.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "ea"))?;
+        let complex_script = opt_cs.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cs"))?;
 
         Ok(Self {
             latin,
@@ -4503,7 +4516,7 @@ impl XYAdjustHandle {
             }
         }
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
         Ok(Self {
@@ -4549,7 +4562,7 @@ impl PolarAdjustHandle {
             }
         }
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
         Ok(Self {
@@ -4574,7 +4587,7 @@ impl ConnectionSite {
         let angle_attr = xml_node.attribute("ang").ok_or_else(|| MissingAttributeError::new("ang"))?;
         let angle = angle_attr.parse()?;
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pos"))?;
+        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
         Ok(Self {
@@ -4664,26 +4677,33 @@ impl Path2D {
             match child_node.local_name() {
                 "close" => commands.push(Path2DCommand::Close),
                 "moveTo" => {
-                    let pt_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::MoveTo(AdjPoint2D::from_xml_element(pt_node)?));
                 }
                 "lnTo" => {
-                    let pt_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::LineTo(AdjPoint2D::from_xml_element(pt_node)?));
                 }
                 "arcTo" => commands.push(Path2DCommand::ArcTo(Path2DArcTo::from_xml_element(child_node)?)),
                 "quadBezTo" => {
-                    let pt1_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
-                    let pt2_node = child_node.child_nodes.get(1).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt1_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
+                    let pt2_node = child_node.child_nodes.get(1)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::QuadBezierTo(
                         AdjPoint2D::from_xml_element(pt1_node)?,
                         AdjPoint2D::from_xml_element(pt2_node)?,
                     ));
                 }
                 "cubicBezTo" => {
-                    let pt1_node = child_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new("pt"))?;
-                    let pt2_node = child_node.child_nodes.get(1).ok_or_else(|| MissingChildNodeError::new("pt"))?;
-                    let pt3_node = child_node.child_nodes.get(2).ok_or_else(|| MissingChildNodeError::new("pt"))?;
+                    let pt1_node = child_node.child_nodes.get(0)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
+                    let pt2_node = child_node.child_nodes.get(1)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
+                    let pt3_node = child_node.child_nodes.get(2)
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::CubicBezTo(
                         AdjPoint2D::from_xml_element(pt1_node)?,
                         AdjPoint2D::from_xml_element(pt2_node)?,
@@ -4868,10 +4888,10 @@ impl ShapeStyle {
             }
         }
 
-        let line_reference = line_reference.ok_or_else(|| MissingChildNodeError::new("lnRef"))?;
-        let fill_reference = fill_reference.ok_or_else(|| MissingChildNodeError::new("fillRef"))?;
-        let effect_reference = effect_reference.ok_or_else(|| MissingChildNodeError::new("effectRef"))?;
-        let font_reference = font_reference.ok_or_else(|| MissingChildNodeError::new("fontRef"))?;
+        let line_reference = line_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "lnRef"))?;
+        let fill_reference = fill_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fillRef"))?;
+        let effect_reference = effect_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "effectRef"))?;
+        let font_reference = font_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fontRef"))?;
 
         Ok(Self {
             line_reference,
@@ -4977,7 +4997,7 @@ impl OfficeStyleSheet {
             }
         }
 
-        let theme_elements = theme_elements.ok_or_else(|| MissingChildNodeError::new("themeElements"))?;
+        let theme_elements = theme_elements.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "themeElements"))?;
 
         Ok(Self {
             name,
@@ -5010,9 +5030,9 @@ impl BaseStyles {
             }
         }
 
-        let color_scheme = color_scheme.ok_or_else(|| MissingChildNodeError::new("clrScheme"))?;
-        let font_scheme = font_scheme.ok_or_else(|| MissingChildNodeError::new("fontScheme"))?;
-        let format_scheme = format_scheme.ok_or_else(|| MissingChildNodeError::new("fmtScheme"))?;
+        let color_scheme = color_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrScheme"))?;
+        let font_scheme = font_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fontScheme"))?;
+        let format_scheme = format_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fmtScheme"))?;
 
         Ok(Self {
             color_scheme,

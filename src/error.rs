@@ -27,22 +27,24 @@ impl Error for MissingAttributeError {
 }
 
 /// Error indicating that an xml element doesn't have a required child node
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct MissingChildNodeError {
+    pub node_name: String,
     pub child_node: &'static str,
 }
 
 impl MissingChildNodeError {
-    pub fn new(child_node: &'static str) -> Self {
+    pub fn new(node_name: String, child_node: &'static str) -> Self {
         Self {
-            child_node
+            node_name,
+            child_node,
         }
     }
 }
 
 impl Display for MissingChildNodeError {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Xml element is missing a required child element: {}", self.child_node)
+        write!(f, "Xml element '{}' is missing a required child element: {}", self.node_name, self.child_node)
     }
 }
 
