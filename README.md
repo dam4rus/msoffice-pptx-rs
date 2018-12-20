@@ -3,7 +3,7 @@
 A library to deserialize pptx files in Rust.
 
 ## Overview
-msoffice-pptx-rs is a low level deserializer for Microsoft's OfficeOpen XML pptx file format. It's still WIP, so except API breaking changes.
+msoffice-pptx-rs is a low level deserializer for Microsoft's OfficeOpen XML pptx file format. It's still WIP, so expect API breaking changes.
 Expect a more detailed documentation later.
 
 ## Simple usage
