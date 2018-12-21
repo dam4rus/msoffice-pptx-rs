@@ -1,8 +1,8 @@
-use ::std::io::{ Read, Seek };
-use crate::relationship::RelationshipId;
-use crate::xml::{XmlNode, parse_xml_bool};
 use crate::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
-use ::zip::read::ZipFile;
+use crate::relationship::RelationshipId;
+use crate::xml::{parse_xml_bool, XmlNode};
+use std::io::{Read, Seek};
+use zip::read::ZipFile;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -282,7 +282,6 @@ decl_simple_type_enum! {
     }
 }
 
-
 decl_simple_type_enum! {
     pub enum TLTimeNodePresetClassType {
         Entrance = "entr",
@@ -460,14 +459,16 @@ impl BackgroundProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let shade_to_title = match xml_node.attribute("shadeToTitle") {
             Some(val) => Some(parse_xml_bool(val)?),
-            None => None
+            None => None,
         };
 
         let mut fill = None;
 
         for child_node in &xml_node.child_nodes {
-            if crate::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
-                fill = Some(crate::drawingml::FillProperties::from_xml_element(child_node)?);
+            use crate::drawingml::FillProperties;
+
+            if FillProperties::is_choice_member(child_node.local_name()) {
+                fill = Some(FillProperties::from_xml_element(child_node)?);
             }
             // TODO: implement EffectProperties
             // else if ::drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
@@ -500,8 +501,12 @@ impl BackgroundGroup {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
-            "bgRef" => Ok(BackgroundGroup::Reference(crate::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
+            "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(
+                xml_node,
+            )?)),
+            "bgRef" => Ok(BackgroundGroup::Reference(
+                crate::drawingml::StyleMatrixReference::from_xml_element(xml_node)?,
+            )),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
     }
@@ -519,11 +524,13 @@ impl Background {
             None => None,
         };
 
-        let background_node = xml_node.child_nodes.get(0)
+        let background_node = xml_node
+            .child_nodes
+            .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Background"))?;
         let background = BackgroundGroup::from_xml_element(background_node)?;
 
-        Ok(Self{
+        Ok(Self {
             background,
             black_and_white_mode,
         })
@@ -532,10 +539,10 @@ impl Background {
 
 pub struct Placeholder {
     pub placeholder_type: Option<PlaceholderType>, // obj
-    pub orientation: Option<Direction>, // horz
-    pub size: Option<PlaceholderSize>, // full
-    pub index: Option<u32>, // 0
-    pub has_custom_prompt: Option<bool>, // false
+    pub orientation: Option<Direction>,            // horz
+    pub size: Option<PlaceholderSize>,             // full
+    pub index: Option<u32>,                        // 0
+    pub has_custom_prompt: Option<bool>,           // false
 }
 
 impl Placeholder {
@@ -568,7 +575,7 @@ impl Placeholder {
 }
 
 pub struct ApplicationNonVisualDrawingProps {
-    pub is_photo: Option<bool>, // false
+    pub is_photo: Option<bool>,      // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
     pub media: Option<crate::drawingml::Media>,
@@ -645,14 +652,19 @@ impl Shape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
-                "spPr" => shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "spPr" => {
+                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                        child_node,
+                    )?))
+                }
                 "style" => style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 "txBody" => text_body = Some(crate::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvSpPr"))?;
+        let non_visual_props =
+            non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvSpPr"))?;
         let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "spPr"))?;
 
         Ok(Self {
@@ -679,15 +691,24 @@ impl ShapeNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)),
-                "cNvSpPr" => shape_drawing_props = Some(crate::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
+                "cNvPr" => {
+                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "cNvSpPr" => {
+                    shape_drawing_props = Some(crate::drawingml::NonVisualDrawingShapeProps::from_xml_element(
+                        child_node,
+                    )?)
+                }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
         let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
-        let shape_drawing_props = shape_drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvSpPr"))?;
+        let shape_drawing_props =
+            shape_drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvSpPr"))?;
         let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
 
         Ok(Self {
@@ -713,23 +734,33 @@ impl GroupShape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvGrpSpPr" => non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?)),
-                "grpSpPr" => group_shape_props = Some(crate::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
+                "grpSpPr" => {
+                    group_shape_props = Some(crate::drawingml::GroupShapeProperties::from_xml_element(child_node)?)
+                }
                 "sp" => shape_array.push(ShapeGroup::Shape(Box::new(Shape::from_xml_element(child_node)?))),
-                "grpSp" => shape_array.push(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(child_node)?))),
+                "grpSp" => shape_array.push(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(
+                    child_node,
+                )?))),
                 // TODO implement GraphicalObjectFrame
                 //"graphicFrame" => shape_array.push(ShapeGroup::GraphicFrame(GraphicalObjectFrame::from_xml_element(child_node)?)),
-                "cxnSp" => shape_array.push(ShapeGroup::Connector(Box::new(Connector::from_xml_element(child_node)?))),
+                "cxnSp" => shape_array.push(ShapeGroup::Connector(Box::new(Connector::from_xml_element(
+                    child_node,
+                )?))),
                 "pic" => shape_array.push(ShapeGroup::Picture(Box::new(Picture::from_xml_element(child_node)?))),
                 "contentPart" => {
-                    let attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     shape_array.push(ShapeGroup::ContentPart(attr.clone()));
                 }
                 _ => (),
             }
         }
 
-        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvGrpSpPr"))?;
-        let group_shape_props = group_shape_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "grpSpPr"))?;
+        let non_visual_props =
+            non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvGrpSpPr"))?;
+        let group_shape_props =
+            group_shape_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "grpSpPr"))?;
 
         Ok(Self {
             non_visual_props,
@@ -753,21 +784,24 @@ impl GroupShapeNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(
-                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
-                ),
-                "cNvGrpSpPr" => group_drawing_props = Some(
-                    crate::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
-                ),
-                "nvPr" => app_props = Some(
-                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
-                ),
+                "cNvPr" => {
+                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "cNvGrpSpPr" => {
+                    group_drawing_props = Some(crate::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
+                        child_node,
+                    )?)
+                }
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
         let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
-        let group_drawing_props = group_drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvGrpSpPr"))?;
+        let group_drawing_props =
+            group_drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvGrpSpPr"))?;
         let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
         Ok(Self {
             drawing_props,
@@ -804,20 +838,19 @@ impl Connector {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvCxnSpPr" => non_visual_props = Some(
-                    Box::new(ConnectorNonVisual::from_xml_element(child_node)?)
-                ),
-                "spPr" => shape_props = Some(
-                    Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)
-                ),
-                "style" => shape_style = Some(
-                    Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)
-                ),
+                "nvCxnSpPr" => non_visual_props = Some(Box::new(ConnectorNonVisual::from_xml_element(child_node)?)),
+                "spPr" => {
+                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "style" => shape_style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
 
-        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvCxnSpPr"))?;
+        let non_visual_props =
+            non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvCxnSpPr"))?;
         let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvCxnSpPr"))?;
 
         Ok(Self {
@@ -842,21 +875,24 @@ impl ConnectorNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(
-                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
-                ),
-                "cNvCxnSpPr" => connector_props = Some(
-                    crate::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?
-                ),
-                "nvPr" => app_props = Some(
-                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
-                ),
+                "cNvPr" => {
+                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "cNvCxnSpPr" => {
+                    connector_props = Some(crate::drawingml::NonVisualConnectorProperties::from_xml_element(
+                        child_node,
+                    )?)
+                }
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
         let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
-        let connector_props = connector_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvCxnSpPr"))?;
+        let connector_props =
+            connector_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvCxnSpPr"))?;
         let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
 
         Ok(Self {
@@ -883,23 +919,24 @@ impl Picture {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvPicPr" => non_visual_props = Some(
-                    Box::new(PictureNonVisual::from_xml_element(child_node)?)
-                ),
-                "blipFill" => blip_fill = Some(
-                    Box::new(crate::drawingml::BlipFillProperties::from_xml_element(child_node)?)
-                ),
-                "spPr" => shape_props = Some(
-                    Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)
-                ),
-                "style" => shape_style = Some(
-                    Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)
-                ),
+                "nvPicPr" => non_visual_props = Some(Box::new(PictureNonVisual::from_xml_element(child_node)?)),
+                "blipFill" => {
+                    blip_fill = Some(Box::new(crate::drawingml::BlipFillProperties::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "spPr" => {
+                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "style" => shape_style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
 
-        let non_visual_props = non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPicPr"))?;
+        let non_visual_props =
+            non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPicPr"))?;
         let blip_fill = blip_fill.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "blipFill"))?;
         let shape_props = shape_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "spPr"))?;
 
@@ -926,21 +963,24 @@ impl PictureNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(
-                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
-                ),
-                "cNvPicPr" => picture_props = Some(
-                    crate::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?
-                ),
-                "nvPr" => app_props = Some(
-                    ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
-                ),
+                "cNvPr" => {
+                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "cNvPicPr" => {
+                    picture_props = Some(crate::drawingml::NonVisualPictureProperties::from_xml_element(
+                        child_node,
+                    )?)
+                }
+                "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
         let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
-        let picture_props = picture_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPicPr"))?;
+        let picture_props =
+            picture_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPicPr"))?;
         let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
 
         Ok(Self {
@@ -985,7 +1025,8 @@ impl CommonSlideData {
             }
         }
 
-        let shape_tree = opt_shape_tree.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
+        let shape_tree = opt_shape_tree
+            .ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
 
         Ok(Self {
             name,
@@ -1011,11 +1052,15 @@ impl CustomerDataList {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "custData" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     customer_data_list.push(id_attr.clone());
                 }
                 "tags" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     tags = Some(id_attr.clone());
                 }
                 _ => (),
@@ -1036,7 +1081,7 @@ pub struct Control {
 
 pub struct OleAttributes {
     pub shape_id: Option<crate::drawingml::ShapeId>,
-    pub name: Option<String>, // ""
+    pub name: Option<String>,       // ""
     pub show_as_icon: Option<bool>, // false
     pub id: Option<RelationshipId>,
     pub image_width: Option<crate::drawingml::PositiveCoordinate32>,
@@ -1071,12 +1116,10 @@ impl SlideLayoutIdListEntry {
             }
         }
 
-        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
+        let relationship_id =
+            relationship_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
 
-        Ok(Self {
-            id,
-            relationship_id,
-        })
+        Ok(Self { id, relationship_id })
     }
 }
 
@@ -1107,15 +1150,15 @@ impl SlideMasterTextStyles {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "titleStyle" => title_styles = Some(
-                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
-                ),
-                "bodyStyle" => body_styles = Some(
-                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
-                ),
-                "otherStyle" => other_styles = Some(
-                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
-                ),
+                "titleStyle" => {
+                    title_styles = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
+                "bodyStyle" => {
+                    body_styles = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
+                "otherStyle" => {
+                    other_styles = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }
@@ -1145,7 +1188,7 @@ pub struct SideDirectionTransition {
 }
 
 pub struct SplitTransition {
-    pub orientation: Option<Direction>, // horz
+    pub orientation: Option<Direction>,                  // horz
     pub direction: Option<TransitionInOutDirectionType>, // out
 }
 
@@ -1187,7 +1230,7 @@ pub enum SlideTransitionGroup {
 
 pub struct TransitionStartSoundAction {
     pub sound_file: crate::drawingml::EmbeddedWAVAudioFile,
-    pub is_looping:  Option<bool>, // false
+    pub is_looping: Option<bool>, // false
 }
 
 pub enum TransitionSoundAction {
@@ -1219,11 +1262,11 @@ pub struct TLBuildParagraph {
     pub template_list: Vec<TLTemplate>, // size: 0-9
     pub build_common: TLBuildCommonAttributes,
     pub build_type: Option<TLParaBuildType>, // whole
-    pub build_level: Option<u32>, // 1
-    pub animate_bg: Option<bool>, // false
-    pub auto_update_anim_bg: Option<bool>, // true
-    pub reverse: Option<bool>, // false
-    pub auto_advance_time: Option<TLTime>, // indefinite
+    pub build_level: Option<u32>,            // 1
+    pub animate_bg: Option<bool>,            // false
+    pub auto_update_anim_bg: Option<bool>,   // true
+    pub reverse: Option<bool>,               // false
+    pub auto_advance_time: Option<TLTime>,   // indefinite
 }
 
 pub struct TLPoint {
@@ -1255,7 +1298,7 @@ pub struct TLBuildDiagram {
 pub struct TLOleBuildChart {
     pub build_common: TLBuildCommonAttributes,
     pub build_type: Option<TLOleChartBuildType>, // allAtOnce
-    pub animate_bg: Option<bool>, // true
+    pub animate_bg: Option<bool>,                // true
 }
 
 pub struct TLGraphicalObjectBuild {
@@ -1372,7 +1415,7 @@ pub struct TLMediaNodeVideo {
 pub struct TLTimeAnimateValue {
     pub value: Option<TLAnimVariant>,
     pub time: Option<TLTimeAnimateValueTime>, // indefinite
-    pub formula: Option<String>, // ""
+    pub formula: Option<String>,              // ""
 }
 
 pub enum TLTimeAnimateValueTime {
@@ -1406,9 +1449,9 @@ pub struct TLCommonMediaNodeData {
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
     pub volume: Option<crate::drawingml::PositiveFixedPercentage>, // 50000
-    pub mute: Option<bool>, // false
-    pub number_of_slides: Option<u32>, // 1
-    pub show_when_stopped: Option<bool>, // true
+    pub mute: Option<bool>,                                        // false
+    pub number_of_slides: Option<u32>,                             // 1
+    pub show_when_stopped: Option<bool>,                           // true
 }
 
 pub enum TLTimeConditionTriggerGroup {
@@ -1470,7 +1513,7 @@ pub struct TLCommonTimeNodeData {
     pub speed: Option<crate::drawingml::Percentage>, // 100000
     pub acceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
     pub deceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
-    pub auto_reverse: Option<bool>, // false
+    pub auto_reverse: Option<bool>,                  // false
     pub restart_type: Option<TLTimeNodeRestartType>,
     pub fill_type: Option<TLTimeNodeFillType>,
     pub sync_behavior: Option<TLTimeNodeSyncType>,
@@ -1493,7 +1536,7 @@ pub enum TLIterateDataInterval {
 pub struct TLIterateData {
     pub interval: TLIterateDataInterval,
     pub iterate_type: Option<IterateType>, // el
-    pub backwards: Option<bool>, //false
+    pub backwards: Option<bool>,           //false
 }
 
 pub enum TLByAnimateColorTransform {
@@ -1550,7 +1593,9 @@ impl SlideMaster {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
-                "clrMap" => color_mapping = Some(Box::new(crate::drawingml::ColorMapping::from_xml_element(child_node)?)),
+                "clrMap" => {
+                    color_mapping = Some(Box::new(crate::drawingml::ColorMapping::from_xml_element(child_node)?))
+                }
                 "sldLayoutIdLst" => {
                     for slide_layout_id_node in &child_node.child_nodes {
                         slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
@@ -1565,8 +1610,10 @@ impl SlideMaster {
             }
         }
 
-        let common_slide_data = common_slide_data.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "cSld")))?;
-        let color_mapping = color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "clrMap")))?;
+        let common_slide_data = common_slide_data
+            .ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "cSld")))?;
+        let color_mapping =
+            color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "clrMap")))?;
 
         Ok(Self {
             common_slide_data,
@@ -1582,11 +1629,11 @@ impl SlideMaster {
 }
 
 pub struct SlideLayout {
-    pub matching_name: Option<String>, // ""
-    pub slide_layout_type: Option<SlideLayoutType>, // cust
-    pub preserve: Option<bool>, //false
-    pub is_user_drawn: Option<bool>, // false
-    pub show_master_shapes: Option<bool>, // true
+    pub matching_name: Option<String>,                    // ""
+    pub slide_layout_type: Option<SlideLayoutType>,       // cust
+    pub preserve: Option<bool>,                           //false
+    pub is_user_drawn: Option<bool>,                      // false
+    pub show_master_shapes: Option<bool>,                 // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
     pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
@@ -1634,9 +1681,11 @@ impl SlideLayout {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
-                    let clr_map_node = child_node.child_nodes.get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?;
-                    color_mapping_override = Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
+                        MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
+                    })?;
+                    color_mapping_override =
+                        Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 // TODO implement
                 // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
@@ -1646,7 +1695,8 @@ impl SlideLayout {
             }
         }
 
-        let common_slide_data = common_slide_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
+        let common_slide_data =
+            common_slide_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
 
         Ok(Self {
             matching_name,
@@ -1665,8 +1715,8 @@ impl SlideLayout {
 }
 
 pub struct Slide {
-    pub show: Option<bool>, // true
-    pub show_master_shapes: Option<bool>, // true
+    pub show: Option<bool>,                               // true
+    pub show_master_shapes: Option<bool>,                 // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
     pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
@@ -1706,9 +1756,11 @@ impl Slide {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
-                    let clr_map_node = child_node.child_nodes.get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?;
-                    color_mapping_override = Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
+                        MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
+                    })?;
+                    color_mapping_override =
+                        Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 // TODO implement
                 // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
@@ -1717,8 +1769,9 @@ impl Slide {
             }
         }
 
-        let common_slide_data = common_slide_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
-        
+        let common_slide_data =
+            common_slide_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
+
         Ok(Self {
             show,
             show_master_shapes,
@@ -1752,19 +1805,27 @@ impl EmbeddedFontListEntry {
             match child_node.local_name() {
                 "font" => font = Some(crate::drawingml::TextFont::from_xml_element(child_node)?),
                 "regular" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     regular = Some(id_attr.clone());
                 }
                 "bold" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     bold = Some(id_attr.clone());
                 }
                 "italic" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     italic = Some(id_attr.clone());
                 }
                 "boldItalic" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     bold_italic = Some(id_attr.clone());
                 }
                 _ => (),
@@ -1794,7 +1855,7 @@ impl CustomShow {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<CustomShow> {
         let mut name = None;
         let mut id = None;
-        
+
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "name" => name = Some(value.clone()),
@@ -1808,7 +1869,9 @@ impl CustomShow {
         for child_node in &xml_node.child_nodes {
             if child_node.local_name() == "sldLst" {
                 for slide_node in &child_node.child_nodes {
-                    let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(slide_node.name.clone(), "r:id"))?;
+                    let id_attr = slide_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(slide_node.name.clone(), "r:id"))?;
                     slides.push(id_attr.clone());
                 }
             }
@@ -1817,26 +1880,22 @@ impl CustomShow {
         let name = name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
 
-        Ok(Self {
-            name,
-            id,
-            slides,
-        })
+        Ok(Self { name, id, slides })
     }
 }
 
 pub struct PhotoAlbum {
-    pub black_and_white: Option<bool>, // false
-    pub show_captions: Option<bool>, // false
-    pub layout: Option<PhotoAlbumLayout>, // PhotoAlbumLayout::FitToSlide
+    pub black_and_white: Option<bool>,       // false
+    pub show_captions: Option<bool>,         // false
+    pub layout: Option<PhotoAlbumLayout>,    // PhotoAlbumLayout::FitToSlide
     pub frame: Option<PhotoAlbumFrameShape>, // PhotoAlbumFrameShape::FrameStyle1
 }
 
 pub struct HeaderFooter {
     pub slide_number_enabled: Option<bool>, // true
-    pub header_enabled: Option<bool>, // true
-    pub footer_enabled: Option<bool>, // true
-    pub date_time_enabled: Option<bool>, // true
+    pub header_enabled: Option<bool>,       // true
+    pub footer_enabled: Option<bool>,       // true
+    pub date_time_enabled: Option<bool>,    // true
 }
 
 pub struct Kinsoku {
@@ -1855,16 +1914,16 @@ pub struct ModifyVerifier {
 /// Presentation
 pub struct Presentation {
     pub server_zoom: Option<crate::drawingml::Percentage>, // 50%
-    pub first_slide_num: Option<i32>, // 1
-    pub show_special_pls_on_title_slide: Option<bool>, // true
-    pub rtl: Option<bool>, // false
-    pub remove_personal_info_on_save: Option<bool>, // false
-    pub compatibility_mode: Option<bool>, // false
-    pub strict_first_and_last_chars: Option<bool>, // true
-    pub embed_true_type_fonts: Option<bool>, // false
-    pub save_subset_fonts: Option<bool>, // false
-    pub auto_compress_pictures: Option<bool>, // true
-    pub bookmark_id_seed: Option<BookmarkIdSeed>, // 1
+    pub first_slide_num: Option<i32>,                      // 1
+    pub show_special_pls_on_title_slide: Option<bool>,     // true
+    pub rtl: Option<bool>,                                 // false
+    pub remove_personal_info_on_save: Option<bool>,        // false
+    pub compatibility_mode: Option<bool>,                  // false
+    pub strict_first_and_last_chars: Option<bool>,         // true
+    pub embed_true_type_fonts: Option<bool>,               // false
+    pub save_subset_fonts: Option<bool>,                   // false
+    pub auto_compress_pictures: Option<bool>,              // true
+    pub bookmark_id_seed: Option<BookmarkIdSeed>,          // 1
     pub conformance: Option<ConformanceClass>,
     pub slide_master_id_list: Vec<SlideMasterIdListEntry>,
     pub notes_master_id_list: Vec<NotesMasterIdListEntry>, // length = 1
@@ -1885,7 +1944,7 @@ pub struct Presentation {
 impl Presentation {
     pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self>
     where
-        R: Read + Seek
+        R: Read + Seek,
     {
         let mut presentation_file = zipper.by_name("ppt/presentation.xml")?;
         let mut xml_string = String::new();
@@ -1927,7 +1986,7 @@ impl Presentation {
                 _ => (),
             }
         }
-        
+
         let mut slide_master_id_list = Vec::new();
         let mut notes_master_id_list = Vec::new();
         let mut handout_master_id_list = Vec::new();
@@ -1953,35 +2012,37 @@ impl Presentation {
                         for (attr, value) in &slide_master_id_node.attributes {
                             match attr.as_str() {
                                 "id" => id = Some(value.parse::<u32>()?),
-                                "r:id" => relationship_id =  Some(value.clone()),
+                                "r:id" => relationship_id = Some(value.clone()),
                                 _ => (),
                             }
                         }
 
                         // r:id attribute is required
-                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(slide_master_id_node.name.clone(), "r:id"))?;
-                        slide_master_id_list.push(SlideMasterIdListEntry {
-                            id,
-                            relationship_id,
-                        });
+                        let relationship_id = relationship_id
+                            .ok_or_else(|| MissingAttributeError::new(slide_master_id_node.name.clone(), "r:id"))?;
+                        slide_master_id_list.push(SlideMasterIdListEntry { id, relationship_id });
                     }
-                },
+                }
                 "notesMasterIdLst" => {
                     for notes_master_id_node in &child_node.child_nodes {
-                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(notes_master_id_node.name.clone(), "r:id"))?;
+                        let r_id_attr = notes_master_id_node
+                            .attribute("r:id")
+                            .ok_or_else(|| MissingAttributeError::new(notes_master_id_node.name.clone(), "r:id"))?;
                         notes_master_id_list.push(NotesMasterIdListEntry {
                             relationship_id: r_id_attr.clone(),
                         });
                     }
-                },
+                }
                 "handoutMasterIdLst" => {
                     for handout_master_id_node in &child_node.child_nodes {
-                        let r_id_attr = handout_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(handout_master_id_node.name.clone(), "r:id"))?;
+                        let r_id_attr = handout_master_id_node
+                            .attribute("r:id")
+                            .ok_or_else(|| MissingAttributeError::new(handout_master_id_node.name.clone(), "r:id"))?;
                         handout_master_id_list.push(HandoutMasterIdListEntry {
                             relationship_id: r_id_attr.clone(),
                         });
                     }
-                },
+                }
                 "sldIdLst" => {
                     for slide_id_node in &child_node.child_nodes {
                         let mut id = None;
@@ -1996,14 +2057,12 @@ impl Presentation {
                         }
 
                         let id = id.ok_or_else(|| MissingAttributeError::new(slide_id_node.name.clone(), "id"))?;
-                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(slide_id_node.name.clone(), "r:id"))?;
+                        let relationship_id = relationship_id
+                            .ok_or_else(|| MissingAttributeError::new(slide_id_node.name.clone(), "r:id"))?;
 
-                        slide_id_list.push(SlideIdListEntry {
-                            id,
-                            relationship_id,
-                        });
+                        slide_id_list.push(SlideIdListEntry { id, relationship_id });
                     }
-                },
+                }
                 "sldSz" => {
                     let mut width = None;
                     let mut height = None;
@@ -2029,7 +2088,9 @@ impl Presentation {
                 }
                 "notesSz" => notes_size = Some(crate::drawingml::PositiveSize2D::from_xml_element(child_node)?),
                 "smartTags" => {
-                    let r_id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
+                    let r_id_attr = child_node
+                        .attribute("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     smart_tags = Some(r_id_attr.clone());
                 }
                 "embeddedFontLst" => {
@@ -2080,8 +2141,10 @@ impl Presentation {
                         }
                     }
 
-                    let invalid_start_chars = invalid_start_chars.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalStChars"))?;
-                    let invalid_end_chars = invalid_end_chars.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalEndChars"))?;
+                    let invalid_start_chars = invalid_start_chars
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalStChars"))?;
+                    let invalid_end_chars = invalid_end_chars
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalEndChars"))?;
 
                     kinsoku = Some(Box::new(Kinsoku {
                         language,
@@ -2089,7 +2152,9 @@ impl Presentation {
                         invalid_end_chars,
                     }));
                 }
-                "defaultTextStyle" => default_text_style = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)),
+                "defaultTextStyle" => {
+                    default_text_style = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use quick_xml::{Reader};
+use crate::error::{InvalidXmlError, ParseBoolError};
 use quick_xml::events::{BytesStart, Event};
-use crate::error::InvalidXmlError;
+use quick_xml::Reader;
+use std::collections::HashMap;
 
 /// Represents an implementation independent xml node
 #[derive(Debug, Clone)]
@@ -21,7 +21,7 @@ impl ::std::fmt::Display for XmlNode {
 impl XmlNode {
     pub fn new<T>(name: T) -> Self
     where
-        T: Into<String>
+        T: Into<String>,
     {
         Self {
             name: name.into(),
@@ -38,9 +38,10 @@ impl XmlNode {
             match xml_reader.read_event(&mut buffer) {
                 Ok(Event::Start(ref element)) => {
                     let mut root_node = Self::from_quick_xml_element(element).map_err(|_| InvalidXmlError::new())?;
-                    root_node.child_nodes = Self::parse_child_elements(&mut root_node, element, &mut xml_reader).map_err(|_| InvalidXmlError::new())?;
+                    root_node.child_nodes = Self::parse_child_elements(&mut root_node, element, &mut xml_reader)
+                        .map_err(|_| InvalidXmlError::new())?;
                     return Ok(root_node);
-                },
+                }
                 Ok(Event::Eof) => break,
                 _ => (),
             }
@@ -60,7 +61,7 @@ impl XmlNode {
 
     pub fn attribute<T>(&self, attr_name: T) -> Option<&String>
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         self.attributes.get(attr_name.as_ref())
     }
@@ -94,14 +95,14 @@ impl XmlNode {
                     let mut node = Self::from_quick_xml_element(element)?;
                     node.child_nodes = Self::parse_child_elements(&mut node, element, xml_reader)?;
                     child_nodes.push(node);
-                },
+                }
                 Ok(Event::Text(text)) => {
                     xml_node.text = text.unescape_and_decode(xml_reader).ok();
                 }
                 Ok(Event::Empty(ref element)) => {
                     let node = Self::from_quick_xml_element(element)?;
                     child_nodes.push(node);
-                },
+                }
                 Ok(Event::End(ref element)) => {
                     if element.name() == xml_element.name() {
                         break;
@@ -120,13 +121,13 @@ impl XmlNode {
     }
 }
 
-pub fn parse_xml_bool<T>(value: T) -> Result<bool, crate::error::ParseBoolError>
+pub fn parse_xml_bool<T>(value: T) -> Result<bool, ParseBoolError>
 where
-    T: AsRef<str>
+    T: AsRef<str>,
 {
     match value.as_ref() {
         "true" | "1" => Ok(true),
         "false" | "0" => Ok(false),
-        _ => Err(crate::error::ParseBoolError::new(String::from(value.as_ref()))),
+        _ => Err(ParseBoolError::new(String::from(value.as_ref()))),
     }
 }

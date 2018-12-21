@@ -1,7 +1,7 @@
 use crate::error::MissingAttributeError;
 use crate::xml::XmlNode;
-use ::zip::read::ZipFile;
-use ::std::io::Read;
+use std::io::Read;
+use zip::read::ZipFile;
 
 pub type RelationshipId = String;
 
@@ -32,11 +32,7 @@ impl Relationship {
         let rel_type = rel_type.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "Type"))?;
         let target = target.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "Target"))?;
 
-        Ok(Self {
-            id,
-            rel_type,
-            target,
-        })
+        Ok(Self { id, rel_type, target })
     }
 }
 

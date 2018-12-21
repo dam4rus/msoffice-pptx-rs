@@ -1,8 +1,8 @@
-use std::io::{ Read, Seek };
 use crate::xml::XmlNode;
+use std::io::{Read, Seek};
 
 /// AppInfo
-/// 
+///
 pub struct AppInfo {
     pub app_name: Option<String>,
     pub app_version: Option<String>,
@@ -11,10 +11,10 @@ pub struct AppInfo {
 impl AppInfo {
     pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<dyn (::std::error::Error)>>
     where
-        R: Read + Seek
+        R: Read + Seek,
     {
         let mut app_xml_file = zipper.by_name("docProps/app.xml")?;
-        
+
         let mut xml_string = String::new();
         app_xml_file.read_to_string(&mut xml_string)?;
         let root = XmlNode::from_str(&xml_string)?;
@@ -29,28 +29,25 @@ impl AppInfo {
             }
         }
 
-        Ok(Self {
-            app_name,
-            app_version,
-        })
+        Ok(Self { app_name, app_version })
     }
 }
 
 /// Core
-/// 
+///
 pub struct Core {
     pub title: Option<String>,
     pub creator: Option<String>,
     pub last_modified_by: Option<String>,
     pub revision: Option<i32>,
     pub created_time: Option<String>,  // TODO: maybe store as some DateTime struct?
-    pub modified_time: Option<String>,  // TODO: maybe store as some DateTime struct?
+    pub modified_time: Option<String>, // TODO: maybe store as some DateTime struct?
 }
 
 impl Core {
     pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<dyn (::std::error::Error)>>
     where
-        R: Read + Seek
+        R: Read + Seek,
     {
         let mut core_xml_file = zipper.by_name("docProps/core.xml")?;
         let mut xml_string = String::new();

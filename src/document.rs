@@ -1,9 +1,8 @@
-use ::std::collections::{ HashMap };
-use ::std::path::{Path, PathBuf};
-use ::std::fs::File;
-use ::zip::ZipArchive;
 use crate::docprops::{AppInfo, Core};
-
+use std::collections::HashMap;
+use std::fs::File;
+use std::path::{Path, PathBuf};
+use zip::ZipArchive;
 
 /// Document
 pub struct PPTXDocument {
@@ -31,7 +30,9 @@ impl PPTXDocument {
         println!("parsing docProps/core.xml");
         let core = Core::from_zip(&mut zipper).map(|val| val.into()).ok();
         println!("parsing ppt/presentation.xml");
-        let presentation = crate::pml::Presentation::from_zip(&mut zipper).map(|val| val.into()).ok();
+        let presentation = crate::pml::Presentation::from_zip(&mut zipper)
+            .map(|val| val.into())
+            .ok();
         let mut theme_map = HashMap::new();
         let mut slide_master_map = HashMap::new();
         let mut slide_layout_map = HashMap::new();

@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter, Result};
 use std::error::Error;
+use std::fmt::{Display, Formatter, Result};
 
-#[derive(Debug, Clone)]
 /// An error indicating that an xml element doesn't have an attribute that's marked as required in the schema
+#[derive(Debug, Clone)]
 pub struct MissingAttributeError {
     pub node_name: String,
     pub attr: &'static str,
@@ -11,7 +11,7 @@ pub struct MissingAttributeError {
 impl MissingAttributeError {
     pub fn new<T>(node_name: T, attr: &'static str) -> Self
     where
-        T: Into<String>
+        T: Into<String>,
     {
         Self {
             node_name: node_name.into(),
@@ -22,7 +22,11 @@ impl MissingAttributeError {
 
 impl Display for MissingAttributeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Xml element '{}' is missing a required attribute: {}", self.node_name, self.attr)
+        write!(
+            f,
+            "Xml element '{}' is missing a required attribute: {}",
+            self.node_name, self.attr
+        )
     }
 }
 
@@ -42,7 +46,7 @@ pub struct MissingChildNodeError {
 impl MissingChildNodeError {
     pub fn new<T>(node_name: T, child_node: &'static str) -> Self
     where
-        T: Into<String>
+        T: Into<String>,
     {
         Self {
             node_name: node_name.into(),
@@ -53,7 +57,11 @@ impl MissingChildNodeError {
 
 impl Display for MissingChildNodeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Xml element '{}' is missing a required child element: {}", self.node_name, self.child_node)
+        write!(
+            f,
+            "Xml element '{}' is missing a required child element: {}",
+            self.node_name, self.child_node
+        )
     }
 }
 
@@ -71,9 +79,12 @@ pub struct NotGroupMemberError {
 }
 
 impl NotGroupMemberError {
-    pub fn new(node_name: String, group: &'static str) -> Self {
+    pub fn new<T>(node_name: T, group: &'static str) -> Self
+    where
+        T: Into<String>,
+    {
         Self {
-            node_name,
+            node_name: node_name.into(),
             group,
         }
     }
@@ -81,7 +92,11 @@ impl NotGroupMemberError {
 
 impl Display for NotGroupMemberError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "XmlNode '{}' is not a member of {} group", self.node_name, self.group)
+        write!(
+            f,
+            "XmlNode '{}' is not a member of {} group",
+            self.node_name, self.group
+        )
     }
 }
 
@@ -122,10 +137,10 @@ impl LimitViolationError {
         violating_node_name: &'static str,
         min_occurs: Limit,
         max_occurs: Limit,
-        occurs: u32
+        occurs: u32,
     ) -> Self
     where
-        T: Into<String>
+        T: Into<String>,
     {
         LimitViolationError {
             node_name: node_name.into(),
@@ -142,11 +157,7 @@ impl Display for LimitViolationError {
         write!(
             f,
             "Element {} violates the limits of occurance in element: {}. minOccurs: {}, maxOccurs: {}, occurance: {}",
-            self.node_name,
-            self.violating_node_name,
-            self.min_occurs,
-            self.max_occurs,
-            self.occurs,
+            self.node_name, self.violating_node_name, self.min_occurs, self.max_occurs, self.occurs,
         )
     }
 }
@@ -209,8 +220,7 @@ impl From<LimitViolationError> for XmlError {
 
 /// An error indicating that the parsed xml document is invalid
 #[derive(Debug, Clone, Copy)]
-pub struct InvalidXmlError {
-}
+pub struct InvalidXmlError {}
 
 impl InvalidXmlError {
     pub fn new() -> Self {
@@ -230,7 +240,6 @@ impl Error for InvalidXmlError {
     }
 }
 
-
 /// Error indicating that an xml element's attribute is not a valid bool value
 /// Valid bool values are: true, false, 0, 1
 #[derive(Debug, Clone)]
@@ -241,7 +250,7 @@ pub struct ParseBoolError {
 impl ParseBoolError {
     pub fn new<T>(attr_value: T) -> Self
     where
-        T: Into<String>
+        T: Into<String>,
     {
         Self {
             attr_value: attr_value.into(),
@@ -269,9 +278,7 @@ pub struct ParseEnumError {
 
 impl ParseEnumError {
     pub fn new(enum_name: &'static str) -> Self {
-        Self {
-            enum_name,
-        }
+        Self { enum_name }
     }
 }
 

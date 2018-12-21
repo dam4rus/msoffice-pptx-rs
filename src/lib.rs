@@ -1,25 +1,22 @@
 #![forbid(unsafe_code)]
 
-
-
-
 #[macro_use]
 mod macros;
-mod xml;
-pub mod error;
 pub mod docprops;
-pub mod relationship;
-pub mod pml;
-pub mod drawingml;
 pub mod document;
+pub mod drawingml;
+pub mod error;
+pub mod pml;
+pub mod relationship;
+mod xml;
 
 #[cfg(test)]
 mod tests {
     use crate::document::*;
     use crate::xml::*;
     use std::fs::File;
-    use std::io::{ Read };
-    use std::path::{PathBuf};
+    use std::io::Read;
+    use std::path::PathBuf;
 
     #[test]
     fn test_sample_pptx() {
@@ -59,7 +56,10 @@ mod tests {
             let slide_size = presentation.slide_size.as_ref().unwrap();
             assert_eq!(slide_size.width, 9144000);
             assert_eq!(slide_size.height, 6858000);
-            assert_eq!(*slide_size.size_type.as_ref().unwrap(), crate::pml::SlideSizeType::Screen4x3);
+            assert_eq!(
+                *slide_size.size_type.as_ref().unwrap(),
+                crate::pml::SlideSizeType::Screen4x3
+            );
 
             let notes_size = presentation.notes_size.as_ref().unwrap();
             assert_eq!(notes_size.width, 6858000);
@@ -67,7 +67,16 @@ mod tests {
 
             let def_text_style = presentation.default_text_style.as_ref().unwrap();
             let def_par_props = def_text_style.def_paragraph_props.as_ref().unwrap();
-            assert_eq!(def_par_props.default_run_properties.as_ref().unwrap().language.as_ref().unwrap(), "en-US");
+            assert_eq!(
+                def_par_props
+                    .default_run_properties
+                    .as_ref()
+                    .unwrap()
+                    .language
+                    .as_ref()
+                    .unwrap(),
+                "en-US"
+            );
 
             let lvl1_ppr = def_text_style.lvl1_paragraph_props.as_ref().unwrap();
             assert_eq!(lvl1_ppr.margin_left.unwrap(), 0);
@@ -98,57 +107,57 @@ mod tests {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x000066),
                 _ => panic!("theme1 dk1 color type mismatch"),
             }
-            
+
             match color_scheme.light1 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt1 color type mismatch"),
             }
-            
+
             match color_scheme.dark2 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x003366),
                 _ => panic!("theme1 dk2 color type mismatch"),
             }
-            
+
             match color_scheme.light2 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt2 color type mismatch"),
             }
-            
+
             match color_scheme.accent1 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x8EB3C8),
                 _ => panic!("theme1 accent1 color type mismatch"),
             }
-            
+
             match color_scheme.accent2 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6F97B3),
                 _ => panic!("theme1 accent2 color type mismatch"),
             }
-            
+
             match color_scheme.accent3 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xAAADB8),
                 _ => panic!("theme1 accent3 color type mismatch"),
             }
-            
+
             match color_scheme.accent4 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xDADADA),
                 _ => panic!("theme1 accent4 color type mismatch"),
             }
-            
+
             match color_scheme.accent5 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xC6D6E0),
                 _ => panic!("theme1 accent5 color type mismatch"),
             }
-            
+
             match color_scheme.accent6 {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6488A2),
                 _ => panic!("theme1 accent6 color type mismatch"),
             }
-            
+
             match color_scheme.hyperlink {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x556575),
                 _ => panic!("theme1 hyperlink color type mismatch"),
             }
-            
+
             match color_scheme.followed_hyperlink {
                 crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x3D556F),
                 _ => panic!("theme1 followhyperlink type mismatch"),
@@ -174,12 +183,12 @@ mod tests {
             // first fill style test
             let fill_style = &format_scheme.fill_style_list[0];
             match fill_style {
-                crate::drawingml::FillProperties::SolidFill(ref color) => {
-                    match color {
-                        crate::drawingml::Color::SchemeColor(ref clr) => assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor),
-                        _ => panic!("fill[0] is invalid"),
+                crate::drawingml::FillProperties::SolidFill(ref color) => match color {
+                    crate::drawingml::Color::SchemeColor(ref clr) => {
+                        assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor)
                     }
-                }
+                    _ => panic!("fill[0] is invalid"),
+                },
                 _ => panic!("fill[0] is invalid"),
             }
 
@@ -258,30 +267,30 @@ mod tests {
             assert_eq!(ln_style.cap, Some(crate::drawingml::LineCap::Flat));
             assert_eq!(ln_style.compound, Some(crate::drawingml::CompoundLine::Single));
             assert_eq!(ln_style.pen_alignment, Some(crate::drawingml::PenAlignment::Center));
-            
-            match ln_style.fill_properties {
-                Some(crate::drawingml::LineFillProperties::SolidFill(ref clr)) => {
-                    match clr {
-                        crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
-                            assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
-                            match scheme_clr.color_transforms[0] {
-                                crate::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 95_000.0),
-                                _ => panic!("ColorTransform is not Shade"),
-                            }
 
-                            match scheme_clr.color_transforms[1] {
-                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 105_000.0),
-                                _ => panic!("ColorTransform is not SatMode"),
-                            }
+            match ln_style.fill_properties {
+                Some(crate::drawingml::LineFillProperties::SolidFill(ref clr)) => match clr {
+                    crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                        assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
+                        match scheme_clr.color_transforms[0] {
+                            crate::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 95_000.0),
+                            _ => panic!("ColorTransform is not Shade"),
                         }
-                        _ => panic!("Scheme color is not PlaceholderColor"),
+
+                        match scheme_clr.color_transforms[1] {
+                            crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 105_000.0),
+                            _ => panic!("ColorTransform is not SatMode"),
+                        }
                     }
-                }
+                    _ => panic!("Scheme color is not PlaceholderColor"),
+                },
                 _ => panic!("ln_style.fill_properties is not SolidFill"),
             }
 
             match ln_style.dash_properties {
-                Some(crate::drawingml::LineDashProperties::PresetDash(ref dash)) => assert_eq!(*dash, crate::drawingml::PresetLineDashVal::Solid),
+                Some(crate::drawingml::LineDashProperties::PresetDash(ref dash)) => {
+                    assert_eq!(*dash, crate::drawingml::PresetLineDashVal::Solid)
+                }
                 _ => panic!("ln_style.dash_properties is not PresetDash"),
             }
 
@@ -381,11 +390,15 @@ mod tests {
         let mut file = File::open(sample_xml_file).expect("Sample xml file not found");
 
         let mut file_content = String::new();
-        file.read_to_string(&mut file_content).expect("Failed to read sample xml file to string");
+        file.read_to_string(&mut file_content)
+            .expect("Failed to read sample xml file to string");
 
         let root_node = XmlNode::from_str(file_content.as_str()).expect("Couldn't create XmlNode from string");
         assert_eq!(root_node.name, "p:presentation");
-        assert_eq!(root_node.attribute("xmlns:a").unwrap(), "http://schemas.openxmlformats.org/drawingml/2006/main");
+        assert_eq!(
+            root_node.attribute("xmlns:a").unwrap(),
+            "http://schemas.openxmlformats.org/drawingml/2006/main"
+        );
 
         assert_eq!(root_node.child_nodes[0].name, "p:sldMasterIdLst");
         assert_eq!(root_node.child_nodes[1].name, "p:sldIdLst");

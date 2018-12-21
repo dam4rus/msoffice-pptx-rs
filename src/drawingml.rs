@@ -1,10 +1,12 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
-use crate::xml::{XmlNode, parse_xml_bool};
-use crate::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, AdjustParseError};
+use crate::error::{
+    AdjustParseError, Limit, LimitViolationError, MissingAttributeError, MissingChildNodeError, NotGroupMemberError,
+};
 use crate::relationship::RelationshipId;
-use ::zip::read::ZipFile;
-use ::std::io::Read;
-use ::std::str::FromStr;
+use crate::xml::{parse_xml_bool, XmlNode};
+use std::io::Read;
+use std::str::FromStr;
+use zip::read::ZipFile;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
@@ -39,7 +41,7 @@ pub type TextTypeFace = String;
 pub type TextLanguageID = String;
 pub type Panose = String; // TODO: hex, length=10
 pub type TextBulletStartAtNum = i32; // TODO: 1 <= n <= 32767
-pub type Lang = String; 
+pub type Lang = String;
 pub type TextNonNegativePoint = i32; // TODO: 0 <= n <= 400000
 pub type TextPoint = i32; // TODO: -400000 <= n <= 400000
 pub type ShapeId = String;
@@ -1058,15 +1060,9 @@ pub enum ColorTransform {
 impl ColorTransform {
     pub fn is_choice_member(name: &str) -> bool {
         match name {
-            "tint" | "shade" | "comp" | "inv" | "gray"
-            | "alpha" | "alphaOff" | "alphaMod"
-            | "hue" | "hueOff" | "hueMod"
-            | "sat" | "satOff" | "satMod"
-            | "lum" | "lumOff" | "lumMod"
-            | "red" | "redOff" | "redMod"
-            | "green" | "greenOff" | "greenMod"
-            | "blue" | "blueOff" | "blueMod"
-            | "gamma" | "invGamma" => true,
+            "tint" | "shade" | "comp" | "inv" | "gray" | "alpha" | "alphaOff" | "alphaMod" | "hue" | "hueOff"
+            | "hueMod" | "sat" | "satOff" | "satMod" | "lum" | "lumOff" | "lumMod" | "red" | "redOff" | "redMod"
+            | "green" | "greenOff" | "greenMod" | "blue" | "blueOff" | "blueMod" | "gamma" | "invGamma" => true,
             _ => false,
         }
     }
@@ -1074,98 +1070,144 @@ impl ColorTransform {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<ColorTransform> {
         match xml_node.local_name() {
             "tint" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Tint(value.parse::<PositiveFixedPercentage>()?))
             }
             "shade" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Shade(value.parse::<PositiveFixedPercentage>()?))
             }
             "comp" => Ok(ColorTransform::Complement),
             "inv" => Ok(ColorTransform::Inverse),
             "gray" => Ok(ColorTransform::Grayscale),
             "alpha" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Alpha(value.parse::<PositiveFixedPercentage>()?))
             }
             "alphaOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::AlphaOffset(value.parse::<FixedPercentage>()?))
             }
             "alphaMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::AlphaModulate(value.parse::<FixedPercentage>()?))
             }
             "hue" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Hue(value.parse::<PositiveFixedAngle>()?))
             }
             "hueOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::HueOffset(value.parse::<Angle>()?))
             }
             "hueMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::HueModulate(value.parse::<PositivePercentage>()?))
             }
             "sat" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Saturation(value.parse::<Percentage>()?))
             }
             "satOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::SaturationOffset(value.parse::<Percentage>()?))
             }
             "satMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::SaturationModulate(value.parse::<Percentage>()?))
             }
             "lum" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Luminance(value.parse::<Percentage>()?))
             }
             "lumOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::LuminanceOffset(value.parse::<Percentage>()?))
             }
             "lumMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::LuminanceModulate(value.parse::<Percentage>()?))
             }
             "red" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Red(value.parse::<Percentage>()?))
             }
             "redOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::RedOffset(value.parse::<Percentage>()?))
             }
             "redMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::RedModulate(value.parse::<Percentage>()?))
             }
             "green" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Green(value.parse::<Percentage>()?))
             }
             "greenOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::GreenOffset(value.parse::<Percentage>()?))
             }
             "greenMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::GreenModulate(value.parse::<Percentage>()?))
             }
             "blue" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Blue(value.parse::<Percentage>()?))
             }
             "blueOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::BlueOffset(value.parse::<Percentage>()?))
             }
             "blueMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let value = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::BlueModulate(value.parse::<Percentage>()?))
             }
             "gamma" => Ok(ColorTransform::Gamma),
@@ -1227,7 +1269,9 @@ pub struct SRgbColor {
 
 impl SRgbColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<SRgbColor> {
-        let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+        let val_attr = xml_node
+            .attribute("val")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = u32::from_str_radix(val_attr, 16)?;
 
         let mut color_transforms = Vec::new();
@@ -1335,7 +1379,9 @@ pub struct PresetColor {
 
 impl PresetColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<PresetColor> {
-        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+        let attr_val = xml_node
+            .attribute("val")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = attr_val.parse::<PresetColorVal>()?;
 
         let mut color_transforms = Vec::new();
@@ -1361,7 +1407,9 @@ pub struct SchemeColor {
 
 impl SchemeColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<SchemeColor> {
-        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+        let attr_val = xml_node
+            .attribute("val")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = attr_val.parse::<SchemeColorVal>()?;
 
         let mut color_transforms = Vec::new();
@@ -1399,24 +1447,12 @@ impl Color {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Color> {
         match xml_node.local_name() {
-            "scrgbClr" => Ok(
-                Color::ScRgbColor(Box::new(ScRgbColor::from_xml_element(xml_node)?))
-            ),
-            "srgbClr" => Ok(
-                Color::SRgbColor(Box::new(SRgbColor::from_xml_element(xml_node)?))
-            ),
-            "hslClr" => Ok(
-                Color::HslColor(Box::new(HslColor::from_xml_element(xml_node)?))
-            ),
-            "sysClr" => Ok(
-                Color::SystemColor(Box::new(SystemColor::from_xml_element(xml_node)?))
-            ),
-            "schemeClr" => Ok(
-                Color::SchemeColor(Box::new(SchemeColor::from_xml_element(xml_node)?))
-            ),
-            "prstClr" => Ok(
-                Color::PresetColor(Box::new(PresetColor::from_xml_element(xml_node)?))
-            ),
+            "scrgbClr" => Ok(Color::ScRgbColor(Box::new(ScRgbColor::from_xml_element(xml_node)?))),
+            "srgbClr" => Ok(Color::SRgbColor(Box::new(SRgbColor::from_xml_element(xml_node)?))),
+            "hslClr" => Ok(Color::HslColor(Box::new(HslColor::from_xml_element(xml_node)?))),
+            "sysClr" => Ok(Color::SystemColor(Box::new(SystemColor::from_xml_element(xml_node)?))),
+            "schemeClr" => Ok(Color::SchemeColor(Box::new(SchemeColor::from_xml_element(xml_node)?))),
+            "prstClr" => Ok(Color::PresetColor(Box::new(PresetColor::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_ColorChoice").into()),
         }
     }
@@ -1486,7 +1522,8 @@ impl ColorMapping {
         let accent5 = accent5.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent5"))?;
         let accent6 = accent6.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent6"))?;
         let hyperlink = hyperlink.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "hlink"))?;
-        let followed_hyperlink = followed_hyperlink.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "folHlink"))?;
+        let followed_hyperlink =
+            followed_hyperlink.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "folHlink"))?;
 
         Ok(Self {
             background1,
@@ -1523,7 +1560,9 @@ pub struct ColorScheme {
 
 impl ColorScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
+        let name_attr = xml_node
+            .attribute("name")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let name = name_attr.clone();
 
         let mut dk1 = None;
@@ -1540,7 +1579,9 @@ impl ColorScheme {
         let mut follow_hyperlink = None;
 
         for child_node in &xml_node.child_nodes {
-            let scheme_node = child_node.child_nodes.get(0)
+            let scheme_node = child_node
+                .child_nodes
+                .get(0)
                 .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "scheme color value"))?;
 
             match child_node.local_name() {
@@ -1571,7 +1612,8 @@ impl ColorScheme {
         let accent5 = accent5.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent5"))?;
         let accent6 = accent6.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "accent6"))?;
         let hyperlink = hyperlink.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "hlink"))?;
-        let followed_hyperlink = follow_hyperlink.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "folHlink"))?;
+        let followed_hyperlink =
+            follow_hyperlink.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "folHlink"))?;
 
         Ok(Self {
             name,
@@ -1607,9 +1649,9 @@ impl ColorMappingOverride {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "masterClrMapping" => Ok(ColorMappingOverride::UseMaster),
-            "overrideClrMapping" => Ok(
-                ColorMappingOverride::Override(Box::new(ColorMapping::from_xml_element(xml_node)?))
-            ),
+            "overrideClrMapping" => Ok(ColorMappingOverride::Override(Box::new(
+                ColorMapping::from_xml_element(xml_node)?,
+            ))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "CT_ColorMappingOverride").into()),
         }
     }
@@ -1628,19 +1670,21 @@ pub struct GradientStop {
 
 impl GradientStop {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let pos_attr = xml_node.attribute("pos").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "pos"))?;
+        let pos_attr = xml_node
+            .attribute("pos")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "pos"))?;
         let position = pos_attr.parse::<PositiveFixedPercentage>()?;
 
-        let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
+        let child_node = xml_node
+            .child_nodes
+            .get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
         if !Color::is_choice_member(child_node.local_name()) {
             return Err(NotGroupMemberError::new(child_node.name.clone(), "EG_Color").into());
         }
 
         let color = Color::from_xml_element(child_node)?;
-        Ok(Self {
-            position,
-            color,
-        })
+        Ok(Self { position, color })
     }
 }
 
@@ -1662,10 +1706,7 @@ impl LinearShadeProperties {
             }
         }
 
-        Ok(Self {
-            angle,
-            scaled,
-        })
+        Ok(Self { angle, scaled })
     }
 }
 
@@ -1686,10 +1727,7 @@ impl PathShadeProperties {
             None => None,
         };
 
-        Ok(Self {
-            path,
-            fill_to_rect,
-        })
+        Ok(Self { path, fill_to_rect })
     }
 }
 
@@ -1708,7 +1746,9 @@ impl ShadeProperties {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "lin" => Ok(ShadeProperties::Linear(LinearShadeProperties::from_xml_element(xml_node)?)),
+            "lin" => Ok(ShadeProperties::Linear(LinearShadeProperties::from_xml_element(
+                xml_node,
+            )?)),
             "path" => Ok(ShadeProperties::Path(PathShadeProperties::from_xml_element(xml_node)?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_ShadeProperties").into()),
         }
@@ -1820,9 +1860,7 @@ impl StretchInfoProperties {
             None => None,
         };
 
-        Ok(Self {
-            fill_rect,
-        })
+        Ok(Self { fill_rect })
     }
 }
 
@@ -1841,8 +1879,12 @@ impl FillModeProperties {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "tile" => Ok(FillModeProperties::Tile(Box::new(TileInfoProperties::from_xml_element(xml_node)?))),
-            "stretch" => Ok(FillModeProperties::Stretch(Box::new(StretchInfoProperties::from_xml_element(xml_node)?))),
+            "tile" => Ok(FillModeProperties::Tile(Box::new(
+                TileInfoProperties::from_xml_element(xml_node)?,
+            ))),
+            "stretch" => Ok(FillModeProperties::Stretch(Box::new(
+                StretchInfoProperties::from_xml_element(xml_node)?,
+            ))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_FillModeProperties").into()),
         }
     }
@@ -1860,7 +1902,7 @@ impl BlipFillProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut dpi = None;
         let mut rotate_with_shape = None;
-        
+
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "dpi" => dpi = Some(value.parse()?),
@@ -1909,7 +1951,7 @@ pub enum FillProperties {
     GradientFill(Box<GradientFillProperties>),
     BlipFill(Box<BlipFillProperties>),
     PatternFill(Box<PatternFillProperties>),
-    GroupFill
+    GroupFill,
 }
 
 impl FillProperties {
@@ -1925,11 +1967,15 @@ impl FillProperties {
         match xml_node.local_name() {
             "noFill" => Ok(FillProperties::NoFill),
             "solidFill" => {
-                let child_node = xml_node.child_nodes.get(0)
+                let child_node = xml_node
+                    .child_nodes
+                    .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
                 Ok(FillProperties::SolidFill(Color::from_xml_element(&child_node)?))
             }
-            "gradFill" => Ok(FillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))),
+            "gradFill" => Ok(FillProperties::GradientFill(Box::new(
+                GradientFillProperties::from_xml_element(xml_node)?,
+            ))),
             // TODO: implement
             // <xsd:element name="blipFill" type="CT_BlipFillProperties" minOccurs="1" maxOccurs="1"/>
             // <xsd:element name="pattFill" type="CT_PatternFillProperties" minOccurs="1" maxOccurs="1"/>
@@ -1960,18 +2006,20 @@ impl LineFillProperties {
         match xml_node.local_name() {
             "noFill" => Ok(LineFillProperties::NoFill),
             "solidFill" => {
-                let child_node = xml_node.child_nodes.get(0)
+                let child_node = xml_node
+                    .child_nodes
+                    .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
-                
+
                 if !Color::is_choice_member(child_node.local_name()) {
                     return Err(NotGroupMemberError::new(child_node.name.clone(), "EG_Color").into());
                 }
 
                 Ok(LineFillProperties::SolidFill(Color::from_xml_element(child_node)?))
-            },
-            "gradFill" => Ok(
-                LineFillProperties::GradientFill(Box::new(GradientFillProperties::from_xml_element(xml_node)?))
-            ),
+            }
+            "gradFill" => Ok(LineFillProperties::GradientFill(Box::new(
+                GradientFillProperties::from_xml_element(xml_node)?,
+            ))),
             // TODO: implement pattFill
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_LineFillProperties").into()),
         }
@@ -2010,7 +2058,7 @@ impl DashStop {
 /// LineDashProperties
 pub enum LineDashProperties {
     PresetDash(PresetLineDashVal),
-    CustomDash(Vec<DashStop>)
+    CustomDash(Vec<DashStop>),
 }
 
 impl LineDashProperties {
@@ -2024,7 +2072,9 @@ impl LineDashProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<LineDashProperties> {
         match xml_node.local_name() {
             "prstDash" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let val_attr = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(LineDashProperties::PresetDash(val_attr.parse::<PresetLineDashVal>()?))
             }
             "custDash" => {
@@ -2039,7 +2089,7 @@ impl LineDashProperties {
                 }
 
                 Ok(LineDashProperties::CustomDash(dash_vec))
-            },
+            }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_LineDashProperties").into()),
         }
     }
@@ -2207,7 +2257,7 @@ impl RelativeRect {
 }
 
 pub struct Point2D {
-    pub x: Coordinate,  
+    pub x: Coordinate,
     pub y: Coordinate,
 }
 
@@ -2227,12 +2277,8 @@ impl Point2D {
         let x = x.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "x"))?;
         let y = y.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "y"))?;
 
-        Ok(Self {
-            x,
-            y,
-        })
+        Ok(Self { x, y })
     }
-
 }
 
 /// PositiveSize2D
@@ -2257,10 +2303,7 @@ impl PositiveSize2D {
         let width = opt_width.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "cx"))?;
         let height = opt_height.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "cy"))?;
 
-        Ok(Self{
-            width,
-            height,
-        })
+        Ok(Self { width, height })
     }
 }
 
@@ -2271,7 +2314,9 @@ pub struct StyleMatrixReference {
 
 impl StyleMatrixReference {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let idx_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
+        let idx_attr = xml_node
+            .attribute("idx")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
         let index = idx_attr.parse()?;
 
         let color = match xml_node.child_nodes.get(0) {
@@ -2279,10 +2324,7 @@ impl StyleMatrixReference {
             None => None,
         };
 
-        Ok(Self {
-            index,
-            color,
-        })
+        Ok(Self { index, color })
     }
 }
 
@@ -2324,11 +2366,11 @@ pub struct AlphaBiLevelEffect {
 
 impl AlphaBiLevelEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<AlphaBiLevelEffect> {
-        let thresh_attr = xml_node.attribute("thresh").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "thresh"))?;
+        let thresh_attr = xml_node
+            .attribute("thresh")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "thresh"))?;
         let threshold = thresh_attr.parse::<PositiveFixedPercentage>()?;
-        Ok(Self {
-            threshold,
-        })
+        Ok(Self { threshold })
     }
 }
 
@@ -2346,9 +2388,7 @@ impl AlphaInverseEffect {
             }
         }
 
-        Ok(Self {
-            color,
-        })
+        Ok(Self { color })
     }
 }
 
@@ -2359,14 +2399,14 @@ pub struct AlphaModulateEffect {
 
 impl AlphaModulateEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<AlphaModulateEffect> {
-        let child_node = xml_node.child_nodes.get(0)
+        let child_node = xml_node
+            .child_nodes
+            .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "container"))?;
 
         let container = EffectContainer::from_xml_element(child_node)?;
 
-        Ok(Self {
-            container
-        })
+        Ok(Self { container })
     }
 }
 
@@ -2382,9 +2422,7 @@ impl AlphaModulateFixedEffect {
             None => None,
         };
 
-        Ok(Self {
-            amount
-        })
+        Ok(Self { amount })
     }
 }
 
@@ -2407,7 +2445,7 @@ pub struct BlendEffect {
 
 pub struct BlurEffect {
     pub radius: PositiveCoordinate, // 0
-    pub grow: bool, // true
+    pub grow: bool,                 // true
 }
 
 pub struct ColorChangeEffect {
@@ -2444,53 +2482,53 @@ pub struct GlowEffect {
 }
 
 pub struct HslEffect {
-    pub hue: Option<PositiveFixedAngle>, // 0
+    pub hue: Option<PositiveFixedAngle>,     // 0
     pub saturation: Option<FixedPercentage>, // 0%
-    pub luminance: Option<FixedPercentage>, // 0%
+    pub luminance: Option<FixedPercentage>,  // 0%
 }
 
 pub struct InnerShadowEffect {
     pub color: Color,
     pub blur_radius: Option<PositiveCoordinate>, // 0
-    pub distance: Option<PositiveCoordinate>, // 0
-    pub direction: Option<PositiveFixedAngle>, // 0
+    pub distance: Option<PositiveCoordinate>,    // 0
+    pub direction: Option<PositiveFixedAngle>,   // 0
 }
 
 pub struct OuterShadowEffect {
     pub color: Color,
     pub blur_radius: Option<PositiveCoordinate>, // 0
-    pub distance: Option<PositiveCoordinate>, // 0
-    pub direction: Option<PositiveFixedAngle>, // 0
-    pub scale_x: Option<Percentage>, // 100000
-    pub scale_y: Option<Percentage>, // 100000
-    pub skew_x: Option<FixedAngle>, // 0
-    pub skew_y: Option<FixedAngle>, // 0
-    pub alignment: Option<RectAlignment>, // b
-    pub rotate_with_shape: Option<bool>, // true
+    pub distance: Option<PositiveCoordinate>,    // 0
+    pub direction: Option<PositiveFixedAngle>,   // 0
+    pub scale_x: Option<Percentage>,             // 100000
+    pub scale_y: Option<Percentage>,             // 100000
+    pub skew_x: Option<FixedAngle>,              // 0
+    pub skew_y: Option<FixedAngle>,              // 0
+    pub alignment: Option<RectAlignment>,        // b
+    pub rotate_with_shape: Option<bool>,         // true
 }
 
 pub struct PresetShadowEffect {
     pub color: Color,
     pub preset: PresetShadowVal,
-    pub distance: Option<PositiveCoordinate>, // 0
+    pub distance: Option<PositiveCoordinate>,  // 0
     pub direction: Option<PositiveFixedAngle>, // 0
 }
 
 pub struct ReflectionEffect {
-    pub blur_radius: Option<PositiveCoordinate>, // 0
-    pub start_opacity: Option<PositiveFixedPercentage>, // 100000
+    pub blur_radius: Option<PositiveCoordinate>,         // 0
+    pub start_opacity: Option<PositiveFixedPercentage>,  // 100000
     pub start_position: Option<PositiveFixedPercentage>, // 0
-    pub end_opacity: Option<PositiveFixedPercentage>, // 0
-    pub end_position: Option<PositiveFixedPercentage>, // 100000
-    pub distance: Option<PositiveCoordinate>, // 0
-    pub direction: Option<PositiveFixedAngle>, // 0
-    pub fade_direction: Option<PositiveFixedAngle>, // 5400000
-    pub scale_x: Option<Percentage>, // 100000
-    pub scale_y: Option<Percentage>, // 100000
-    pub skew_x: Option<FixedAngle>, // 0
-    pub skew_y: Option<FixedAngle>, // 0
-    pub alignment: Option<RectAlignment>, // b
-    pub rotate_with_shape: Option<bool>, // true
+    pub end_opacity: Option<PositiveFixedPercentage>,    // 0
+    pub end_position: Option<PositiveFixedPercentage>,   // 100000
+    pub distance: Option<PositiveCoordinate>,            // 0
+    pub direction: Option<PositiveFixedAngle>,           // 0
+    pub fade_direction: Option<PositiveFixedAngle>,      // 5400000
+    pub scale_x: Option<Percentage>,                     // 100000
+    pub scale_y: Option<Percentage>,                     // 100000
+    pub skew_x: Option<FixedAngle>,                      // 0
+    pub skew_y: Option<FixedAngle>,                      // 0
+    pub alignment: Option<RectAlignment>,                // b
+    pub rotate_with_shape: Option<bool>,                 // true
 }
 
 pub struct RelativeOffsetEffect {
@@ -2508,12 +2546,12 @@ pub struct TintEffect {
 }
 
 pub struct TransformEffect {
-    pub scale_x: Option<Percentage>, // 100000
-    pub scale_y: Option<Percentage>, // 100000
+    pub scale_x: Option<Percentage>,     // 100000
+    pub scale_y: Option<Percentage>,     // 100000
     pub translate_x: Option<Coordinate>, // 0
     pub translate_y: Option<Coordinate>, // 0
-    pub skew_x: Option<FixedAngle>, // 0
-    pub skew_y: Option<FixedAngle>, // 0
+    pub skew_x: Option<FixedAngle>,      // 0
+    pub skew_y: Option<FixedAngle>,      // 0
 }
 
 // TODO maybe Box ReflectionEffect variant (sizeof==120)
@@ -2601,14 +2639,18 @@ impl BlipEffect {
         }
     }
 
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<BlipEffect,> {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<BlipEffect> {
         match xml_node.local_name() {
-            "alphaBiLevel" => Ok(BlipEffect::AlphaBiLevel(AlphaBiLevelEffect::from_xml_element(xml_node)?)),
+            "alphaBiLevel" => Ok(BlipEffect::AlphaBiLevel(AlphaBiLevelEffect::from_xml_element(
+                xml_node,
+            )?)),
             "alphaCeiling" => Ok(BlipEffect::AlphaCeiling),
             "alphaFloor" => Ok(BlipEffect::AlphaFloor),
             "alphaInv" => Ok(BlipEffect::AlphaInv(AlphaInverseEffect::from_xml_element(xml_node)?)),
             "alphaMod" => Ok(BlipEffect::AlphaMod(AlphaModulateEffect::from_xml_element(xml_node)?)),
-            "alphaModFixed" => Ok(BlipEffect::AlphaModFix(AlphaModulateFixedEffect::from_xml_element(xml_node)?)),
+            "alphaModFixed" => Ok(BlipEffect::AlphaModFix(AlphaModulateFixedEffect::from_xml_element(
+                xml_node,
+            )?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_BlipEffect").into()),
         }
     }
@@ -2659,7 +2701,7 @@ pub struct TextFont {
     pub typeface: TextTypeFace,
     pub panose: Option<Panose>,
     pub pitch_family: Option<i32>, // 0
-    pub charset: Option<i32>, // 1
+    pub charset: Option<i32>,      // 1
 }
 
 impl TextFont {
@@ -2711,10 +2753,7 @@ impl SupplementalFont {
         let script = script.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "script"))?;
         let typeface = typeface.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "typeface"))?;
 
-        Ok(Self {
-            script,
-            typeface,
-        })
+        Ok(Self { script, typeface })
     }
 }
 
@@ -2728,11 +2767,15 @@ impl TextSpacing {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextSpacing> {
         match xml_node.local_name() {
             "spcPct" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let val_attr = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextSpacing::Percent(val_attr.parse::<TextSpacingPercent>()?))
             }
             "spcPts" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let val_attr = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextSpacing::Point(val_attr.parse::<TextSpacingPoint>()?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextSpacing").into()),
@@ -2758,7 +2801,9 @@ impl TextBulletColor {
         match xml_node.local_name() {
             "buClrTx" => Ok(TextBulletColor::FollowText),
             "buClr" => {
-                let child_node = xml_node.child_nodes.get(0)
+                let child_node = xml_node
+                    .child_nodes
+                    .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
                 Ok(TextBulletColor::Color(Color::from_xml_element(child_node)?))
             }
@@ -2786,11 +2831,15 @@ impl TextBulletSize {
         match xml_node.local_name() {
             "buSzTx" => Ok(TextBulletSize::FollowText),
             "buSzPct" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let val_attr = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextBulletSize::Percent(val_attr.parse::<TextBulletSizePercent>()?))
-            } ,
+            }
             "buSzPts" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
+                let val_attr = xml_node
+                    .attribute("val")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextBulletSize::Point(val_attr.parse::<TextFontSize>()?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBulletSize").into()),
@@ -2840,24 +2889,23 @@ impl TextBullet {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextBullet> {
         match xml_node.local_name() {
             "buNone" => Ok(TextBullet::None),
-            "buAutoNum" => Ok(TextBullet::AutoNumbered(TextAutonumberedBullet::from_xml_element(xml_node)?)),
+            "buAutoNum" => Ok(TextBullet::AutoNumbered(TextAutonumberedBullet::from_xml_element(
+                xml_node,
+            )?)),
             "buChar" => {
-                let char_attr = xml_node.attribute("char").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "char"))?;
+                let char_attr = xml_node
+                    .attribute("char")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "char"))?;
                 Ok(TextBullet::Character(char_attr.clone()))
             }
-            "buBlip" => {
-                match xml_node.child_nodes.get(0) {
-                    Some(child_node) => Ok(
-                        TextBullet::Picture(Box::new(Blip::from_xml_element(child_node)?))
-                    ),
-                    None => Err(MissingChildNodeError::new(xml_node.name.clone(), "EG_TextBullet").into()),
-                }
+            "buBlip" => match xml_node.child_nodes.get(0) {
+                Some(child_node) => Ok(TextBullet::Picture(Box::new(Blip::from_xml_element(child_node)?))),
+                None => Err(MissingChildNodeError::new(xml_node.name.clone(), "EG_TextBullet").into()),
             },
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBullet").into()),
         }
     }
 }
-
 
 /// TextAutonumberedBullet
 pub struct TextAutonumberedBullet {
@@ -2880,10 +2928,7 @@ impl TextAutonumberedBullet {
 
         let scheme = scheme.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "type"))?;
 
-        Ok(Self {
-            scheme,
-            start_at,
-        })
+        Ok(Self { scheme, start_at })
     }
 }
 
@@ -2906,10 +2951,7 @@ impl TextTabStop {
             }
         }
 
-        Ok(Self {
-            position,
-            alignment,
-        })
+        Ok(Self { position, alignment })
     }
 }
 
@@ -2922,20 +2964,18 @@ impl TextUnderlineLine {
     pub fn is_choice_member(name: &str) -> bool {
         match name {
             "uLnTx" | "uLn" => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "uLnTx" => Ok(TextUnderlineLine::FollowText),
-            "uLn" => {
-                Ok(TextUnderlineLine::Line(match xml_node.child_nodes.get(0) {
-                    Some(node) => Some(Box::new(LineProperties::from_xml_element(node)?)),
-                    None => None,
-                }))
-            }
-            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextUnderlineLine").into())
+            "uLn" => Ok(TextUnderlineLine::Line(match xml_node.child_nodes.get(0) {
+                Some(node) => Some(Box::new(LineProperties::from_xml_element(node)?)),
+                None => None,
+            })),
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextUnderlineLine").into()),
         }
     }
 }
@@ -2957,7 +2997,9 @@ impl TextUnderlineFill {
         match xml_node.local_name() {
             "uFillTx" => Ok(TextUnderlineFill::FollowText),
             "uFill" => {
-                let fill_node = xml_node.child_nodes.get(0)
+                let fill_node = xml_node
+                    .child_nodes
+                    .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_FillProperties"))?;
                 Ok(TextUnderlineFill::Fill(FillProperties::from_xml_element(fill_node)?))
             }
@@ -2972,9 +3014,9 @@ pub struct Hyperlink {
     pub action: Option<String>,
     pub target_frame: Option<String>,
     pub tooltip: Option<String>,
-    pub history: Option<bool>, // true
+    pub history: Option<bool>,         // true
     pub highlight_click: Option<bool>, // false
-    pub end_sound: Option<bool>, // false
+    pub end_sound: Option<bool>,       // false
     pub sound: Option<EmbeddedWAVAudioFile>,
 }
 
@@ -2999,7 +3041,7 @@ impl Hyperlink {
                 "history" => history = Some(parse_xml_bool(value)?),
                 "highlightClick" => highlight_click = Some(parse_xml_bool(value)?),
                 "endSnd" => end_sound = Some(parse_xml_bool(value)?),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -3040,10 +3082,10 @@ pub struct TextCharacterProperties {
     pub normalize_heights: Option<bool>,
     pub baseline: Option<Percentage>,
     pub no_proofing: Option<bool>,
-    pub dirty: Option<bool>, // true
+    pub dirty: Option<bool>,          // true
     pub spelling_error: Option<bool>, // false
     pub smarttag_clean: Option<bool>, // true
-    pub smarttag_id: Option<u32>, // 0
+    pub smarttag_id: Option<u32>,     // 0
     pub bookmark_link_target: Option<String>,
     pub line_properties: Option<Box<LineProperties>>,
     pub fill_properties: Option<FillProperties>,
@@ -3057,7 +3099,7 @@ pub struct TextCharacterProperties {
     pub symbol_font: Option<TextFont>,
     pub hyperlink_click: Option<Box<Hyperlink>>,
     pub hyperlink_mouse_over: Option<Box<Hyperlink>>,
-    pub rtl: Option<bool>
+    pub rtl: Option<bool>,
 }
 
 impl TextCharacterProperties {
@@ -3136,7 +3178,9 @@ impl TextCharacterProperties {
                 match child_local_name {
                     "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
                     "highlight" => {
-                        let color_node = child_node.child_nodes.get(0)
+                        let color_node = child_node
+                            .child_nodes
+                            .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_Color"))?;
                         highlight_color = Some(Color::from_xml_element(color_node)?);
                     }
@@ -3270,24 +3314,30 @@ impl TextParagraphProperties {
             } else {
                 match child_node.local_name() {
                     "lnSpc" => {
-                        let line_spacing_node = child_node.child_nodes.get(0)
+                        let line_spacing_node = child_node
+                            .child_nodes
+                            .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "lnSpc child"))?;
                         line_spacing = Some(TextSpacing::from_xml_element(line_spacing_node)?);
                     }
                     "spcBef" => {
-                        let space_before_node = child_node.child_nodes.get(0)
+                        let space_before_node = child_node
+                            .child_nodes
+                            .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcBef child"))?;
                         space_before = Some(TextSpacing::from_xml_element(space_before_node)?);
                     }
                     "spcAft" => {
-                        let space_after_node = child_node.child_nodes.get(0)
+                        let space_after_node = child_node
+                            .child_nodes
+                            .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcAft child"))?;
                         space_after = Some(TextSpacing::from_xml_element(space_after_node)?);
-                    },
+                    }
                     "tabLst" => tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
-                    "defRPr" => default_run_properties = Some(
-                        Box::new(TextCharacterProperties::from_xml_element(child_node)?)
-                    ),
+                    "defRPr" => {
+                        default_run_properties = Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
+                    }
                     _ => (),
                 }
             }
@@ -3336,12 +3386,11 @@ impl TextParagraph {
                 text_run_list.push(TextRun::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
-                    "pPr" => properties = Some(
-                        Box::new(TextParagraphProperties::from_xml_element(child_node)?)
-                    ),
-                    "endParaRPr" => end_paragraph_char_properties = Some(
-                        Box::new(TextCharacterProperties::from_xml_element(child_node)?)
-                    ),
+                    "pPr" => properties = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                    "endParaRPr" => {
+                        end_paragraph_char_properties =
+                            Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
+                    }
                     _ => (),
                 }
             }
@@ -3371,7 +3420,9 @@ impl TextRun {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "r" => Ok(TextRun::RegularTextRun(Box::new(RegularTextRun::from_xml_element(xml_node)?))),
+            "r" => Ok(TextRun::RegularTextRun(Box::new(RegularTextRun::from_xml_element(
+                xml_node,
+            )?))),
             "br" => Ok(TextRun::LineBreak(Box::new(TextLineBreak::from_xml_element(xml_node)?))),
             "fld" => Ok(TextRun::TextField(Box::new(TextField::from_xml_element(xml_node)?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextRun").into()),
@@ -3398,10 +3449,7 @@ impl RegularTextRun {
         }
 
         let text = text.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "t"))?;
-        Ok(Self {
-            char_properties,
-            text,
-        })
+        Ok(Self { char_properties, text })
     }
 }
 
@@ -3416,9 +3464,7 @@ impl TextLineBreak {
             None => None,
         };
 
-        Ok(Self {
-            char_properties,
-        })
+        Ok(Self { char_properties })
     }
 }
 
@@ -3497,16 +3543,36 @@ impl TextListStyle {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "defPPr" => def_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl1pPr" => lvl1_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl2pPr" => lvl2_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl3pPr" => lvl3_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl4pPr" => lvl4_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl5pPr" => lvl5_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl6pPr" => lvl6_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl7pPr" => lvl7_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl8pPr" => lvl8_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
-                "lvl9pPr" => lvl9_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                "defPPr" => {
+                    def_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl1pPr" => {
+                    lvl1_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl2pPr" => {
+                    lvl2_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl3pPr" => {
+                    lvl3_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl4pPr" => {
+                    lvl4_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl5pPr" => {
+                    lvl5_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl6pPr" => {
+                    lvl6_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl7pPr" => {
+                    lvl7_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl8pPr" => {
+                    lvl8_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl9pPr" => {
+                    lvl9_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }
@@ -3547,7 +3613,8 @@ impl TextBody {
             }
         }
 
-        let body_properties = body_properties.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "bodyPr"))?;
+        let body_properties =
+            body_properties.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "bodyPr"))?;
 
         Ok(Self {
             body_properties,
@@ -3685,7 +3752,9 @@ impl TextAutoFit {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "noAutofit" => Ok(TextAutoFit::NoAutoFit),
-            "normAutofit" => Ok(TextAutoFit::NormalAutoFit(TextNormalAutoFit::from_xml_element(xml_node)?)),
+            "normAutofit" => Ok(TextAutoFit::NormalAutoFit(TextNormalAutoFit::from_xml_element(
+                xml_node,
+            )?)),
             "spAutoFit" => Ok(TextAutoFit::ShapeAutoFit),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextAutofit").into()),
         }
@@ -3693,7 +3762,7 @@ impl TextAutoFit {
 }
 
 pub struct TextNormalAutoFit {
-    pub font_scale: Option<TextFontScalePercent>, // 100000
+    pub font_scale: Option<TextFontScalePercent>,           // 100000
     pub line_spacing_reduction: Option<TextSpacingPercent>, // 0
 }
 
@@ -3712,7 +3781,7 @@ impl TextNormalAutoFit {
 
         Ok(Self {
             font_scale,
-            line_spacing_reduction
+            line_spacing_reduction,
         })
     }
 }
@@ -3724,7 +3793,9 @@ pub struct PresetTextShape {
 
 impl PresetTextShape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
+        let preset_attr = xml_node
+            .attribute("prst")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
         let preset = preset_attr.parse()?;
 
         let mut adjust_value_list = Vec::new();
@@ -3749,7 +3820,9 @@ pub struct FontScheme {
 
 impl FontScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
+        let name_attr = xml_node
+            .attribute("name")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let name = name_attr.clone();
         let mut major_font = None;
         let mut minor_font = None;
@@ -3866,16 +3939,16 @@ impl NonVisualDrawingProps {
 
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Locking {
-    pub no_grouping: Option<bool>, // false
-    pub no_select: Option<bool>, // false
-    pub no_rotate: Option<bool>, // false
+    pub no_grouping: Option<bool>,            // false
+    pub no_select: Option<bool>,              // false
+    pub no_rotate: Option<bool>,              // false
     pub no_change_aspect_ratio: Option<bool>, // false
-    pub no_move: Option<bool>, // false
-    pub no_resize: Option<bool>, // false
-    pub no_edit_points: Option<bool>, // false
-    pub no_adjust_handles: Option<bool>, // false
-    pub no_change_arrowheads: Option<bool>, // false
-    pub no_change_shape_type: Option<bool>, // false
+    pub no_move: Option<bool>,                // false
+    pub no_resize: Option<bool>,              // false
+    pub no_edit_points: Option<bool>,         // false
+    pub no_adjust_handles: Option<bool>,      // false
+    pub no_change_arrowheads: Option<bool>,   // false
+    pub no_change_shape_type: Option<bool>,   // false
 }
 
 impl Locking {
@@ -3916,21 +3989,18 @@ impl ShapeLocking {
             }
         }
 
-        Ok(Self {
-            locking,
-            no_text_edit,
-        })
+        Ok(Self { locking, no_text_edit })
     }
 }
 
 pub struct GroupLocking {
-    pub no_grouping: Option<bool>, // false
-    pub no_ungrouping: Option<bool>, // false
-    pub no_select: Option<bool>, // false
-    pub no_rotate: Option<bool>, // false
+    pub no_grouping: Option<bool>,            // false
+    pub no_ungrouping: Option<bool>,          // false
+    pub no_select: Option<bool>,              // false
+    pub no_rotate: Option<bool>,              // false
     pub no_change_aspect_ratio: Option<bool>, // false
-    pub no_move: Option<bool>, // false
-    pub no_resize: Option<bool>, // false
+    pub no_move: Option<bool>,                // false
+    pub no_resize: Option<bool>,              // false
 }
 
 impl GroupLocking {
@@ -3969,12 +4039,12 @@ impl GroupLocking {
 }
 
 pub struct GraphicalObjectFrameLocking {
-    pub no_grouping: Option<bool>, // false
-    pub no_drilldown: Option<bool>, // false
-    pub no_select: Option<bool>, // false
+    pub no_grouping: Option<bool>,      // false
+    pub no_drilldown: Option<bool>,     // false
+    pub no_select: Option<bool>,        // false
     pub no_change_aspect: Option<bool>, // false
-    pub no_move: Option<bool>, // false
-    pub no_resize: Option<bool>, // false
+    pub no_move: Option<bool>,          // false
+    pub no_resize: Option<bool>,        // false
 }
 
 pub struct ConnectorLocking {
@@ -3989,9 +4059,7 @@ impl ConnectorLocking {
             locking.try_attribute_parse(attr, value)?;
         }
 
-        Ok(Self {
-            locking,
-        })
+        Ok(Self { locking })
     }
 }
 
@@ -4012,10 +4080,7 @@ impl PictureLocking {
             }
         }
 
-        Ok(Self {
-            locking,
-            no_crop,
-        })
+        Ok(Self { locking, no_crop })
     }
 }
 
@@ -4053,10 +4118,8 @@ impl NonVisualGroupDrawingShapeProps {
             Some(node) => Some(GroupLocking::from_xml_element(node)?),
             None => None,
         };
-        
-        Ok(Self {
-            locks,
-        })
+
+        Ok(Self { locks })
     }
 }
 
@@ -4138,10 +4201,7 @@ impl Connection {
         let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
         let shape_index = shape_index.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
 
-        Ok(Self {
-            id,
-            shape_index,
-        })
+        Ok(Self { id, shape_index })
     }
 }
 
@@ -4184,11 +4244,11 @@ pub enum Media {
 }
 
 pub struct Transform2D {
-    pub rotate_angle: Option<Angle>, // 0
+    pub rotate_angle: Option<Angle>,   // 0
     pub flip_horizontal: Option<bool>, // false
-    pub flip_vertical: Option<bool>, // false
+    pub flip_vertical: Option<bool>,   // false
     pub offset: Option<Point2D>,
-    pub extents:  Option<PositiveSize2D>,
+    pub extents: Option<PositiveSize2D>,
 }
 
 impl Transform2D {
@@ -4227,11 +4287,11 @@ impl Transform2D {
 }
 
 pub struct GroupTransform2D {
-    pub rotate_angle: Option<Angle>, // 0
+    pub rotate_angle: Option<Angle>,   // 0
     pub flip_horizontal: Option<bool>, // false
-    pub flip_vertical: Option<bool>, // false
+    pub flip_vertical: Option<bool>,   // false
     pub offset: Option<Point2D>,
-    pub extents:  Option<PositiveSize2D>,
+    pub extents: Option<PositiveSize2D>,
     pub child_offset: Option<Point2D>,
     pub child_extents: Option<PositiveSize2D>,
 }
@@ -4302,8 +4362,8 @@ impl GroupShapeProperties {
                 transform = Some(Box::new(GroupTransform2D::from_xml_element(child_node)?));
             } else if FillProperties::is_choice_member(child_local_name) {
                 fill_properties = Some(FillProperties::from_xml_element(child_node)?);
-            // } else if EffectProperties::is_choice_member(child_local_name) {
-            //     effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+                // } else if EffectProperties::is_choice_member(child_local_name) {
+                //     effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
             }
         }
 
@@ -4331,8 +4391,12 @@ impl Geometry {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "custGeom" => Ok(Geometry::Custom(Box::new(CustomGeometry2D::from_xml_element(xml_node)?))),
-            "prstGeom" => Ok(Geometry::Preset(Box::new(PresetGeometry2D::from_xml_element(xml_node)?))),
+            "custGeom" => Ok(Geometry::Custom(Box::new(CustomGeometry2D::from_xml_element(
+                xml_node,
+            )?))),
+            "prstGeom" => Ok(Geometry::Preset(Box::new(PresetGeometry2D::from_xml_element(
+                xml_node,
+            )?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Geometry").into()),
         }
     }
@@ -4358,10 +4422,7 @@ impl GeomGuide {
 
         let name = name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let formula = formula.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "fmla"))?;
-        Ok(Self {
-            name,
-            formula,
-        })
+        Ok(Self { name, formula })
     }
 }
 
@@ -4381,7 +4442,9 @@ impl AdjustHandle {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "ahXY" => Ok(AdjustHandle::XY(Box::new(XYAdjustHandle::from_xml_element(xml_node)?))),
-            "ahPolar" => Ok(AdjustHandle::Polar(Box::new(PolarAdjustHandle::from_xml_element(xml_node)?))),
+            "ahPolar" => Ok(AdjustHandle::Polar(Box::new(PolarAdjustHandle::from_xml_element(
+                xml_node,
+            )?))),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "AdjustHandle").into()),
         }
     }
@@ -4440,10 +4503,7 @@ impl AdjPoint2D {
         let x = x.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "x"))?;
         let y = y.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "y"))?;
 
-        Ok(Self {
-            x,
-            y,
-        })
+        Ok(Self { x, y })
     }
 }
 
@@ -4516,7 +4576,10 @@ impl XYAdjustHandle {
             }
         }
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
+        let pos_node = xml_node
+            .child_nodes
+            .get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
         Ok(Self {
@@ -4562,7 +4625,10 @@ impl PolarAdjustHandle {
             }
         }
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
+        let pos_node = xml_node
+            .child_nodes
+            .get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
         Ok(Self {
@@ -4584,16 +4650,18 @@ pub struct ConnectionSite {
 
 impl ConnectionSite {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let angle_attr = xml_node.attribute("ang").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "ang"))?;
+        let angle_attr = xml_node
+            .attribute("ang")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "ang"))?;
         let angle = angle_attr.parse()?;
 
-        let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
+        let pos_node = xml_node
+            .child_nodes
+            .get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
         let position = AdjPoint2D::from_xml_element(pos_node)?;
 
-        Ok(Self {
-            angle,
-            position,
-        })
+        Ok(Self { angle, position })
     }
 }
 
@@ -4645,11 +4713,11 @@ impl Path2DArcTo {
 }
 
 pub struct Path2D {
-    pub width: Option<PositiveCoordinate>, // 0
+    pub width: Option<PositiveCoordinate>,  // 0
     pub height: Option<PositiveCoordinate>, // 0
-    pub fill_mode: Option<PathFillMode>, // norm
-    pub stroke: Option<bool>, // true
-    pub extrusion_ok: Option<bool>, // true
+    pub fill_mode: Option<PathFillMode>,    // norm
+    pub stroke: Option<bool>,               // true
+    pub extrusion_ok: Option<bool>,         // true
     pub commands: Vec<Path2DCommand>,
 }
 
@@ -4677,20 +4745,28 @@ impl Path2D {
             match child_node.local_name() {
                 "close" => commands.push(Path2DCommand::Close),
                 "moveTo" => {
-                    let pt_node = child_node.child_nodes.get(0)
+                    let pt_node = child_node
+                        .child_nodes
+                        .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::MoveTo(AdjPoint2D::from_xml_element(pt_node)?));
                 }
                 "lnTo" => {
-                    let pt_node = child_node.child_nodes.get(0)
+                    let pt_node = child_node
+                        .child_nodes
+                        .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::LineTo(AdjPoint2D::from_xml_element(pt_node)?));
                 }
                 "arcTo" => commands.push(Path2DCommand::ArcTo(Path2DArcTo::from_xml_element(child_node)?)),
                 "quadBezTo" => {
-                    let pt1_node = child_node.child_nodes.get(0)
+                    let pt1_node = child_node
+                        .child_nodes
+                        .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt2_node = child_node.child_nodes.get(1)
+                    let pt2_node = child_node
+                        .child_nodes
+                        .get(1)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::QuadBezierTo(
                         AdjPoint2D::from_xml_element(pt1_node)?,
@@ -4698,11 +4774,17 @@ impl Path2D {
                     ));
                 }
                 "cubicBezTo" => {
-                    let pt1_node = child_node.child_nodes.get(0)
+                    let pt1_node = child_node
+                        .child_nodes
+                        .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt2_node = child_node.child_nodes.get(1)
+                    let pt2_node = child_node
+                        .child_nodes
+                        .get(1)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt3_node = child_node.child_nodes.get(2)
+                    let pt3_node = child_node
+                        .child_nodes
+                        .get(2)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
                     commands.push(Path2DCommand::CubicBezTo(
                         AdjPoint2D::from_xml_element(pt1_node)?,
@@ -4793,7 +4875,9 @@ pub struct PresetGeometry2D {
 
 impl PresetGeometry2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
+        let preset_attr = xml_node
+            .attribute("prst")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
         let preset = preset_attr.parse()?;
         let mut adjust_value_list = Vec::new();
 
@@ -4888,10 +4972,14 @@ impl ShapeStyle {
             }
         }
 
-        let line_reference = line_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "lnRef"))?;
-        let fill_reference = fill_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fillRef"))?;
-        let effect_reference = effect_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "effectRef"))?;
-        let font_reference = font_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fontRef"))?;
+        let line_reference =
+            line_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "lnRef"))?;
+        let fill_reference =
+            fill_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fillRef"))?;
+        let effect_reference =
+            effect_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "effectRef"))?;
+        let font_reference =
+            font_reference.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fontRef"))?;
 
         Ok(Self {
             line_reference,
@@ -4909,7 +4997,9 @@ pub struct FontReference {
 
 impl FontReference {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let index_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
+        let index_attr = xml_node
+            .attribute("idx")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
         let index = index_attr.parse()?;
 
         let color = match xml_node.child_nodes.get(0) {
@@ -4917,10 +5007,7 @@ impl FontReference {
             None => None,
         };
 
-        Ok(Self {
-            index,
-            color,
-        })
+        Ok(Self { index, color })
     }
 }
 
@@ -4939,12 +5026,12 @@ pub enum AnimationElementChoice {
 }
 
 pub struct AnimationDgmElement {
-    pub id: Option<Guid>, // {00000000-0000-0000-0000-000000000000}
+    pub id: Option<Guid>,                 // {00000000-0000-0000-0000-000000000000}
     pub build_step: Option<DgmBuildStep>, // sp
 }
 
 pub struct AnimationChartElement {
-    pub series_index: Option<i32>, // -1
+    pub series_index: Option<i32>,   // -1
     pub category_index: Option<i32>, // -1
     pub build_step: ChartBuildStep,
 }
@@ -4954,15 +5041,14 @@ pub enum AnimationGraphicalObjectBuildProperties {
     BuildChart(AnimationChartBuildProperties),
 }
 
-
 pub struct AnimationDgmBuildProperties {
     pub build_type: Option<AnimationDgmBuildType>, // allAtOnce
-    pub reverse: Option<bool>, // false
+    pub reverse: Option<bool>,                     // false
 }
 
 pub struct AnimationChartBuildProperties {
     pub build_type: Option<AnimationChartBuildType>, // allAtOnce
-    pub animate_bg: Option<bool>, // true
+    pub animate_bg: Option<bool>,                    // true
 }
 
 pub struct OfficeStyleSheet {
@@ -4997,7 +5083,8 @@ impl OfficeStyleSheet {
             }
         }
 
-        let theme_elements = theme_elements.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "themeElements"))?;
+        let theme_elements =
+            theme_elements.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "themeElements"))?;
 
         Ok(Self {
             name,
@@ -5030,9 +5117,11 @@ impl BaseStyles {
             }
         }
 
-        let color_scheme = color_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrScheme"))?;
+        let color_scheme =
+            color_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrScheme"))?;
         let font_scheme = font_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fontScheme"))?;
-        let format_scheme = format_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fmtScheme"))?;
+        let format_scheme =
+            format_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "fmtScheme"))?;
 
         Ok(Self {
             color_scheme,
@@ -5043,11 +5132,11 @@ impl BaseStyles {
 }
 
 pub struct StyleMatrix {
-    pub name: Option<String>, // ""
-    pub fill_style_list: Vec<FillProperties>, // minOccurs: 3
+    pub name: Option<String>,                      // ""
+    pub fill_style_list: Vec<FillProperties>,      // minOccurs: 3
     pub line_style_list: Vec<Box<LineProperties>>, // minOccurs: 3
-    pub effect_style_list: Vec<EffectStyleItem>, // minOccurs: 3
-    pub bg_fill_style_list: Vec<FillProperties>, // minOccurs: 3
+    pub effect_style_list: Vec<EffectStyleItem>,   // minOccurs: 3
+    pub bg_fill_style_list: Vec<FillProperties>,   // minOccurs: 3
 }
 
 impl StyleMatrix {
@@ -5081,13 +5170,14 @@ impl StyleMatrix {
         }
 
         if fill_style_list.len() < 3 {
-             return Err(LimitViolationError::new(
+            return Err(LimitViolationError::new(
                 xml_node.name.clone(),
                 "fillStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
                 fill_style_list.len() as u32,
-            ).into());
+            )
+            .into());
         }
 
         if line_style_list.len() < 3 {
@@ -5097,7 +5187,8 @@ impl StyleMatrix {
                 Limit::Value(3),
                 Limit::Unbounded,
                 line_style_list.len() as u32,
-            ).into());
+            )
+            .into());
         }
 
         if bg_fill_style_list.len() < 3 {
@@ -5107,7 +5198,8 @@ impl StyleMatrix {
                 Limit::Value(3),
                 Limit::Unbounded,
                 bg_fill_style_list.len() as u32,
-            ).into());
+            )
+            .into());
         }
 
         Ok(Self {
