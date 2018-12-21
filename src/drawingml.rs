@@ -1,12 +1,12 @@
 // TODO: This module defines shared types between different OOX file formats. It should be refactored into a different crate, if these types are needed.
-use ::xml::{XmlNode, parse_xml_bool};
-use ::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, AdjustParseError};
-use ::relationship::RelationshipId;
+use crate::xml::{XmlNode, parse_xml_bool};
+use crate::error::{NotGroupMemberError, MissingAttributeError, MissingChildNodeError, LimitViolationError, Limit, AdjustParseError};
+use crate::relationship::RelationshipId;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
 use ::std::str::FromStr;
 
-pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 pub type Guid = String; // TODO: move to shared common types. pattern="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"
 pub type Percentage = f32;
@@ -3109,14 +3109,14 @@ impl TextCharacterProperties {
 
         let mut line_properties = None;
         let mut fill_properties = None;
-        let mut effect_properties = None;
+        let effect_properties = None;
         let mut highlight_color = None;
         let mut text_underline_line = None;
         let mut text_underline_fill = None;
         let mut latin_font = None;
         let mut east_asian_font = None;
         let mut complex_script_font = None;
-        let mut symbol_font = None;
+        let symbol_font = None;
         let mut hyperlink_click = None;
         let mut hyperlink_mouse_over = None;
         let mut rtl = None;
@@ -4294,7 +4294,7 @@ impl GroupShapeProperties {
 
         let mut transform = None;
         let mut fill_properties = None;
-        let mut effect_properties = None;
+        let effect_properties = None;
 
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
@@ -4834,7 +4834,7 @@ impl ShapeProperties {
         let mut geometry = None;
         let mut fill_properties = None;
         let mut line_properties = None;
-        let mut effect_properties = None;
+        let effect_properties = None;
 
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
@@ -4974,7 +4974,7 @@ pub struct OfficeStyleSheet {
 }
 
 impl OfficeStyleSheet {
-    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+    pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
@@ -5055,7 +5055,7 @@ impl StyleMatrix {
         let name = xml_node.attribute("name").cloned();
         let mut fill_style_list = Vec::new();
         let mut line_style_list = Vec::new();
-        let mut effect_style_list = Vec::new();
+        let effect_style_list = Vec::new();
         let mut bg_fill_style_list = Vec::new();
 
         for child_node in &xml_node.child_nodes {

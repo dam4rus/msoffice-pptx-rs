@@ -8,7 +8,7 @@ macro_rules! decl_simple_type_enum {
         }
 
         impl ::std::str::FromStr for $name {
-            type Err = ::error::ParseEnumError;
+            type Err = crate::error::ParseEnumError;
 
             fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
                 match s {

@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
-extern crate quick_xml;
-extern crate zip;
+
+
 
 #[macro_use]
 mod macros;
@@ -15,12 +15,11 @@ pub mod document;
 
 #[cfg(test)]
 mod tests {
-    use document::*;
-    use docprops::*;
-    use xml::*;
+    use crate::document::*;
+    use crate::xml::*;
     use std::fs::File;
     use std::io::{ Read };
-    use std::path::{ Path, PathBuf };
+    use std::path::{PathBuf};
 
     #[test]
     fn test_sample_pptx() {
@@ -60,7 +59,7 @@ mod tests {
             let slide_size = presentation.slide_size.as_ref().unwrap();
             assert_eq!(slide_size.width, 9144000);
             assert_eq!(slide_size.height, 6858000);
-            assert_eq!(*slide_size.size_type.as_ref().unwrap(), ::pml::SlideSizeType::Screen4x3);
+            assert_eq!(*slide_size.size_type.as_ref().unwrap(), crate::pml::SlideSizeType::Screen4x3);
 
             let notes_size = presentation.notes_size.as_ref().unwrap();
             assert_eq!(notes_size.width, 6858000);
@@ -72,7 +71,7 @@ mod tests {
 
             let lvl1_ppr = def_text_style.lvl1_paragraph_props.as_ref().unwrap();
             assert_eq!(lvl1_ppr.margin_left.unwrap(), 0);
-            assert_eq!(*lvl1_ppr.align.as_ref().unwrap(), ::drawingml::TextAlignType::Left);
+            assert_eq!(*lvl1_ppr.align.as_ref().unwrap(), crate::drawingml::TextAlignType::Left);
             assert_eq!(lvl1_ppr.default_tab_size.unwrap(), 914400);
             assert_eq!(lvl1_ppr.rtl.unwrap(), false);
             assert_eq!(lvl1_ppr.east_asian_line_break.unwrap(), true);
@@ -96,62 +95,62 @@ mod tests {
             assert_eq!(color_scheme.name, "Default Design 1");
 
             match color_scheme.dark1 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x000066),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x000066),
                 _ => panic!("theme1 dk1 color type mismatch"),
             }
             
             match color_scheme.light1 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt1 color type mismatch"),
             }
             
             match color_scheme.dark2 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x003366),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x003366),
                 _ => panic!("theme1 dk2 color type mismatch"),
             }
             
             match color_scheme.light2 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xFFFFFF),
                 _ => panic!("theme1 lt2 color type mismatch"),
             }
             
             match color_scheme.accent1 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x8EB3C8),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x8EB3C8),
                 _ => panic!("theme1 accent1 color type mismatch"),
             }
             
             match color_scheme.accent2 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6F97B3),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6F97B3),
                 _ => panic!("theme1 accent2 color type mismatch"),
             }
             
             match color_scheme.accent3 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xAAADB8),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xAAADB8),
                 _ => panic!("theme1 accent3 color type mismatch"),
             }
             
             match color_scheme.accent4 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xDADADA),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xDADADA),
                 _ => panic!("theme1 accent4 color type mismatch"),
             }
             
             match color_scheme.accent5 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xC6D6E0),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0xC6D6E0),
                 _ => panic!("theme1 accent5 color type mismatch"),
             }
             
             match color_scheme.accent6 {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6488A2),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x6488A2),
                 _ => panic!("theme1 accent6 color type mismatch"),
             }
             
             match color_scheme.hyperlink {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x556575),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x556575),
                 _ => panic!("theme1 hyperlink color type mismatch"),
             }
             
             match color_scheme.followed_hyperlink {
-                ::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x3D556F),
+                crate::drawingml::Color::SRgbColor(ref clr) => assert_eq!(clr.value, 0x3D556F),
                 _ => panic!("theme1 followhyperlink type mismatch"),
             }
 
@@ -175,9 +174,9 @@ mod tests {
             // first fill style test
             let fill_style = &format_scheme.fill_style_list[0];
             match fill_style {
-                ::drawingml::FillProperties::SolidFill(ref color) => {
+                crate::drawingml::FillProperties::SolidFill(ref color) => {
                     match color {
-                        ::drawingml::Color::SchemeColor(ref clr) => assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor),
+                        crate::drawingml::Color::SchemeColor(ref clr) => assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor),
                         _ => panic!("fill[0] is invalid"),
                     }
                 }
@@ -187,19 +186,19 @@ mod tests {
             // second fill style test
             let fill_style = &format_scheme.fill_style_list[1];
             match fill_style {
-                ::drawingml::FillProperties::GradientFill(ref gradient) => {
+                crate::drawingml::FillProperties::GradientFill(ref gradient) => {
                     let stop = &gradient.gradient_stop_list[0];
                     assert_eq!(stop.position, 0.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref clr) => {
-                            assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref clr) => {
+                            assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
                             match clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 50_000.0),
+                                crate::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 50_000.0),
                                 _ => panic!("color transform is not tint"),
                             }
 
                             match clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 300_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 300_000.0),
                                 _ => panic!("color transform is not satMod"),
                             }
                         }
@@ -209,15 +208,15 @@ mod tests {
                     let stop = &gradient.gradient_stop_list[1];
                     assert_eq!(stop.position, 35_000.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref clr) => {
-                            assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref clr) => {
+                            assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
                             match clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 37_000.0),
+                                crate::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 37_000.0),
                                 _ => panic!("color transform is not tint"),
                             }
 
                             match clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 300_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 300_000.0),
                                 _ => panic!("color transform is not satMod"),
                             }
                         }
@@ -227,15 +226,15 @@ mod tests {
                     let stop = &gradient.gradient_stop_list[2];
                     assert_eq!(stop.position, 100_000.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref clr) => {
-                            assert_eq!(clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref clr) => {
+                            assert_eq!(clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
                             match clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 15_000.0),
+                                crate::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 15_000.0),
                                 _ => panic!("color transform is not tint"),
                             }
 
                             match clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
                                 _ => panic!("color transform is not satMod"),
                             }
                         }
@@ -243,7 +242,7 @@ mod tests {
                     }
 
                     match gradient.shade_properties {
-                        Some(::drawingml::ShadeProperties::Linear(ref shade_props)) => {
+                        Some(crate::drawingml::ShadeProperties::Linear(ref shade_props)) => {
                             assert_eq!(shade_props.angle, Some(16_200_000));
                             assert_eq!(shade_props.scaled, Some(true));
                         }
@@ -256,22 +255,22 @@ mod tests {
             // outline style test
             let ln_style = &format_scheme.line_style_list[0];
             assert_eq!(ln_style.width, Some(9_525));
-            assert_eq!(ln_style.cap, Some(::drawingml::LineCap::Flat));
-            assert_eq!(ln_style.compound, Some(::drawingml::CompoundLine::Single));
-            assert_eq!(ln_style.pen_alignment, Some(::drawingml::PenAlignment::Center));
+            assert_eq!(ln_style.cap, Some(crate::drawingml::LineCap::Flat));
+            assert_eq!(ln_style.compound, Some(crate::drawingml::CompoundLine::Single));
+            assert_eq!(ln_style.pen_alignment, Some(crate::drawingml::PenAlignment::Center));
             
             match ln_style.fill_properties {
-                Some(::drawingml::LineFillProperties::SolidFill(ref clr)) => {
+                Some(crate::drawingml::LineFillProperties::SolidFill(ref clr)) => {
                     match clr {
-                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
-                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
                             match scheme_clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 95_000.0),
+                                crate::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 95_000.0),
                                 _ => panic!("ColorTransform is not Shade"),
                             }
 
                             match scheme_clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 105_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 105_000.0),
                                 _ => panic!("ColorTransform is not SatMode"),
                             }
                         }
@@ -282,29 +281,29 @@ mod tests {
             }
 
             match ln_style.dash_properties {
-                Some(::drawingml::LineDashProperties::PresetDash(ref dash)) => assert_eq!(*dash, ::drawingml::PresetLineDashVal::Solid),
+                Some(crate::drawingml::LineDashProperties::PresetDash(ref dash)) => assert_eq!(*dash, crate::drawingml::PresetLineDashVal::Solid),
                 _ => panic!("ln_style.dash_properties is not PresetDash"),
             }
 
             // bg fill style test
             let bg_fill_style = &format_scheme.bg_fill_style_list[1];
             match bg_fill_style {
-                ::drawingml::FillProperties::GradientFill(ref gradient) => {
+                crate::drawingml::FillProperties::GradientFill(ref gradient) => {
                     assert_eq!(gradient.rotate_with_shape, Some(true));
 
                     let stop = &gradient.gradient_stop_list[0];
                     assert_eq!(stop.position, 0.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
-                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
 
                             match scheme_clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 40_000.0),
+                                crate::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 40_000.0),
                                 _ => panic!("invalid color transform"),
                             }
 
                             match scheme_clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
                                 _ => panic!("invalid color transform"),
                             }
                         }
@@ -314,21 +313,21 @@ mod tests {
                     let stop = &gradient.gradient_stop_list[1];
                     assert_eq!(stop.position, 40_000.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
-                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
 
                             match scheme_clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 45_000.0),
+                                crate::drawingml::ColorTransform::Tint(val) => assert_eq!(val, 45_000.0),
                                 _ => panic!("invalid color transform"),
                             }
 
                             match scheme_clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 99_000.0),
+                                crate::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 99_000.0),
                                 _ => panic!("invalid color transform"),
                             }
 
                             match scheme_clr.color_transforms[2] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 350_000.0),
                                 _ => panic!("invalid color transform"),
                             }
                         }
@@ -338,16 +337,16 @@ mod tests {
                     let stop = &gradient.gradient_stop_list[2];
                     assert_eq!(stop.position, 100_000.0);
                     match stop.color {
-                        ::drawingml::Color::SchemeColor(ref scheme_clr) => {
-                            assert_eq!(scheme_clr.value, ::drawingml::SchemeColorVal::PlaceholderColor);
+                        crate::drawingml::Color::SchemeColor(ref scheme_clr) => {
+                            assert_eq!(scheme_clr.value, crate::drawingml::SchemeColorVal::PlaceholderColor);
 
                             match scheme_clr.color_transforms[0] {
-                                ::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 20_000.0),
+                                crate::drawingml::ColorTransform::Shade(val) => assert_eq!(val, 20_000.0),
                                 _ => panic!("invalid color transform"),
                             }
 
                             match scheme_clr.color_transforms[1] {
-                                ::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 255_000.0),
+                                crate::drawingml::ColorTransform::SaturationModulate(val) => assert_eq!(val, 255_000.0),
                                 _ => panic!("invalid color transform"),
                             }
                         }
@@ -355,8 +354,8 @@ mod tests {
                     }
 
                     match gradient.shade_properties {
-                        Some(::drawingml::ShadeProperties::Path(ref path)) => {
-                            assert_eq!(path.path, Some(::drawingml::PathShadeType::Circle));
+                        Some(crate::drawingml::ShadeProperties::Path(ref path)) => {
+                            assert_eq!(path.path, Some(crate::drawingml::PathShadeType::Circle));
                             match path.fill_to_rect {
                                 Some(ref rect) => {
                                     assert_eq!(rect.left, Some(50_000.0));

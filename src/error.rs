@@ -21,7 +21,7 @@ impl MissingAttributeError {
 }
 
 impl Display for MissingAttributeError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Xml element '{}' is missing a required attribute: {}", self.node_name, self.attr)
     }
 }
@@ -52,7 +52,7 @@ impl MissingChildNodeError {
 }
 
 impl Display for MissingChildNodeError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Xml element '{}' is missing a required child element: {}", self.node_name, self.child_node)
     }
 }
@@ -80,7 +80,7 @@ impl NotGroupMemberError {
 }
 
 impl Display for NotGroupMemberError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "XmlNode '{}' is not a member of {} group", self.node_name, self.group)
     }
 }
@@ -98,7 +98,7 @@ pub enum Limit {
 }
 
 impl Display for Limit {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Limit::Value(val) => write!(f, "{}", val),
             Limit::Unbounded => write!(f, "unbounded"),
@@ -138,7 +138,7 @@ impl LimitViolationError {
 }
 
 impl Display for LimitViolationError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(
             f,
             "Element {} violates the limits of occurance in element: {}. minOccurs: {}, maxOccurs: {}, occurance: {}",
@@ -167,7 +167,7 @@ pub enum XmlError {
 }
 
 impl Display for XmlError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             XmlError::Attribute(ref err) => err.fmt(f),
             XmlError::ChildNode(ref err) => err.fmt(f),
@@ -219,7 +219,7 @@ impl InvalidXmlError {
 }
 
 impl Display for InvalidXmlError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Invalid xml document")
     }
 }
@@ -250,7 +250,7 @@ impl ParseBoolError {
 }
 
 impl Display for ParseBoolError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Xml attribute is not a valid bool value: {}", self.attr_value)
     }
 }
@@ -276,7 +276,7 @@ impl ParseEnumError {
 }
 
 impl Display for ParseEnumError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Cannot convert string to {}", self.enum_name)
     }
 }
@@ -292,7 +292,7 @@ impl Error for ParseEnumError {
 pub struct AdjustParseError {}
 
 impl Display for AdjustParseError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "AdjCoordinate or AdjAngle parse error")
     }
 }

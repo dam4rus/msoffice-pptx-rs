@@ -1,5 +1,5 @@
 use std::io::{ Read, Seek };
-use ::xml::XmlNode;
+use crate::xml::XmlNode;
 
 /// AppInfo
 /// 
@@ -9,7 +9,7 @@ pub struct AppInfo {
 }
 
 impl AppInfo {
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<::std::error::Error>>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<dyn (::std::error::Error)>>
     where
         R: Read + Seek
     {
@@ -48,7 +48,7 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<::std::error::Error>>
+    pub fn from_zip<R>(zipper: &mut zip::ZipArchive<R>) -> Result<Self, Box<dyn (::std::error::Error)>>
     where
         R: Read + Seek
     {

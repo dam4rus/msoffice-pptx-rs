@@ -1,6 +1,7 @@
 [package]
 name = "msoffice_pptx"
 version = "0.1.0"
+edition = "2018"
 description = "pptx file format deserializer"
 authors = ["Kalmár Róbert <rfrostkalmar@gmail.com>"]
 keywords = ["office", "pptx", "ppt"]

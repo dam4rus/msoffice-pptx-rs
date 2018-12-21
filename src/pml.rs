@@ -1,7 +1,7 @@
 use ::std::io::{ Read, Seek };
-use ::relationship::RelationshipId;
-use ::xml::{XmlNode, parse_xml_bool};
-use ::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
+use crate::relationship::RelationshipId;
+use crate::xml::{XmlNode, parse_xml_bool};
+use crate::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use ::zip::read::ZipFile;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
@@ -10,11 +10,11 @@ pub type SlideMasterId = u32; // TODO: 2147483648 <= n
 pub type Index = u32;
 pub type TLTimeNodeId = u32;
 pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
-pub type SlideSizeCoordinate = ::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
+pub type SlideSizeCoordinate = crate::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
 pub type Name = String;
-pub type TLSubShapeId = ::drawingml::ShapeId;
+pub type TLSubShapeId = crate::drawingml::ShapeId;
 
-pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 decl_simple_type_enum! {
     pub enum ConformanceClass {
@@ -452,8 +452,8 @@ pub struct IndexRange {
 
 pub struct BackgroundProperties {
     pub shade_to_title: Option<bool>, // false
-    pub fill: ::drawingml::FillProperties,
-    pub effect: Option<::drawingml::EffectProperties>,
+    pub fill: crate::drawingml::FillProperties,
+    pub effect: Option<crate::drawingml::EffectProperties>,
 }
 
 impl BackgroundProperties {
@@ -466,8 +466,8 @@ impl BackgroundProperties {
         let mut fill = None;
 
         for child_node in &xml_node.child_nodes {
-            if ::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
-                fill = Some(::drawingml::FillProperties::from_xml_element(child_node)?);
+            if crate::drawingml::FillProperties::is_choice_member(child_node.local_name()) {
+                fill = Some(crate::drawingml::FillProperties::from_xml_element(child_node)?);
             }
             // TODO: implement EffectProperties
             // else if ::drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
@@ -487,7 +487,7 @@ impl BackgroundProperties {
 
 pub enum BackgroundGroup {
     Properties(BackgroundProperties),
-    Reference(::drawingml::StyleMatrixReference),
+    Reference(crate::drawingml::StyleMatrixReference),
 }
 
 impl BackgroundGroup {
@@ -501,14 +501,14 @@ impl BackgroundGroup {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(xml_node)?)),
-            "bgRef" => Ok(BackgroundGroup::Reference(::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
+            "bgRef" => Ok(BackgroundGroup::Reference(crate::drawingml::StyleMatrixReference::from_xml_element(xml_node)?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
     }
 }
 
 pub struct Background {
-    pub black_and_white_mode: Option<::drawingml::BlackWhiteMode>, // white
+    pub black_and_white_mode: Option<crate::drawingml::BlackWhiteMode>, // white
     pub background: BackgroundGroup,
 }
 
@@ -571,7 +571,7 @@ pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>, // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
-    pub media: Option<::drawingml::Media>,
+    pub media: Option<crate::drawingml::Media>,
     //pub customer_data_list: Option<CustomerDataList>,
 }
 
@@ -625,9 +625,9 @@ pub enum ShapeGroup {
 pub struct Shape {
     pub use_bg_fill: Option<bool>, // false
     pub non_visual_props: Box<ShapeNonVisual>,
-    pub shape_props: Box<::drawingml::ShapeProperties>,
-    pub style: Option<Box<::drawingml::ShapeStyle>>,
-    pub text_body: Option<::drawingml::TextBody>,
+    pub shape_props: Box<crate::drawingml::ShapeProperties>,
+    pub style: Option<Box<crate::drawingml::ShapeStyle>>,
+    pub text_body: Option<crate::drawingml::TextBody>,
 }
 
 impl Shape {
@@ -645,9 +645,9 @@ impl Shape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
-                "spPr" => shape_props = Some(Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)),
-                "style" => style = Some(Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)),
-                "txBody" => text_body = Some(::drawingml::TextBody::from_xml_element(child_node)?),
+                "spPr" => shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "style" => style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "txBody" => text_body = Some(crate::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -666,8 +666,8 @@ impl Shape {
 }
 
 pub struct ShapeNonVisual {
-    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub shape_drawing_props: ::drawingml::NonVisualDrawingShapeProps,
+    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
+    pub shape_drawing_props: crate::drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -679,8 +679,8 @@ impl ShapeNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)),
-                "cNvSpPr" => shape_drawing_props = Some(::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
+                "cNvPr" => drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)),
+                "cNvSpPr" => shape_drawing_props = Some(crate::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?),
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
@@ -700,7 +700,7 @@ impl ShapeNonVisual {
 
 pub struct GroupShape {
     pub non_visual_props: Box<GroupShapeNonVisual>,
-    pub group_shape_props: ::drawingml::GroupShapeProperties,
+    pub group_shape_props: crate::drawingml::GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
 }
 
@@ -713,7 +713,7 @@ impl GroupShape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvGrpSpPr" => non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?)),
-                "grpSpPr" => group_shape_props = Some(::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
+                "grpSpPr" => group_shape_props = Some(crate::drawingml::GroupShapeProperties::from_xml_element(child_node)?),
                 "sp" => shape_array.push(ShapeGroup::Shape(Box::new(Shape::from_xml_element(child_node)?))),
                 "grpSp" => shape_array.push(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(child_node)?))),
                 // TODO implement GraphicalObjectFrame
@@ -740,8 +740,8 @@ impl GroupShape {
 }
 
 pub struct GroupShapeNonVisual {
-    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub group_drawing_props: ::drawingml::NonVisualGroupDrawingShapeProps,
+    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
+    pub group_drawing_props: crate::drawingml::NonVisualGroupDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -754,10 +754,10 @@ impl GroupShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => drawing_props = Some(
-                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvGrpSpPr" => group_drawing_props = Some(
-                    ::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
+                    crate::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
                     ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
@@ -779,21 +779,21 @@ impl GroupShapeNonVisual {
 
 pub struct GraphicalObjectFrame {
     pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
-    pub transform: Box<::drawingml::Transform2D>,
-    pub graphic: ::drawingml::GraphicalObject,
-    pub black_white_mode: Option<::drawingml::BlackWhiteMode>,
+    pub transform: Box<crate::drawingml::Transform2D>,
+    pub graphic: crate::drawingml::GraphicalObject,
+    pub black_white_mode: Option<crate::drawingml::BlackWhiteMode>,
 }
 
 pub struct GraphicalObjectFrameNonVisual {
-    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub graphic_frame_props: ::drawingml::NonVisualGraphicFrameProperties,
+    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
+    pub graphic_frame_props: crate::drawingml::NonVisualGraphicFrameProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
 pub struct Connector {
     pub non_visual_props: Box<ConnectorNonVisual>,
-    pub shape_props: Box<::drawingml::ShapeProperties>,
-    pub shape_style: Option<Box<::drawingml::ShapeStyle>>,
+    pub shape_props: Box<crate::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<crate::drawingml::ShapeStyle>>,
 }
 
 impl Connector {
@@ -808,10 +808,10 @@ impl Connector {
                     Box::new(ConnectorNonVisual::from_xml_element(child_node)?)
                 ),
                 "spPr" => shape_props = Some(
-                    Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)
                 ),
                 "style" => shape_style = Some(
-                    Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)
                 ),
                 _ => (),
             }
@@ -829,8 +829,8 @@ impl Connector {
 }
 
 pub struct ConnectorNonVisual {
-    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub connector_props: ::drawingml::NonVisualConnectorProperties,
+    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
+    pub connector_props: crate::drawingml::NonVisualConnectorProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -843,10 +843,10 @@ impl ConnectorNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => drawing_props = Some(
-                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvCxnSpPr" => connector_props = Some(
-                    ::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?
+                    crate::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
                     ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
@@ -869,9 +869,9 @@ impl ConnectorNonVisual {
 
 pub struct Picture {
     pub non_visual_props: Box<PictureNonVisual>,
-    pub blip_fill: Box<::drawingml::BlipFillProperties>,
-    pub shape_props: Box<::drawingml::ShapeProperties>,
-    pub shape_style: Option<Box<::drawingml::ShapeStyle>>,
+    pub blip_fill: Box<crate::drawingml::BlipFillProperties>,
+    pub shape_props: Box<crate::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<crate::drawingml::ShapeStyle>>,
 }
 
 impl Picture {
@@ -887,13 +887,13 @@ impl Picture {
                     Box::new(PictureNonVisual::from_xml_element(child_node)?)
                 ),
                 "blipFill" => blip_fill = Some(
-                    Box::new(::drawingml::BlipFillProperties::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::BlipFillProperties::from_xml_element(child_node)?)
                 ),
                 "spPr" => shape_props = Some(
-                    Box::new(::drawingml::ShapeProperties::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::ShapeProperties::from_xml_element(child_node)?)
                 ),
                 "style" => shape_style = Some(
-                    Box::new(::drawingml::ShapeStyle::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)
                 ),
                 _ => (),
             }
@@ -913,8 +913,8 @@ impl Picture {
 }
 
 pub struct PictureNonVisual {
-    pub drawing_props: Box<::drawingml::NonVisualDrawingProps>,
-    pub picture_props: ::drawingml::NonVisualPictureProperties,
+    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
+    pub picture_props: crate::drawingml::NonVisualPictureProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -927,10 +927,10 @@ impl PictureNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => drawing_props = Some(
-                    Box::new(::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?)
                 ),
                 "cNvPicPr" => picture_props = Some(
-                    ::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?
+                    crate::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?
                 ),
                 "nvPr" => app_props = Some(
                     ApplicationNonVisualDrawingProps::from_xml_element(child_node)?
@@ -1035,12 +1035,12 @@ pub struct Control {
 }
 
 pub struct OleAttributes {
-    pub shape_id: Option<::drawingml::ShapeId>,
+    pub shape_id: Option<crate::drawingml::ShapeId>,
     pub name: Option<String>, // ""
     pub show_as_icon: Option<bool>, // false
     pub id: Option<RelationshipId>,
-    pub image_width: Option<::drawingml::PositiveCoordinate32>,
-    pub image_height: Option<::drawingml::PositiveCoordinate32>,
+    pub image_width: Option<crate::drawingml::PositiveCoordinate32>,
+    pub image_height: Option<crate::drawingml::PositiveCoordinate32>,
 }
 
 pub struct SlideSize {
@@ -1094,9 +1094,9 @@ pub struct HandoutMasterIdListEntry {
 }
 
 pub struct SlideMasterTextStyles {
-    pub title_styles: Option<Box<::drawingml::TextListStyle>>,
-    pub body_styles: Option<Box<::drawingml::TextListStyle>>,
-    pub other_styles: Option<Box<::drawingml::TextListStyle>>,
+    pub title_styles: Option<Box<crate::drawingml::TextListStyle>>,
+    pub body_styles: Option<Box<crate::drawingml::TextListStyle>>,
+    pub other_styles: Option<Box<crate::drawingml::TextListStyle>>,
 }
 
 impl SlideMasterTextStyles {
@@ -1108,13 +1108,13 @@ impl SlideMasterTextStyles {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "titleStyle" => title_styles = Some(
-                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
                 ),
                 "bodyStyle" => body_styles = Some(
-                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
                 ),
                 "otherStyle" => other_styles = Some(
-                    Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)
+                    Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)
                 ),
                 _ => (),
             }
@@ -1186,7 +1186,7 @@ pub enum SlideTransitionGroup {
 }
 
 pub struct TransitionStartSoundAction {
-    pub sound_file: ::drawingml::EmbeddedWAVAudioFile,
+    pub sound_file: crate::drawingml::EmbeddedWAVAudioFile,
     pub is_looping:  Option<bool>, // false
 }
 
@@ -1227,8 +1227,8 @@ pub struct TLBuildParagraph {
 }
 
 pub struct TLPoint {
-    pub x: ::drawingml::Percentage,
-    pub y: ::drawingml::Percentage,
+    pub x: crate::drawingml::Percentage,
+    pub y: crate::drawingml::Percentage,
 }
 
 pub enum TLTime {
@@ -1242,7 +1242,7 @@ pub struct TLTemplate {
 }
 
 pub struct TLBuildCommonAttributes {
-    pub shape_id: ::drawingml::DrawingElementId,
+    pub shape_id: crate::drawingml::DrawingElementId,
     pub group_id: u32,
     pub ui_expand: Option<bool>, // false
 }
@@ -1265,7 +1265,7 @@ pub struct TLGraphicalObjectBuild {
 
 pub enum TLGraphicalObjectBuildChoice {
     BuildAsOne,
-    BuildSubElements(::drawingml::AnimationGraphicalObjectBuildProperties),
+    BuildSubElements(crate::drawingml::AnimationGraphicalObjectBuildProperties),
 }
 
 pub enum TimeNodeGroup {
@@ -1306,8 +1306,8 @@ pub struct TLAnimateBehavior {
 pub struct TLAnimateColorBehavior {
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLByAnimateColorTransform>,
-    pub from: Option<::drawingml::Color>,
-    pub to: Option<::drawingml::Color>,
+    pub from: Option<crate::drawingml::Color>,
+    pub to: Option<crate::drawingml::Color>,
     pub color_space: Option<TLAnimateColorSpace>,
     pub direction: Option<TLAnimateColorDirection>,
 }
@@ -1329,15 +1329,15 @@ pub struct TLAnimateMotionBehavior {
     pub origin: Option<TLAnimateMotionBehaviorOrigin>,
     pub path: Option<String>,
     pub path_edit_mode: Option<TLAnimateMotionPathEditMode>,
-    pub rotate_angle: Option<::drawingml::Angle>,
+    pub rotate_angle: Option<crate::drawingml::Angle>,
     pub points_types: Option<String>,
 }
 
 pub struct TLAnimateRotationBehavior {
     pub common_behavior_data: Box<TLCommonBehaviorData>,
-    pub by: Option<::drawingml::Angle>,
-    pub from: Option<::drawingml::Angle>,
-    pub to: Option<::drawingml::Angle>,
+    pub by: Option<crate::drawingml::Angle>,
+    pub from: Option<crate::drawingml::Angle>,
+    pub to: Option<crate::drawingml::Angle>,
 }
 
 pub struct TLAnimateScaleBehavior {
@@ -1376,7 +1376,7 @@ pub struct TLTimeAnimateValue {
 }
 
 pub enum TLTimeAnimateValueTime {
-    Percentage(::drawingml::PositiveFixedPercentage),
+    Percentage(crate::drawingml::PositiveFixedPercentage),
     Indefinite,
 }
 
@@ -1385,7 +1385,7 @@ pub enum TLAnimVariant {
     Int(i32),
     Float(f32),
     String(String),
-    Color(::drawingml::Color),
+    Color(crate::drawingml::Color),
 }
 
 pub struct TLCommonBehaviorData {
@@ -1405,7 +1405,7 @@ pub struct TLCommonBehaviorData {
 pub struct TLCommonMediaNodeData {
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
-    pub volume: Option<::drawingml::PositiveFixedPercentage>, // 50000
+    pub volume: Option<crate::drawingml::PositiveFixedPercentage>, // 50000
     pub mute: Option<bool>, // false
     pub number_of_slides: Option<u32>, // 1
     pub show_when_stopped: Option<bool>, // true
@@ -1419,14 +1419,14 @@ pub enum TLTimeConditionTriggerGroup {
 
 pub enum TLTimeTargetElement {
     SlideTarget,
-    SoundTarget(::drawingml::EmbeddedWAVAudioFile),
+    SoundTarget(crate::drawingml::EmbeddedWAVAudioFile),
     ShapeTarget(TLShapeTargetElement),
     InkTarget(TLSubShapeId),
 }
 
 pub struct TLShapeTargetElement {
     pub target: Option<TLShapeTargetElementGroup>,
-    pub shape_id: ::drawingml::DrawingElementId,
+    pub shape_id: crate::drawingml::DrawingElementId,
 }
 
 pub enum TLShapeTargetElementGroup {
@@ -1434,7 +1434,7 @@ pub enum TLShapeTargetElementGroup {
     SubShape(TLSubShapeId),
     OleChartElement(TLOleChartTargetElement),
     TextElement(Option<TLTextTargetElement>),
-    GraphicElement(::drawingml::AnimationElementChoice),
+    GraphicElement(crate::drawingml::AnimationElementChoice),
 }
 
 pub struct TLOleChartTargetElement {
@@ -1467,9 +1467,9 @@ pub struct TLCommonTimeNodeData {
     pub duration: Option<TLTime>,
     pub repeat_count: Option<TLTime>, // 1000
     pub repeat_duration: Option<TLTime>,
-    pub speed: Option<::drawingml::Percentage>, // 100000
-    pub acceleration: Option<::drawingml::PositiveFixedPercentage>, // 0
-    pub deceleration: Option<::drawingml::PositiveFixedPercentage>, // 0
+    pub speed: Option<crate::drawingml::Percentage>, // 100000
+    pub acceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
+    pub deceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
     pub auto_reverse: Option<bool>, // false
     pub restart_type: Option<TLTimeNodeRestartType>,
     pub fill_type: Option<TLTimeNodeFillType>,
@@ -1487,7 +1487,7 @@ pub struct TLCommonTimeNodeData {
 
 pub enum TLIterateDataInterval {
     Absolute(TLTime),
-    Percent(::drawingml::PositivePercentage),
+    Percent(crate::drawingml::PositivePercentage),
 }
 
 pub struct TLIterateData {
@@ -1502,21 +1502,21 @@ pub enum TLByAnimateColorTransform {
 }
 
 pub struct TLByRgbColorTransform {
-    pub r: ::drawingml::FixedPercentage,
-    pub g: ::drawingml::FixedPercentage,
-    pub b: ::drawingml::FixedPercentage,
+    pub r: crate::drawingml::FixedPercentage,
+    pub g: crate::drawingml::FixedPercentage,
+    pub b: crate::drawingml::FixedPercentage,
 }
 
 pub struct TLByHslColorTransform {
-    pub h: ::drawingml::Angle,
-    pub s: ::drawingml::FixedPercentage,
-    pub l: ::drawingml::FixedPercentage,
+    pub h: crate::drawingml::Angle,
+    pub s: crate::drawingml::FixedPercentage,
+    pub l: crate::drawingml::FixedPercentage,
 }
 
 pub struct SlideMaster {
     pub preserve: Option<bool>, // false
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping: Box<::drawingml::ColorMapping>,
+    pub color_mapping: Box<crate::drawingml::ColorMapping>,
     pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
@@ -1525,7 +1525,7 @@ pub struct SlideMaster {
 }
 
 impl SlideMaster {
-    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+    pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
@@ -1550,7 +1550,7 @@ impl SlideMaster {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
-                "clrMap" => color_mapping = Some(Box::new(::drawingml::ColorMapping::from_xml_element(child_node)?)),
+                "clrMap" => color_mapping = Some(Box::new(crate::drawingml::ColorMapping::from_xml_element(child_node)?)),
                 "sldLayoutIdLst" => {
                     for slide_layout_id_node in &child_node.child_nodes {
                         slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
@@ -1589,14 +1589,14 @@ pub struct SlideLayout {
     pub show_master_shapes: Option<bool>, // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
 }
 
 impl SlideLayout {
-    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+    pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
@@ -1636,7 +1636,7 @@ impl SlideLayout {
                 "clrMapOvr" => {
                     let clr_map_node = child_node.child_nodes.get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?;
-                    color_mapping_override = Some(::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 // TODO implement
                 // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
@@ -1669,13 +1669,13 @@ pub struct Slide {
     pub show_master_shapes: Option<bool>, // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping_override: Option<::drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
 }
 
 impl Slide {
-    pub fn from_zip_file(zip_file: &mut ZipFile) -> Result<Self> {
+    pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
@@ -1708,7 +1708,7 @@ impl Slide {
                 "clrMapOvr" => {
                     let clr_map_node = child_node.child_nodes.get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?;
-                    color_mapping_override = Some(::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 // TODO implement
                 // "transition" => transition = Some(SlideTransition::from_xml_element(child_node)?),
@@ -1733,7 +1733,7 @@ impl Slide {
 
 /// EmbeddedFontListEntry
 pub struct EmbeddedFontListEntry {
-    pub font: ::drawingml::TextFont,
+    pub font: crate::drawingml::TextFont,
     pub regular: Option<RelationshipId>,
     pub bold: Option<RelationshipId>,
     pub italic: Option<RelationshipId>,
@@ -1750,7 +1750,7 @@ impl EmbeddedFontListEntry {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "font" => font = Some(::drawingml::TextFont::from_xml_element(child_node)?),
+                "font" => font = Some(crate::drawingml::TextFont::from_xml_element(child_node)?),
                 "regular" => {
                     let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     regular = Some(id_attr.clone());
@@ -1854,7 +1854,7 @@ pub struct ModifyVerifier {
 
 /// Presentation
 pub struct Presentation {
-    pub server_zoom: Option<::drawingml::Percentage>, // 50%
+    pub server_zoom: Option<crate::drawingml::Percentage>, // 50%
     pub first_slide_num: Option<i32>, // 1
     pub show_special_pls_on_title_slide: Option<bool>, // true
     pub rtl: Option<bool>, // false
@@ -1871,14 +1871,14 @@ pub struct Presentation {
     pub handout_master_id_list: Vec<HandoutMasterIdListEntry>, // length = 1
     pub slide_id_list: Vec<SlideIdListEntry>,
     pub slide_size: Option<SlideSize>,
-    pub notes_size: Option<::drawingml::PositiveSize2D>,
+    pub notes_size: Option<crate::drawingml::PositiveSize2D>,
     pub smart_tags: Option<RelationshipId>,
     pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
     pub custom_show_list: Vec<CustomShow>,
     pub photo_album: Option<PhotoAlbum>,
     pub customer_data_list: Option<CustomerDataList>,
     pub kinsoku: Option<Box<Kinsoku>>,
-    pub default_text_style: Option<Box<::drawingml::TextListStyle>>,
+    pub default_text_style: Option<Box<crate::drawingml::TextListStyle>>,
     pub modify_verifier: Option<Box<ModifyVerifier>>,
 }
 
@@ -2027,7 +2027,7 @@ impl Presentation {
                         size_type,
                     })
                 }
-                "notesSz" => notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node)?),
+                "notesSz" => notes_size = Some(crate::drawingml::PositiveSize2D::from_xml_element(child_node)?),
                 "smartTags" => {
                     let r_id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     smart_tags = Some(r_id_attr.clone());
@@ -2089,7 +2089,7 @@ impl Presentation {
                         invalid_end_chars,
                     }));
                 }
-                "defaultTextStyle" => default_text_style = Some(Box::new(::drawingml::TextListStyle::from_xml_element(child_node)?)),
+                "defaultTextStyle" => default_text_style = Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }

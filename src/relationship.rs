@@ -1,11 +1,11 @@
-use ::error::MissingAttributeError;
-use ::xml::XmlNode;
+use crate::error::MissingAttributeError;
+use crate::xml::XmlNode;
 use ::zip::read::ZipFile;
 use ::std::io::Read;
 
 pub type RelationshipId = String;
 
-pub type Result<T> = ::std::result::Result<T, Box<::std::error::Error>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 pub struct Relationship {
     pub id: String,
@@ -40,7 +40,7 @@ impl Relationship {
     }
 }
 
-pub fn relationships_from_zip_file(zip_file: &mut ZipFile) -> Result<Vec<Relationship>> {
+pub fn relationships_from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Vec<Relationship>> {
     let mut xml_string = String::new();
     zip_file.read_to_string(&mut xml_string)?;
     let xml_node = XmlNode::from_str(xml_string.as_str())?;

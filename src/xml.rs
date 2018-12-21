@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use quick_xml::{Reader};
 use quick_xml::events::{BytesStart, Event};
-use ::error::InvalidXmlError;
+use crate::error::InvalidXmlError;
 
 /// Represents an implementation independent xml node
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ pub struct XmlNode {
 }
 
 impl ::std::fmt::Display for XmlNode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         write!(f, "name: {}", self.name)
     }
 }
@@ -65,7 +65,7 @@ impl XmlNode {
         self.attributes.get(attr_name.as_ref())
     }
 
-    fn from_quick_xml_element(xml_element: &BytesStart) -> Result<Self, ::std::str::Utf8Error> {
+    fn from_quick_xml_element(xml_element: &BytesStart<'_>) -> Result<Self, ::std::str::Utf8Error> {
         let name = ::std::str::from_utf8(xml_element.name())?;
         let mut node = Self::new(name);
 
@@ -82,7 +82,7 @@ impl XmlNode {
 
     fn parse_child_elements(
         xml_node: &mut Self,
-        xml_element: &BytesStart,
+        xml_element: &BytesStart<'_>,
         xml_reader: &mut Reader<&[u8]>,
     ) -> Result<Vec<Self>, ::std::str::Utf8Error> {
         let mut child_nodes = Vec::new();
@@ -120,13 +120,13 @@ impl XmlNode {
     }
 }
 
-pub fn parse_xml_bool<T>(value: T) -> Result<bool, ::error::ParseBoolError>
+pub fn parse_xml_bool<T>(value: T) -> Result<bool, crate::error::ParseBoolError>
 where
     T: AsRef<str>
 {
     match value.as_ref() {
         "true" | "1" => Ok(true),
         "false" | "0" => Ok(false),
-        _ => Err(::error::ParseBoolError::new(String::from(value.as_ref()))),
+        _ => Err(crate::error::ParseBoolError::new(String::from(value.as_ref()))),
     }
 }
