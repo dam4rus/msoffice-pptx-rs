@@ -1,14 +1,20 @@
 use std::fmt::{Display, Formatter, Result};
 use std::error::Error;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
+/// An error indicating that an xml element doesn't have an attribute that's marked as required in the schema
 pub struct MissingAttributeError {
+    pub node_name: String,
     pub attr: &'static str,
 }
 
 impl MissingAttributeError {
-    pub fn new(attr: &'static str) -> Self {
+    pub fn new<T>(node_name: T, attr: &'static str) -> Self
+    where
+        T: Into<String>
+    {
         Self {
+            node_name: node_name.into(),
             attr,
         }
     }
@@ -16,7 +22,7 @@ impl MissingAttributeError {
 
 impl Display for MissingAttributeError {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Missing required attribute: {}", self.attr)
+        write!(f, "Xml element '{}' is missing a required attribute: {}", self.node_name, self.attr)
     }
 }
 
@@ -26,7 +32,7 @@ impl Error for MissingAttributeError {
     }
 }
 
-/// Error indicating that an xml element doesn't have a required child node
+/// An error indicating that an xml element doesn't have a child node that's marked as required in the schema
 #[derive(Debug, Clone)]
 pub struct MissingChildNodeError {
     pub node_name: String,
@@ -34,9 +40,12 @@ pub struct MissingChildNodeError {
 }
 
 impl MissingChildNodeError {
-    pub fn new(node_name: String, child_node: &'static str) -> Self {
+    pub fn new<T>(node_name: T, child_node: &'static str) -> Self
+    where
+        T: Into<String>
+    {
         Self {
-            node_name,
+            node_name: node_name.into(),
             child_node,
         }
     }
@@ -54,7 +63,7 @@ impl Error for MissingChildNodeError {
     }
 }
 
-/// Error indicating that an xml element is not a member of a given element group
+/// An error indicating that an xml element is not a member of a given element group
 #[derive(Debug, Clone)]
 pub struct NotGroupMemberError {
     node_name: String,
@@ -97,24 +106,30 @@ impl Display for Limit {
     }
 }
 
-/// Error indicating that the element violates either minOccurs or maxOccurs
-#[derive(Debug, Clone, Copy)]
+/// An error indicating that the xml element violates either minOccurs or maxOccurs of the schema
+#[derive(Debug, Clone)]
 pub struct LimitViolationError {
-    element_name: &'static str,
+    node_name: String,
+    violating_node_name: &'static str,
     min_occurs: Limit,
     max_occurs: Limit,
     occurs: u32,
 }
 
 impl LimitViolationError {
-    pub fn new(
-        element_name: &'static str,
+    pub fn new<T>(
+        node_name: T,
+        violating_node_name: &'static str,
         min_occurs: Limit,
         max_occurs: Limit,
         occurs: u32
-    ) -> Self {
+    ) -> Self
+    where
+        T: Into<String>
+    {
         LimitViolationError {
-            element_name,
+            node_name: node_name.into(),
+            violating_node_name,
             min_occurs,
             max_occurs,
             occurs,
@@ -126,11 +141,12 @@ impl Display for LimitViolationError {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(
             f,
-            "Element {} violates the limits of occurance. minOccurs: {}, maxOccurs: {}, occurance: {}",
-            self.element_name,
+            "Element {} violates the limits of occurance in element: {}. minOccurs: {}, maxOccurs: {}, occurance: {}",
+            self.node_name,
+            self.violating_node_name,
             self.min_occurs,
             self.max_occurs,
-            self.occurs
+            self.occurs,
         )
     }
 }
@@ -191,7 +207,7 @@ impl From<LimitViolationError> for XmlError {
     }
 }
 
-/// Error indicating that the parsed xml document is invalid
+/// An error indicating that the parsed xml document is invalid
 #[derive(Debug, Clone, Copy)]
 pub struct InvalidXmlError {
 }
@@ -223,9 +239,12 @@ pub struct ParseBoolError {
 }
 
 impl ParseBoolError {
-    pub fn new(attr_value: String) -> Self {
+    pub fn new<T>(attr_value: T) -> Self
+    where
+        T: Into<String>
+    {
         Self {
-            attr_value,
+            attr_value: attr_value.into(),
         }
     }
 }

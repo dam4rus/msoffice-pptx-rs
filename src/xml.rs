@@ -4,7 +4,7 @@ use quick_xml::events::{BytesStart, Event};
 use ::error::InvalidXmlError;
 
 /// Represents an implementation independent xml node
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct XmlNode {
     pub name: String,
     pub child_nodes: Vec<XmlNode>,
@@ -19,9 +19,12 @@ impl ::std::fmt::Display for XmlNode {
 }
 
 impl XmlNode {
-    pub fn new(name: &str) -> Self {
+    pub fn new<T>(name: T) -> Self
+    where
+        T: Into<String>
+    {
         Self {
-            name: String::from(name),
+            name: name.into(),
             child_nodes: Vec::new(),
             attributes: HashMap::new(),
             text: None,
@@ -55,11 +58,14 @@ impl XmlNode {
         }
     }
 
-    pub fn attribute(&self, attr_name: &str) -> Option<&String> {
-        self.attributes.get(attr_name)
+    pub fn attribute<T>(&self, attr_name: T) -> Option<&String>
+    where
+        T: AsRef<str>
+    {
+        self.attributes.get(attr_name.as_ref())
     }
 
-    fn from_quick_xml_element(xml_element: &quick_xml::events::BytesStart) -> Result<Self, ::std::str::Utf8Error> {
+    fn from_quick_xml_element(xml_element: &BytesStart) -> Result<Self, ::std::str::Utf8Error> {
         let name = ::std::str::from_utf8(xml_element.name())?;
         let mut node = Self::new(name);
 
@@ -114,10 +120,13 @@ impl XmlNode {
     }
 }
 
-pub fn parse_xml_bool(value: &str) -> Result<bool, ::error::ParseBoolError> {
-    match value {
+pub fn parse_xml_bool<T>(value: T) -> Result<bool, ::error::ParseBoolError>
+where
+    T: AsRef<str>
+{
+    match value.as_ref() {
         "true" | "1" => Ok(true),
         "false" | "0" => Ok(false),
-        _ => Err(::error::ParseBoolError::new(String::from(value))),
+        _ => Err(::error::ParseBoolError::new(String::from(value.as_ref()))),
     }
 }

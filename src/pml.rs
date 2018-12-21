@@ -721,7 +721,7 @@ impl GroupShape {
                 "cxnSp" => shape_array.push(ShapeGroup::Connector(Box::new(Connector::from_xml_element(child_node)?))),
                 "pic" => shape_array.push(ShapeGroup::Picture(Box::new(Picture::from_xml_element(child_node)?))),
                 "contentPart" => {
-                    let attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     shape_array.push(ShapeGroup::ContentPart(attr.clone()));
                 }
                 _ => (),
@@ -1011,11 +1011,11 @@ impl CustomerDataList {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "custData" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     customer_data_list.push(id_attr.clone());
                 }
                 "tags" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     tags = Some(id_attr.clone());
                 }
                 _ => (),
@@ -1071,7 +1071,7 @@ impl SlideLayoutIdListEntry {
             }
         }
 
-        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
 
         Ok(Self {
             id,
@@ -1752,19 +1752,19 @@ impl EmbeddedFontListEntry {
             match child_node.local_name() {
                 "font" => font = Some(::drawingml::TextFont::from_xml_element(child_node)?),
                 "regular" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     regular = Some(id_attr.clone());
                 }
                 "bold" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     bold = Some(id_attr.clone());
                 }
                 "italic" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     italic = Some(id_attr.clone());
                 }
                 "boldItalic" => {
-                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     bold_italic = Some(id_attr.clone());
                 }
                 _ => (),
@@ -1808,14 +1808,14 @@ impl CustomShow {
         for child_node in &xml_node.child_nodes {
             if child_node.local_name() == "sldLst" {
                 for slide_node in &child_node.child_nodes {
-                    let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let id_attr = slide_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(slide_node.name.clone(), "r:id"))?;
                     slides.push(id_attr.clone());
                 }
             }
         }
 
-        let name = name.ok_or_else(|| MissingAttributeError::new("name"))?;
-        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+        let name = name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
+        let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
 
         Ok(Self {
             name,
@@ -1959,7 +1959,7 @@ impl Presentation {
                         }
 
                         // r:id attribute is required
-                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(slide_master_id_node.name.clone(), "r:id"))?;
                         slide_master_id_list.push(SlideMasterIdListEntry {
                             id,
                             relationship_id,
@@ -1968,15 +1968,15 @@ impl Presentation {
                 },
                 "notesMasterIdLst" => {
                     for notes_master_id_node in &child_node.child_nodes {
-                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(notes_master_id_node.name.clone(), "r:id"))?;
                         notes_master_id_list.push(NotesMasterIdListEntry {
                             relationship_id: r_id_attr.clone(),
                         });
                     }
                 },
                 "handoutMasterIdLst" => {
-                    for notes_master_id_node in &child_node.child_nodes {
-                        let r_id_attr = notes_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    for handout_master_id_node in &child_node.child_nodes {
+                        let r_id_attr = handout_master_id_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(handout_master_id_node.name.clone(), "r:id"))?;
                         handout_master_id_list.push(HandoutMasterIdListEntry {
                             relationship_id: r_id_attr.clone(),
                         });
@@ -1995,8 +1995,8 @@ impl Presentation {
                             }
                         }
 
-                        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
-                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                        let id = id.ok_or_else(|| MissingAttributeError::new(slide_id_node.name.clone(), "id"))?;
+                        let relationship_id = relationship_id.ok_or_else(|| MissingAttributeError::new(slide_id_node.name.clone(), "r:id"))?;
 
                         slide_id_list.push(SlideIdListEntry {
                             id,
@@ -2018,8 +2018,8 @@ impl Presentation {
                         }
                     }
 
-                    let width = width.ok_or_else(|| MissingAttributeError::new("cx"))?;
-                    let height = height.ok_or_else(|| MissingAttributeError::new("cy"))?;
+                    let width = width.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "cx"))?;
+                    let height = height.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "cy"))?;
 
                     slide_size = Some(SlideSize {
                         width,
@@ -2029,7 +2029,7 @@ impl Presentation {
                 }
                 "notesSz" => notes_size = Some(::drawingml::PositiveSize2D::from_xml_element(child_node)?),
                 "smartTags" => {
-                    let r_id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new("r:id"))?;
+                    let r_id_attr = child_node.attribute("r:id").ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
                     smart_tags = Some(r_id_attr.clone());
                 }
                 "embeddedFontLst" => {
@@ -2080,8 +2080,8 @@ impl Presentation {
                         }
                     }
 
-                    let invalid_start_chars = invalid_start_chars.ok_or_else(|| MissingAttributeError::new("invalStChars"))?;
-                    let invalid_end_chars = invalid_end_chars.ok_or_else(|| MissingAttributeError::new("invalEndChars"))?;
+                    let invalid_start_chars = invalid_start_chars.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalStChars"))?;
+                    let invalid_end_chars = invalid_end_chars.ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "invalEndChars"))?;
 
                     kinsoku = Some(Box::new(Kinsoku {
                         language,

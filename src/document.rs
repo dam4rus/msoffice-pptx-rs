@@ -1,6 +1,5 @@
 use ::std::collections::{ HashMap };
 use ::std::path::{Path, PathBuf};
-use ::std::ffi::{OsStr};
 use ::std::fs::File;
 use ::zip::ZipArchive;
 use ::docprops::{AppInfo, Core};

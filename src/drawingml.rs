@@ -1074,98 +1074,98 @@ impl ColorTransform {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<ColorTransform> {
         match xml_node.local_name() {
             "tint" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Tint(value.parse::<PositiveFixedPercentage>()?))
             }
             "shade" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Shade(value.parse::<PositiveFixedPercentage>()?))
             }
             "comp" => Ok(ColorTransform::Complement),
             "inv" => Ok(ColorTransform::Inverse),
             "gray" => Ok(ColorTransform::Grayscale),
             "alpha" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Alpha(value.parse::<PositiveFixedPercentage>()?))
             }
             "alphaOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::AlphaOffset(value.parse::<FixedPercentage>()?))
             }
             "alphaMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::AlphaModulate(value.parse::<FixedPercentage>()?))
             }
             "hue" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Hue(value.parse::<PositiveFixedAngle>()?))
             }
             "hueOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::HueOffset(value.parse::<Angle>()?))
             }
             "hueMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::HueModulate(value.parse::<PositivePercentage>()?))
             }
             "sat" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Saturation(value.parse::<Percentage>()?))
             }
             "satOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::SaturationOffset(value.parse::<Percentage>()?))
             }
             "satMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::SaturationModulate(value.parse::<Percentage>()?))
             }
             "lum" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Luminance(value.parse::<Percentage>()?))
             }
             "lumOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::LuminanceOffset(value.parse::<Percentage>()?))
             }
             "lumMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::LuminanceModulate(value.parse::<Percentage>()?))
             }
             "red" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Red(value.parse::<Percentage>()?))
             }
             "redOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::RedOffset(value.parse::<Percentage>()?))
             }
             "redMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::RedModulate(value.parse::<Percentage>()?))
             }
             "green" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Green(value.parse::<Percentage>()?))
             }
             "greenOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::GreenOffset(value.parse::<Percentage>()?))
             }
             "greenMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::GreenModulate(value.parse::<Percentage>()?))
             }
             "blue" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::Blue(value.parse::<Percentage>()?))
             }
             "blueOff" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::BlueOffset(value.parse::<Percentage>()?))
             }
             "blueMod" => {
-                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let value = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(ColorTransform::BlueModulate(value.parse::<Percentage>()?))
             }
             "gamma" => Ok(ColorTransform::Gamma),
@@ -1198,9 +1198,9 @@ impl ScRgbColor {
             }
         }
 
-        let r = opt_r.ok_or_else(|| MissingAttributeError::new("r"))?;
-        let g = opt_g.ok_or_else(|| MissingAttributeError::new("g"))?;
-        let b = opt_b.ok_or_else(|| MissingAttributeError::new("b"))?;
+        let r = opt_r.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r"))?;
+        let g = opt_g.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "g"))?;
+        let b = opt_b.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "b"))?;
 
         let mut color_transforms = Vec::new();
 
@@ -1227,7 +1227,7 @@ pub struct SRgbColor {
 
 impl SRgbColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<SRgbColor> {
-        let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+        let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = u32::from_str_radix(val_attr, 16)?;
 
         let mut color_transforms = Vec::new();
@@ -1268,9 +1268,9 @@ impl HslColor {
             }
         }
 
-        let hue = opt_h.ok_or_else(|| MissingAttributeError::new("hue"))?;
-        let saturation = opt_s.ok_or_else(|| MissingAttributeError::new("sat"))?;
-        let luminance = opt_l.ok_or_else(|| MissingAttributeError::new("lum"))?;
+        let hue = opt_h.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "hue"))?;
+        let saturation = opt_s.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "sat"))?;
+        let luminance = opt_l.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "lum"))?;
 
         let mut color_transforms = Vec::new();
 
@@ -1309,7 +1309,7 @@ impl SystemColor {
             }
         }
 
-        let value = opt_val.ok_or_else(|| MissingAttributeError::new("val"))?;
+        let value = opt_val.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
 
         let mut color_transforms = Vec::new();
 
@@ -1335,7 +1335,7 @@ pub struct PresetColor {
 
 impl PresetColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<PresetColor> {
-        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = attr_val.parse::<PresetColorVal>()?;
 
         let mut color_transforms = Vec::new();
@@ -1361,7 +1361,7 @@ pub struct SchemeColor {
 
 impl SchemeColor {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<SchemeColor> {
-        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+        let attr_val = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
         let value = attr_val.parse::<SchemeColorVal>()?;
 
         let mut color_transforms = Vec::new();
@@ -1475,18 +1475,18 @@ impl ColorMapping {
             }
         }
 
-        let background1 = background1.ok_or_else(|| MissingAttributeError::new("bg1"))?;
-        let text1 = text1.ok_or_else(|| MissingAttributeError::new("tx1"))?;
-        let background2 = background2.ok_or_else(|| MissingAttributeError::new("bg2"))?;
-        let text2 = text2.ok_or_else(|| MissingAttributeError::new("tx2"))?;
-        let accent1 = accent1.ok_or_else(|| MissingAttributeError::new("accent1"))?;
-        let accent2 = accent2.ok_or_else(|| MissingAttributeError::new("accent2"))?;
-        let accent3 = accent3.ok_or_else(|| MissingAttributeError::new("accent3"))?;
-        let accent4 = accent4.ok_or_else(|| MissingAttributeError::new("accent4"))?;
-        let accent5 = accent5.ok_or_else(|| MissingAttributeError::new("accent5"))?;
-        let accent6 = accent6.ok_or_else(|| MissingAttributeError::new("accent6"))?;
-        let hyperlink = hyperlink.ok_or_else(|| MissingAttributeError::new("hlink"))?;
-        let followed_hyperlink = followed_hyperlink.ok_or_else(|| MissingAttributeError::new("folHlink"))?;
+        let background1 = background1.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "bg1"))?;
+        let text1 = text1.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "tx1"))?;
+        let background2 = background2.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "bg2"))?;
+        let text2 = text2.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "tx2"))?;
+        let accent1 = accent1.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent1"))?;
+        let accent2 = accent2.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent2"))?;
+        let accent3 = accent3.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent3"))?;
+        let accent4 = accent4.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent4"))?;
+        let accent5 = accent5.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent5"))?;
+        let accent6 = accent6.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "accent6"))?;
+        let hyperlink = hyperlink.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "hlink"))?;
+        let followed_hyperlink = followed_hyperlink.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "folHlink"))?;
 
         Ok(Self {
             background1,
@@ -1523,7 +1523,7 @@ pub struct ColorScheme {
 
 impl ColorScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new("name"))?;
+        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let name = name_attr.clone();
 
         let mut dk1 = None;
@@ -1628,7 +1628,7 @@ pub struct GradientStop {
 
 impl GradientStop {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let pos_attr = xml_node.attribute("pos").ok_or_else(|| MissingAttributeError::new("pos"))?;
+        let pos_attr = xml_node.attribute("pos").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "pos"))?;
         let position = pos_attr.parse::<PositiveFixedPercentage>()?;
 
         let child_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "color"))?;
@@ -1997,8 +1997,8 @@ impl DashStop {
             }
         }
 
-        let dash_length = opt_dash_length.ok_or_else(|| MissingAttributeError::new("d"))?;
-        let space_length = opt_space_length.ok_or_else(|| MissingAttributeError::new("sp"))?;
+        let dash_length = opt_dash_length.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "d"))?;
+        let space_length = opt_space_length.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "sp"))?;
 
         Ok(Self {
             dash_length,
@@ -2024,7 +2024,7 @@ impl LineDashProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<LineDashProperties> {
         match xml_node.local_name() {
             "prstDash" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(LineDashProperties::PresetDash(val_attr.parse::<PresetLineDashVal>()?))
             }
             "custDash" => {
@@ -2224,8 +2224,8 @@ impl Point2D {
             }
         }
 
-        let x = x.ok_or_else(|| MissingAttributeError::new("x"))?;
-        let y = y.ok_or_else(|| MissingAttributeError::new("y"))?;
+        let x = x.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "x"))?;
+        let y = y.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "y"))?;
 
         Ok(Self {
             x,
@@ -2254,8 +2254,8 @@ impl PositiveSize2D {
             }
         }
 
-        let width = opt_width.ok_or_else(|| MissingAttributeError::new("cx"))?;
-        let height = opt_height.ok_or_else(|| MissingAttributeError::new("cy"))?;
+        let width = opt_width.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "cx"))?;
+        let height = opt_height.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "cy"))?;
 
         Ok(Self{
             width,
@@ -2271,7 +2271,7 @@ pub struct StyleMatrixReference {
 
 impl StyleMatrixReference {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let idx_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new("idx"))?;
+        let idx_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
         let index = idx_attr.parse()?;
 
         let color = match xml_node.child_nodes.get(0) {
@@ -2324,7 +2324,7 @@ pub struct AlphaBiLevelEffect {
 
 impl AlphaBiLevelEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<AlphaBiLevelEffect> {
-        let thresh_attr = xml_node.attribute("thresh").ok_or_else(|| MissingAttributeError::new("thresh"))?;
+        let thresh_attr = xml_node.attribute("thresh").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "thresh"))?;
         let threshold = thresh_attr.parse::<PositiveFixedPercentage>()?;
         Ok(Self {
             threshold,
@@ -2679,7 +2679,7 @@ impl TextFont {
             }
         }
 
-        let typeface = typeface.ok_or_else(|| MissingAttributeError::new("typeface"))?;
+        let typeface = typeface.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "typeface"))?;
 
         Ok(Self {
             typeface,
@@ -2708,8 +2708,8 @@ impl SupplementalFont {
             }
         }
 
-        let script = script.ok_or_else(|| MissingAttributeError::new("script"))?;
-        let typeface = typeface.ok_or_else(|| MissingAttributeError::new("typeface"))?;
+        let script = script.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "script"))?;
+        let typeface = typeface.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "typeface"))?;
 
         Ok(Self {
             script,
@@ -2728,11 +2728,11 @@ impl TextSpacing {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextSpacing> {
         match xml_node.local_name() {
             "spcPct" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextSpacing::Percent(val_attr.parse::<TextSpacingPercent>()?))
             }
             "spcPts" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextSpacing::Point(val_attr.parse::<TextSpacingPoint>()?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextSpacing").into()),
@@ -2786,11 +2786,11 @@ impl TextBulletSize {
         match xml_node.local_name() {
             "buSzTx" => Ok(TextBulletSize::FollowText),
             "buSzPct" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextBulletSize::Percent(val_attr.parse::<TextBulletSizePercent>()?))
             } ,
             "buSzPts" => {
-                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new("val"))?;
+                let val_attr = xml_node.attribute("val").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TextBulletSize::Point(val_attr.parse::<TextFontSize>()?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TextBulletSize").into()),
@@ -2842,7 +2842,7 @@ impl TextBullet {
             "buNone" => Ok(TextBullet::None),
             "buAutoNum" => Ok(TextBullet::AutoNumbered(TextAutonumberedBullet::from_xml_element(xml_node)?)),
             "buChar" => {
-                let char_attr = xml_node.attribute("char").ok_or_else(|| MissingAttributeError::new("char"))?;
+                let char_attr = xml_node.attribute("char").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "char"))?;
                 Ok(TextBullet::Character(char_attr.clone()))
             }
             "buBlip" => {
@@ -2878,7 +2878,7 @@ impl TextAutonumberedBullet {
             }
         }
 
-        let scheme = scheme.ok_or_else(|| MissingAttributeError::new("type"))?;
+        let scheme = scheme.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "type"))?;
 
         Ok(Self {
             scheme,
@@ -3443,7 +3443,7 @@ impl TextField {
             }
         }
 
-        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
+        let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
 
         let mut char_properties = None;
         let mut paragraph_properties = None;
@@ -3724,7 +3724,7 @@ pub struct PresetTextShape {
 
 impl PresetTextShape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new("prst"))?;
+        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
         let preset = preset_attr.parse()?;
 
         let mut adjust_value_list = Vec::new();
@@ -3749,7 +3749,7 @@ pub struct FontScheme {
 
 impl FontScheme {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new("name"))?;
+        let name_attr = xml_node.attribute("name").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let name = name_attr.clone();
         let mut major_font = None;
         let mut minor_font = None;
@@ -3849,8 +3849,8 @@ impl NonVisualDrawingProps {
             }
         }
 
-        let id = opt_id.ok_or_else(|| MissingAttributeError::new("id"))?;
-        let name = opt_name.ok_or_else(|| MissingAttributeError::new("name"))?;
+        let id = opt_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
+        let name = opt_name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
 
         Ok(Self {
             id,
@@ -4135,8 +4135,8 @@ impl Connection {
             }
         }
 
-        let id = id.ok_or_else(|| MissingAttributeError::new("id"))?;
-        let shape_index = shape_index.ok_or_else(|| MissingAttributeError::new("idx"))?;
+        let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
+        let shape_index = shape_index.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
 
         Ok(Self {
             id,
@@ -4356,8 +4356,8 @@ impl GeomGuide {
             }
         }
 
-        let name = name.ok_or_else(|| MissingAttributeError::new("name"))?;
-        let formula = formula.ok_or_else(|| MissingAttributeError::new("fmla"))?;
+        let name = name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
+        let formula = formula.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "fmla"))?;
         Ok(Self {
             name,
             formula,
@@ -4437,8 +4437,8 @@ impl AdjPoint2D {
             }
         }
 
-        let x = x.ok_or_else(|| MissingAttributeError::new("x"))?;
-        let y = y.ok_or_else(|| MissingAttributeError::new("y"))?;
+        let x = x.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "x"))?;
+        let y = y.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "y"))?;
 
         Ok(Self {
             x,
@@ -4471,10 +4471,10 @@ impl GeomRect {
             }
         }
 
-        let left = left.ok_or_else(|| MissingAttributeError::new("l"))?;
-        let top = top.ok_or_else(|| MissingAttributeError::new("l"))?;
-        let right = right.ok_or_else(|| MissingAttributeError::new("l"))?;
-        let bottom = bottom.ok_or_else(|| MissingAttributeError::new("l"))?;
+        let left = left.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "l"))?;
+        let top = top.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "t"))?;
+        let right = right.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r"))?;
+        let bottom = bottom.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "b"))?;
 
         Ok(Self {
             left,
@@ -4584,7 +4584,7 @@ pub struct ConnectionSite {
 
 impl ConnectionSite {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let angle_attr = xml_node.attribute("ang").ok_or_else(|| MissingAttributeError::new("ang"))?;
+        let angle_attr = xml_node.attribute("ang").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "ang"))?;
         let angle = angle_attr.parse()?;
 
         let pos_node = xml_node.child_nodes.get(0).ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pos"))?;
@@ -4630,10 +4630,10 @@ impl Path2DArcTo {
             }
         }
 
-        let width_radius = width_radius.ok_or_else(|| MissingAttributeError::new("wR"))?;
-        let height_radius = height_radius.ok_or_else(|| MissingAttributeError::new("hR"))?;
-        let start_angle = start_angle.ok_or_else(|| MissingAttributeError::new("stAng"))?;
-        let swing_angle = swing_angle.ok_or_else(|| MissingAttributeError::new("swAng"))?;
+        let width_radius = width_radius.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "wR"))?;
+        let height_radius = height_radius.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "hR"))?;
+        let start_angle = start_angle.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "stAng"))?;
+        let swing_angle = swing_angle.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "swAng"))?;
 
         Ok(Self {
             width_radius,
@@ -4793,7 +4793,7 @@ pub struct PresetGeometry2D {
 
 impl PresetGeometry2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new("prst"))?;
+        let preset_attr = xml_node.attribute("prst").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
         let preset = preset_attr.parse()?;
         let mut adjust_value_list = Vec::new();
 
@@ -4909,7 +4909,7 @@ pub struct FontReference {
 
 impl FontReference {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let index_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new("idx"))?;
+        let index_attr = xml_node.attribute("idx").ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "idx"))?;
         let index = index_attr.parse()?;
 
         let color = match xml_node.child_nodes.get(0) {
@@ -5082,6 +5082,7 @@ impl StyleMatrix {
 
         if fill_style_list.len() < 3 {
              return Err(LimitViolationError::new(
+                xml_node.name.clone(),
                 "fillStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
@@ -5091,6 +5092,7 @@ impl StyleMatrix {
 
         if line_style_list.len() < 3 {
             return Err(LimitViolationError::new(
+                xml_node.name.clone(),
                 "lnStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
@@ -5100,6 +5102,7 @@ impl StyleMatrix {
 
         if bg_fill_style_list.len() < 3 {
             return Err(LimitViolationError::new(
+                xml_node.name.clone(),
                 "bgFillStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
