@@ -1026,6 +1026,7 @@ decl_simple_type_enum! {
 }
 
 /// ColorTransform
+#[derive(Debug, Clone)]
 pub enum ColorTransform {
     Tint(PositiveFixedPercentage),
     Shade(PositiveFixedPercentage),
@@ -1218,6 +1219,7 @@ impl ColorTransform {
 }
 
 /// ScRgbColor
+#[derive(Debug, Clone)]
 pub struct ScRgbColor {
     pub r: Percentage,
     pub g: Percentage,
@@ -1262,6 +1264,7 @@ impl ScRgbColor {
 }
 
 /// SRgbColor
+#[derive(Debug, Clone)]
 pub struct SRgbColor {
     pub value: u32,
     pub color_transforms: Vec<ColorTransform>,
@@ -1290,6 +1293,7 @@ impl SRgbColor {
 }
 
 /// HslColor
+#[derive(Debug, Clone)]
 pub struct HslColor {
     pub hue: PositiveFixedAngle,
     pub saturation: Percentage,
@@ -1334,6 +1338,7 @@ impl HslColor {
 }
 
 /// SystemColor
+#[derive(Debug, Clone)]
 pub struct SystemColor {
     pub value: SystemColorVal,
     pub last_color: Option<HexColorRGB>,
@@ -1372,6 +1377,7 @@ impl SystemColor {
 }
 
 /// PresetColor
+#[derive(Debug, Clone)]
 pub struct PresetColor {
     pub value: PresetColorVal,
     pub color_transforms: Vec<ColorTransform>,
@@ -1400,6 +1406,7 @@ impl PresetColor {
 }
 
 /// SchemeColor
+#[derive(Debug, Clone)]
 pub struct SchemeColor {
     pub value: SchemeColorVal,
     pub color_transforms: Vec<ColorTransform>,
@@ -1428,6 +1435,7 @@ impl SchemeColor {
 }
 
 /// Color
+#[derive(Debug, Clone)]
 pub enum Color {
     ScRgbColor(Box<ScRgbColor>),
     SRgbColor(Box<SRgbColor>),
@@ -1458,6 +1466,7 @@ impl Color {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct CustomColor {
     pub color: Color,
     pub name: Option<String>,
@@ -1476,6 +1485,7 @@ impl CustomColor {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColorMapping {
     pub background1: ColorSchemeIndex,
     pub text1: ColorSchemeIndex,
@@ -1555,6 +1565,7 @@ impl ColorMapping {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColorScheme {
     pub name: String,
     pub dark1: Color,
@@ -1646,6 +1657,7 @@ impl ColorScheme {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum ColorMappingOverride {
     UseMaster,
     Override(Box<ColorMapping>),
@@ -1670,6 +1682,7 @@ impl ColorMappingOverride {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColorSchemeAndMapping {
     pub color_scheme: Box<ColorScheme>,
     pub color_mapping: Option<Box<ColorMapping>>,
@@ -1688,14 +1701,18 @@ impl ColorSchemeAndMapping {
             }
         }
 
-        let color_scheme = 
+        let color_scheme =
             color_scheme.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrScheme"))?;
 
-        Ok(Self { color_scheme, color_mapping })
+        Ok(Self {
+            color_scheme,
+            color_mapping,
+        })
     }
 }
 
 /// GradientStop
+#[derive(Debug, Clone)]
 pub struct GradientStop {
     pub position: PositiveFixedPercentage,
     pub color: Color,
@@ -1721,6 +1738,7 @@ impl GradientStop {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct LinearShadeProperties {
     pub angle: Option<PositiveFixedAngle>,
     pub scaled: Option<bool>,
@@ -1743,6 +1761,7 @@ impl LinearShadeProperties {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct PathShadeProperties {
     pub path: Option<PathShadeType>,
     pub fill_to_rect: Option<RelativeRect>,
@@ -1764,6 +1783,7 @@ impl PathShadeProperties {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum ShadeProperties {
     Linear(LinearShadeProperties),
     Path(PathShadeProperties),
@@ -1789,6 +1809,7 @@ impl ShadeProperties {
 }
 
 /// GradientFillProperties
+#[derive(Default, Debug, Clone)]
 pub struct GradientFillProperties {
     pub flip: Option<TileFlipMode>,
     pub rotate_with_shape: Option<bool>,
@@ -1841,6 +1862,7 @@ impl GradientFillProperties {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TileInfoProperties {
     pub translate_x: Option<Coordinate>,
     pub translate_y: Option<Coordinate>,
@@ -1852,36 +1874,25 @@ pub struct TileInfoProperties {
 
 impl TileInfoProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut translate_x = None;
-        let mut translate_y = None;
-        let mut scale_x = None;
-        let mut scale_y = None;
-        let mut flip_mode = None;
-        let mut alignment = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "tx" => translate_x = Some(value.parse()?),
-                "ty" => translate_y = Some(value.parse()?),
-                "sx" => scale_x = Some(value.parse()?),
-                "sy" => scale_y = Some(value.parse()?),
-                "flip" => flip_mode = Some(value.parse()?),
-                "algn" => alignment = Some(value.parse()?),
+                "tx" => instance.translate_x = Some(value.parse()?),
+                "ty" => instance.translate_y = Some(value.parse()?),
+                "sx" => instance.scale_x = Some(value.parse()?),
+                "sy" => instance.scale_y = Some(value.parse()?),
+                "flip" => instance.flip_mode = Some(value.parse()?),
+                "algn" => instance.alignment = Some(value.parse()?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            translate_x,
-            translate_y,
-            scale_x,
-            scale_y,
-            flip_mode,
-            alignment,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct StretchInfoProperties {
     pub fill_rect: Option<RelativeRect>,
 }
@@ -1897,6 +1908,7 @@ impl StretchInfoProperties {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum FillModeProperties {
     Tile(Box<TileInfoProperties>),
     Stretch(Box<StretchInfoProperties>),
@@ -1923,6 +1935,7 @@ impl FillModeProperties {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct BlipFillProperties {
     pub dpi: Option<u32>,
     pub rotate_with_shape: Option<bool>,
@@ -1972,6 +1985,7 @@ impl BlipFillProperties {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct PatternFillProperties {
     pub fg_color: Option<Color>,
     pub bg_color: Option<Color>,
@@ -1980,13 +1994,12 @@ pub struct PatternFillProperties {
 
 impl PatternFillProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preset = match xml_node.attribute("prst") {
+        let mut instance: Self = Default::default();
+
+        instance.preset = match xml_node.attribute("prst") {
             Some(val) => Some(val.parse()?),
             None => None,
         };
-
-        let mut fg_color = None;
-        let mut bg_color = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
@@ -1995,23 +2008,24 @@ impl PatternFillProperties {
                         .child_nodes
                         .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?;
-                    fg_color = Some(Color::from_xml_element(fg_color_node)?);
+                    instance.fg_color = Some(Color::from_xml_element(fg_color_node)?);
                 }
                 "bgClr" => {
                     let bg_color_node = child_node
                         .child_nodes
                         .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?;
-                    bg_color = Some(Color::from_xml_element(bg_color_node)?);
+                    instance.bg_color = Some(Color::from_xml_element(bg_color_node)?);
                 }
                 _ => (),
             }
         }
 
-        Ok(Self { preset, fg_color, bg_color })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum FillProperties {
     NoFill,
     SolidFill(Color),
@@ -2055,6 +2069,7 @@ impl FillProperties {
 }
 
 /// LineFillProperties
+#[derive(Debug, Clone)]
 pub enum LineFillProperties {
     NoFill,
     SolidFill(Color),
@@ -2097,6 +2112,7 @@ impl LineFillProperties {
 }
 
 /// DashStop
+#[derive(Debug, Clone)]
 pub struct DashStop {
     pub dash_length: PositivePercentage,
     pub space_length: PositivePercentage,
@@ -2126,6 +2142,7 @@ impl DashStop {
 }
 
 /// LineDashProperties
+#[derive(Debug, Clone)]
 pub enum LineDashProperties {
     PresetDash(PresetLineDashVal),
     CustomDash(Vec<DashStop>),
@@ -2166,6 +2183,7 @@ impl LineDashProperties {
 }
 
 /// LineJoinProperties
+#[derive(Debug, Clone)]
 pub enum LineJoinProperties {
     Round,
     Bevel,
@@ -2197,6 +2215,7 @@ impl LineJoinProperties {
 }
 
 /// LineEndProperties
+#[derive(Default, Debug, Clone)]
 pub struct LineEndProperties {
     pub end_type: Option<LineEndType>,
     pub width: Option<LineEndWidth>,
@@ -2205,28 +2224,23 @@ pub struct LineEndProperties {
 
 impl LineEndProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<LineEndProperties> {
-        let mut end_type = None;
-        let mut width = None;
-        let mut length = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "type" => end_type = Some(value.parse::<LineEndType>()?),
-                "width" => width = Some(value.parse::<LineEndWidth>()?),
-                "length" => length = Some(value.parse::<LineEndLength>()?),
+                "type" => instance.end_type = Some(value.parse::<LineEndType>()?),
+                "width" => instance.width = Some(value.parse::<LineEndWidth>()?),
+                "length" => instance.length = Some(value.parse::<LineEndLength>()?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            end_type,
-            width,
-            length,
-        })
+        Ok(instance)
     }
 }
 
 /// LineProperties
+#[derive(Default, Debug, Clone)]
 pub struct LineProperties {
     pub width: Option<LineWidth>,
     pub cap: Option<LineCap>,
@@ -2241,58 +2255,40 @@ pub struct LineProperties {
 
 impl LineProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<LineProperties> {
-        let mut width = None;
-        let mut cap = None;
-        let mut compound = None;
-        let mut pen_alignment = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "w" => width = Some(value.parse::<LineWidth>()?),
-                "cap" => cap = Some(value.parse::<LineCap>()?),
-                "cmpd" => compound = Some(value.parse::<CompoundLine>()?),
-                "algn" => pen_alignment = Some(value.parse::<PenAlignment>()?),
+                "w" => instance.width = Some(value.parse()?),
+                "cap" => instance.cap = Some(value.parse()?),
+                "cmpd" => instance.compound = Some(value.parse()?),
+                "algn" => instance.pen_alignment = Some(value.parse()?),
                 _ => (),
             }
         }
 
-        let mut fill_properties = None;
-        let mut dash_properties = None;
-        let mut join_properties = None;
-        let mut head_end = None;
-        let mut tail_end = None;
-
         for child_node in &xml_node.child_nodes {
             if LineFillProperties::is_choice_member(child_node.local_name()) {
-                fill_properties = Some(LineFillProperties::from_xml_element(child_node)?);
+                instance.fill_properties = Some(LineFillProperties::from_xml_element(child_node)?);
             } else if LineDashProperties::is_choice_member(child_node.local_name()) {
-                dash_properties = Some(LineDashProperties::from_xml_element(child_node)?);
+                instance.dash_properties = Some(LineDashProperties::from_xml_element(child_node)?);
             } else if LineJoinProperties::is_choice_member(child_node.local_name()) {
-                join_properties = Some(LineJoinProperties::from_xml_element(child_node)?);
+                instance.join_properties = Some(LineJoinProperties::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
-                    "headEnd" => head_end = Some(LineEndProperties::from_xml_element(child_node)?),
-                    "tailEnd" => tail_end = Some(LineEndProperties::from_xml_element(child_node)?),
+                    "headEnd" => instance.head_end = Some(LineEndProperties::from_xml_element(child_node)?),
+                    "tailEnd" => instance.tail_end = Some(LineEndProperties::from_xml_element(child_node)?),
                     _ => (),
                 }
             }
         }
 
-        Ok(Self {
-            width,
-            cap,
-            compound,
-            pen_alignment,
-            fill_properties,
-            dash_properties,
-            join_properties,
-            head_end,
-            tail_end,
-        })
+        Ok(instance)
     }
 }
 
 /// RelativeRect
+#[derive(Default, Debug, Clone)]
 pub struct RelativeRect {
     pub left: Option<Percentage>,
     pub top: Option<Percentage>,
@@ -2302,30 +2298,23 @@ pub struct RelativeRect {
 
 impl RelativeRect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<RelativeRect> {
-        let mut left = None;
-        let mut top = None;
-        let mut right = None;
-        let mut bottom = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "l" => left = Some(value.parse::<Percentage>()?),
-                "t" => top = Some(value.parse::<Percentage>()?),
-                "r" => right = Some(value.parse::<Percentage>()?),
-                "b" => bottom = Some(value.parse::<Percentage>()?),
+                "l" => instance.left = Some(value.parse::<Percentage>()?),
+                "t" => instance.top = Some(value.parse::<Percentage>()?),
+                "r" => instance.right = Some(value.parse::<Percentage>()?),
+                "b" => instance.bottom = Some(value.parse::<Percentage>()?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            left,
-            top,
-            right,
-            bottom,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Point2D {
     pub x: Coordinate,
     pub y: Coordinate,
@@ -2352,6 +2341,7 @@ impl Point2D {
 }
 
 /// PositiveSize2D
+#[derive(Debug, Clone)]
 pub struct PositiveSize2D {
     pub width: PositiveCoordinate,
     pub height: PositiveCoordinate,
@@ -2377,6 +2367,7 @@ impl PositiveSize2D {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct StyleMatrixReference {
     pub index: StyleMatrixColumnIndex,
     pub color: Option<Color>,
@@ -2399,6 +2390,7 @@ impl StyleMatrixReference {
 }
 
 /// EffectContainer
+#[derive(Default, Debug, Clone)]
 pub struct EffectContainer {
     pub container_type: Option<EffectContainerType>,
     pub name: Option<String>,
@@ -2434,6 +2426,7 @@ impl EffectContainer {
 }
 
 /// AlphaBiLevelEffect
+#[derive(Debug, Clone)]
 pub struct AlphaBiLevelEffect {
     pub threshold: PositiveFixedPercentage,
 }
@@ -2449,6 +2442,7 @@ impl AlphaBiLevelEffect {
 }
 
 /// AlphaInverseEffect
+#[derive(Default, Debug, Clone)]
 pub struct AlphaInverseEffect {
     pub color: Option<Color>,
 }
@@ -2465,6 +2459,7 @@ impl AlphaInverseEffect {
 }
 
 /// AlphaModulateEffect
+#[derive(Debug, Clone)]
 pub struct AlphaModulateEffect {
     pub container: EffectContainer,
 }
@@ -2483,6 +2478,7 @@ impl AlphaModulateEffect {
 }
 
 /// AlphaModulateFixedEffect
+#[derive(Default, Debug, Clone)]
 pub struct AlphaModulateFixedEffect {
     pub amount: Option<PositivePercentage>, // 1.0
 }
@@ -2498,6 +2494,7 @@ impl AlphaModulateFixedEffect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct AlphaOutsetEffect {
     pub radius: Option<Coordinate>,
 }
@@ -2513,6 +2510,7 @@ impl AlphaOutsetEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct AlphaReplaceEffect {
     pub alpha: PositiveFixedPercentage,
 }
@@ -2528,6 +2526,7 @@ impl AlphaReplaceEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BiLevelEffect {
     pub threshold: PositiveFixedPercentage,
 }
@@ -2543,6 +2542,7 @@ impl BiLevelEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BlendEffect {
     pub blend: BlendMode,
     pub container: EffectContainer,
@@ -2565,6 +2565,7 @@ impl BlendEffect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct BlurEffect {
     pub radius: Option<PositiveCoordinate>, // 0
     pub grow: Option<bool>,                 // true
@@ -2587,6 +2588,7 @@ impl BlurEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColorChangeEffect {
     pub use_alpha: Option<bool>, // true
     pub color_from: Color,
@@ -2625,10 +2627,15 @@ impl ColorChangeEffect {
         let color_from = color_from.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrFrom"))?;
         let color_to = color_to.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrTo"))?;
 
-        Ok(Self { use_alpha, color_from, color_to })
+        Ok(Self {
+            use_alpha,
+            color_from,
+            color_to,
+        })
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColorReplaceEffect {
     pub color: Color,
 }
@@ -2645,6 +2652,7 @@ impl ColorReplaceEffect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct LuminanceEffect {
     pub brightness: Option<FixedPercentage>,
     pub contrast: Option<FixedPercentage>,
@@ -2667,6 +2675,7 @@ impl LuminanceEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DuotoneEffect {
     pub colors: [Color; 2],
 }
@@ -2685,10 +2694,13 @@ impl DuotoneEffect {
         let color_1 = Color::from_xml_element(color_1_node)?;
         let color_2 = Color::from_xml_element(color_2_node)?;
 
-        Ok(Self { colors: [color_1, color_2] })
+        Ok(Self {
+            colors: [color_1, color_2],
+        })
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FillEffect {
     pub fill_properties: FillProperties,
 }
@@ -2705,6 +2717,7 @@ impl FillEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FillOverlayEffect {
     pub blend_mode: BlendMode,
     pub fill: FillProperties,
@@ -2722,11 +2735,12 @@ impl FillOverlayEffect {
             .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_FillProperties"))?;
         let fill = FillProperties::from_xml_element(fill_node)?;
-        
+
         Ok(Self { blend_mode, fill })
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GlowEffect {
     pub radius: Option<PositiveCoordinate>, // 0
     pub color: Color,
@@ -2749,6 +2763,7 @@ impl GlowEffect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct HslEffect {
     pub hue: Option<PositiveFixedAngle>,     // 0
     pub saturation: Option<FixedPercentage>, // 0%
@@ -2757,23 +2772,22 @@ pub struct HslEffect {
 
 impl HslEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut hue = None;
-        let mut saturation = None;
-        let mut luminance = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "hue" => hue = Some(value.parse()?),
-                "sat" => saturation = Some(value.parse()?),
-                "lum" => luminance = Some(value.parse()?),
+                "hue" => instance.hue = Some(value.parse()?),
+                "sat" => instance.saturation = Some(value.parse()?),
+                "lum" => instance.luminance = Some(value.parse()?),
                 _ => (),
             }
         }
 
-        Ok(Self { hue, saturation, luminance })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct InnerShadowEffect {
     pub blur_radius: Option<PositiveCoordinate>, // 0
     pub distance: Option<PositiveCoordinate>,    // 0
@@ -2811,6 +2825,7 @@ impl InnerShadowEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct OuterShadowEffect {
     pub blur_radius: Option<PositiveCoordinate>, // 0
     pub distance: Option<PositiveCoordinate>,    // 0
@@ -2835,7 +2850,7 @@ impl OuterShadowEffect {
         let mut skew_y = None;
         let mut alignment = None;
         let mut rotate_with_shape = None;
-        
+
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "blurRad" => blur_radius = Some(value.parse()?),
@@ -2847,7 +2862,7 @@ impl OuterShadowEffect {
                 "ky" => skew_y = Some(value.parse()?),
                 "algn" => alignment = Some(value.parse()?),
                 "rotWithShape" => rotate_with_shape = Some(value.parse()?),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -2872,6 +2887,7 @@ impl OuterShadowEffect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PresetShadowEffect {
     pub preset: PresetShadowVal,
     pub distance: Option<PositiveCoordinate>,  // 0
@@ -2902,10 +2918,16 @@ impl PresetShadowEffect {
 
         let preset = preset.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "prst"))?;
 
-        Ok(Self { preset, distance, direction, color })
+        Ok(Self {
+            preset,
+            distance,
+            direction,
+            color,
+        })
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct ReflectionEffect {
     pub blur_radius: Option<PositiveCoordinate>,         // 0
     pub start_opacity: Option<PositiveFixedPercentage>,  // 100000
@@ -2925,60 +2947,33 @@ pub struct ReflectionEffect {
 
 impl ReflectionEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut blur_radius = None;
-        let mut start_opacity = None;
-        let mut start_position = None;
-        let mut end_opacity = None;
-        let mut end_position = None;
-        let mut distance = None;
-        let mut direction = None;
-        let mut fade_direction = None;
-        let mut scale_x = None;
-        let mut scale_y = None;
-        let mut skew_x = None;
-        let mut skew_y = None;
-        let mut alignment = None;
-        let mut rotate_with_shape = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "blurRad" => blur_radius = Some(value.parse()?),
-                "stA" => start_opacity = Some(value.parse()?),
-                "stPos" => start_position = Some(value.parse()?),
-                "endA" => end_opacity = Some(value.parse()?),
-                "endPos" => end_position = Some(value.parse()?),
-                "dist" => distance = Some(value.parse()?),
-                "dir" => direction = Some(value.parse()?),
-                "fadeDir" => fade_direction = Some(value.parse()?),
-                "sx" => scale_x = Some(value.parse()?),
-                "sy" => scale_y = Some(value.parse()?),
-                "kx" => skew_x = Some(value.parse()?),
-                "ky" => skew_y = Some(value.parse()?),
-                "algn" => alignment = Some(value.parse()?),
-                "rotWithShape" => rotate_with_shape = Some(value.parse()?),
+                "blurRad" => instance.blur_radius = Some(value.parse()?),
+                "stA" => instance.start_opacity = Some(value.parse()?),
+                "stPos" => instance.start_position = Some(value.parse()?),
+                "endA" => instance.end_opacity = Some(value.parse()?),
+                "endPos" => instance.end_position = Some(value.parse()?),
+                "dist" => instance.distance = Some(value.parse()?),
+                "dir" => instance.direction = Some(value.parse()?),
+                "fadeDir" => instance.fade_direction = Some(value.parse()?),
+                "sx" => instance.scale_x = Some(value.parse()?),
+                "sy" => instance.scale_y = Some(value.parse()?),
+                "kx" => instance.skew_x = Some(value.parse()?),
+                "ky" => instance.skew_y = Some(value.parse()?),
+                "algn" => instance.alignment = Some(value.parse()?),
+                "rotWithShape" => instance.rotate_with_shape = Some(value.parse()?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            blur_radius,
-            start_opacity,
-            start_position,
-            end_opacity,
-            end_position,
-            distance,
-            direction,
-            fade_direction,
-            scale_x,
-            scale_y,
-            skew_x,
-            skew_y,
-            alignment,
-            rotate_with_shape,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct RelativeOffsetEffect {
     pub translate_x: Option<Percentage>, // 0
     pub translate_y: Option<Percentage>, // 0
@@ -2997,10 +2992,14 @@ impl RelativeOffsetEffect {
             }
         }
 
-        Ok(Self { translate_x, translate_y })
+        Ok(Self {
+            translate_x,
+            translate_y,
+        })
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct SoftEdgesEffect {
     pub radius: PositiveCoordinate,
 }
@@ -3010,13 +3009,14 @@ impl SoftEdgesEffect {
         let radius_attr = xml_node
             .attribute("rad")
             .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "rad"))?;
-        
+
         let radius = radius_attr.parse()?;
 
         Ok(Self { radius })
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TintEffect {
     pub hue: Option<PositiveFixedAngle>, // 0
     pub amount: Option<FixedPercentage>, // 0
@@ -3039,6 +3039,7 @@ impl TintEffect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TransformEffect {
     pub scale_x: Option<Percentage>,     // 100000
     pub scale_y: Option<Percentage>,     // 100000
@@ -3050,37 +3051,26 @@ pub struct TransformEffect {
 
 impl TransformEffect {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut scale_x = None;
-        let mut scale_y = None;
-        let mut translate_x = None;
-        let mut translate_y = None;
-        let mut skew_x = None;
-        let mut skew_y = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "sx" => scale_x = Some(value.parse()?),
-                "sy" => scale_y = Some(value.parse()?),
-                "kx" => skew_x = Some(value.parse()?),
-                "ky" => skew_y = Some(value.parse()?),
-                "tx" => translate_x = Some(value.parse()?),
-                "ty" => translate_y = Some(value.parse()?),
+                "sx" => instance.scale_x = Some(value.parse()?),
+                "sy" => instance.scale_y = Some(value.parse()?),
+                "kx" => instance.skew_x = Some(value.parse()?),
+                "ky" => instance.skew_y = Some(value.parse()?),
+                "tx" => instance.translate_x = Some(value.parse()?),
+                "ty" => instance.translate_y = Some(value.parse()?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            scale_x,
-            scale_y,
-            translate_x,
-            translate_y,
-            skew_x,
-            skew_y,
-        })
+        Ok(instance)
     }
 }
 
 // TODO: maybe Box ReflectionEffect variant (sizeof==120)
+#[derive(Debug, Clone)]
 pub enum Effect {
     Container(EffectContainer),
     EffectReference(String),
@@ -3117,7 +3107,7 @@ pub enum Effect {
 impl Effect {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "cont" | "effect" | "alphaBiLevel" | "alphaCeiling" | "alphaFloor" | "alphaInv" | "alphaMod"
@@ -3142,7 +3132,9 @@ impl Effect {
             "alphaFloor" => Ok(Effect::AlphaFloor),
             "alphaInv" => Ok(Effect::AlphaInverse(AlphaInverseEffect::from_xml_element(xml_node)?)),
             "alphaMod" => Ok(Effect::AlphaModulate(AlphaModulateEffect::from_xml_element(xml_node)?)),
-            "alphaModFix" => Ok(Effect::AlphaModulateFixed(AlphaModulateFixedEffect::from_xml_element(xml_node)?)),
+            "alphaModFix" => Ok(Effect::AlphaModulateFixed(AlphaModulateFixedEffect::from_xml_element(
+                xml_node,
+            )?)),
             "alphaOutset" => Ok(Effect::AlphaOutset(AlphaOutsetEffect::from_xml_element(xml_node)?)),
             "alphaRepl" => Ok(Effect::AlphaReplace(AlphaReplaceEffect::from_xml_element(xml_node)?)),
             "biLevel" => Ok(Effect::BiLevel(BiLevelEffect::from_xml_element(xml_node)?)),
@@ -3161,7 +3153,9 @@ impl Effect {
             "outerShdw" => Ok(Effect::OuterShadow(OuterShadowEffect::from_xml_element(xml_node)?)),
             "prstShdw" => Ok(Effect::PresetShadow(PresetShadowEffect::from_xml_element(xml_node)?)),
             "reflection" => Ok(Effect::Reflection(ReflectionEffect::from_xml_element(xml_node)?)),
-            "relOff" => Ok(Effect::RelativeOffset(RelativeOffsetEffect::from_xml_element(xml_node)?)),
+            "relOff" => Ok(Effect::RelativeOffset(RelativeOffsetEffect::from_xml_element(
+                xml_node,
+            )?)),
             "softEdge" => Ok(Effect::SoftEdges(SoftEdgesEffect::from_xml_element(xml_node)?)),
             "tint" => Ok(Effect::Tint(TintEffect::from_xml_element(xml_node)?)),
             "xfrm" => Ok(Effect::Transform(TransformEffect::from_xml_element(xml_node)?)),
@@ -3170,6 +3164,7 @@ impl Effect {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct EffectList {
     pub blur: Option<BlurEffect>,
     pub fill_overlay: Option<FillOverlayEffect>,
@@ -3181,42 +3176,112 @@ pub struct EffectList {
     pub soft_edges: Option<SoftEdgesEffect>,
 }
 
+impl EffectList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut instance: Self = Default::default();
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "blur" => instance.blur = Some(BlurEffect::from_xml_element(child_node)?),
+                "fillOverlay" => instance.fill_overlay = Some(FillOverlayEffect::from_xml_element(child_node)?),
+                "glow" => instance.glow = Some(GlowEffect::from_xml_element(child_node)?),
+                "innerShdw" => instance.inner_shadow = Some(InnerShadowEffect::from_xml_element(child_node)?),
+                "outerShdw" => instance.outer_shadow = Some(OuterShadowEffect::from_xml_element(child_node)?),
+                "prstShdw" => instance.preset_shadow = Some(PresetShadowEffect::from_xml_element(child_node)?),
+                "reflection" => instance.reflection = Some(ReflectionEffect::from_xml_element(child_node)?),
+                "softEdge" => instance.soft_edges = Some(SoftEdgesEffect::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum EffectProperties {
     EffectList(Box<EffectList>),
     EffectContainer(Box<EffectContainer>),
 }
 
+impl EffectProperties {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "effectLst" | "effectDag" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "effectLst" => Ok(EffectProperties::EffectList(Box::new(
+                EffectList::from_xml_element(xml_node)?,
+            ))),
+            "effectDag" => Ok(EffectProperties::EffectContainer(Box::new(
+                EffectContainer::from_xml_element(xml_node)?,
+            ))),
+            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_EffectProperties"))),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct EffectStyleItem {
     pub effect_props: EffectProperties,
+    // TODO implement
     //pub scene_3d: Option<Scene3D>,
     //pub shape_3d: Option<Shape3D>,
 }
 
+impl EffectStyleItem {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut effect_props = None;
+
+        for child_node in &xml_node.child_nodes {
+            let child_local_name = child_node.local_name();
+            if EffectProperties::is_choice_member(child_local_name) {
+                effect_props = Some(EffectProperties::from_xml_element(child_node)?);
+            }
+        }
+
+        let effect_props = effect_props
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_EffectProperties"))?;
+        
+        Ok(Self { effect_props })
+    }
+}
+
 /// BlipEffect
+#[derive(Debug, Clone)]
 pub enum BlipEffect {
     AlphaBiLevel(AlphaBiLevelEffect),
     AlphaCeiling,
     AlphaFloor,
-    AlphaInv(AlphaInverseEffect),
-    AlphaMod(AlphaModulateEffect),
-    AlphaModFix(AlphaModulateFixedEffect),
-    AlphaRepl(AlphaReplaceEffect),
+    AlphaInverse(AlphaInverseEffect),
+    AlphaModulate(AlphaModulateEffect),
+    AlphaModulateFixed(AlphaModulateFixedEffect),
+    AlphaReplace(AlphaReplaceEffect),
     BiLevel(BiLevelEffect),
     Blur(BlurEffect),
-    ClrChange(ColorChangeEffect),
-    ClrRepl(ColorReplaceEffect),
+    ColorChange(ColorChangeEffect),
+    ColorReplace(ColorReplaceEffect),
     Duotone(DuotoneEffect),
     FillOverlay(FillOverlayEffect),
-    Grayscl,
+    Grayscale,
     Hsl(HslEffect),
-    Lum(LuminanceEffect),
+    Luminance(LuminanceEffect),
     Tint(TintEffect),
 }
 
 impl BlipEffect {
     pub fn is_choice_member(name: &str) -> bool {
         match name {
-            "alphaBiLevel" | "alphaCeiling" | "alphaFloor" | "alphaInv" | "alphaMod" | "alphaModFixed" => true,
+            "alphaBiLevel" | "alphaCeiling" | "alphaFloor" | "alphaInv" | "alphaMod" | "alphaModFixed" | "alphaRepl"
+            | "biLevel" | "blur" | "clrChange" | "clrRepl" | "duotone" | "fillOverlay" | "grayscl" | "hsl" | "lum"
+            | "tint" => true,
             _ => false,
         }
     }
@@ -3228,17 +3293,29 @@ impl BlipEffect {
             )?)),
             "alphaCeiling" => Ok(BlipEffect::AlphaCeiling),
             "alphaFloor" => Ok(BlipEffect::AlphaFloor),
-            "alphaInv" => Ok(BlipEffect::AlphaInv(AlphaInverseEffect::from_xml_element(xml_node)?)),
-            "alphaMod" => Ok(BlipEffect::AlphaMod(AlphaModulateEffect::from_xml_element(xml_node)?)),
-            "alphaModFixed" => Ok(BlipEffect::AlphaModFix(AlphaModulateFixedEffect::from_xml_element(
-                xml_node,
-            )?)),
+            "alphaInv" => Ok(BlipEffect::AlphaInverse(AlphaInverseEffect::from_xml_element(xml_node)?)),
+            "alphaMod" => Ok(BlipEffect::AlphaModulate(AlphaModulateEffect::from_xml_element(xml_node)?)),
+            "alphaModFixed" => Ok(BlipEffect::AlphaModulateFixed(
+                AlphaModulateFixedEffect::from_xml_element(xml_node)?
+            )),
+            "alphaRepl" => Ok(BlipEffect::AlphaReplace(AlphaReplaceEffect::from_xml_element(xml_node)?)),
+            "biLevel" => Ok(BlipEffect::BiLevel(BiLevelEffect::from_xml_element(xml_node)?)),
+            "blur" => Ok(BlipEffect::Blur(BlurEffect::from_xml_element(xml_node)?)),
+            "clrChange" => Ok(BlipEffect::ColorChange(ColorChangeEffect::from_xml_element(xml_node)?)),
+            "clrRepl" => Ok(BlipEffect::ColorReplace(ColorReplaceEffect::from_xml_element(xml_node)?)),
+            "duotone" => Ok(BlipEffect::Duotone(DuotoneEffect::from_xml_element(xml_node)?)),
+            "fillOverlay" => Ok(BlipEffect::FillOverlay(FillOverlayEffect::from_xml_element(xml_node)?)),
+            "grayscl" => Ok(BlipEffect::Grayscale),
+            "hsl" => Ok(BlipEffect::Hsl(HslEffect::from_xml_element(xml_node)?)),
+            "lum" => Ok(BlipEffect::Luminance(LuminanceEffect::from_xml_element(xml_node)?)),
+            "tint" => Ok(BlipEffect::Tint(TintEffect::from_xml_element(xml_node)?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_BlipEffect").into()),
         }
     }
 }
 
 /// Blip
+#[derive(Default, Debug, Clone)]
 pub struct Blip {
     pub embed_rel_id: Option<RelationshipId>,
     pub linked_rel_id: Option<RelationshipId>,
@@ -3279,6 +3356,7 @@ impl Blip {
 }
 
 /// TextFont
+#[derive(Debug, Clone)]
 pub struct TextFont {
     pub typeface: TextTypeFace,
     pub panose: Option<Panose>,
@@ -3314,6 +3392,7 @@ impl TextFont {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct SupplementalFont {
     pub script: String,
     pub typeface: TextTypeFace,
@@ -3340,6 +3419,7 @@ impl SupplementalFont {
 }
 
 /// TextSpacing
+#[derive(Debug, Clone)]
 pub enum TextSpacing {
     Percent(TextSpacingPercent),
     Point(TextSpacingPoint),
@@ -3366,6 +3446,7 @@ impl TextSpacing {
 }
 
 /// TextBulletColor
+#[derive(Debug, Clone)]
 pub enum TextBulletColor {
     FollowText,
     Color(Color),
@@ -3395,6 +3476,7 @@ impl TextBulletColor {
 }
 
 /// TextBulletSize
+#[derive(Debug, Clone)]
 pub enum TextBulletSize {
     FollowText,
     Percent(TextBulletSizePercent),
@@ -3430,6 +3512,7 @@ impl TextBulletSize {
 }
 
 /// TextBulletTypeface
+#[derive(Debug, Clone)]
 pub enum TextBulletTypeface {
     FollowText,
     Font(TextFont),
@@ -3453,6 +3536,7 @@ impl TextBulletTypeface {
 }
 
 /// TextBullet
+#[derive(Debug, Clone)]
 pub enum TextBullet {
     None,
     AutoNumbered(TextAutonumberedBullet),
@@ -3490,6 +3574,7 @@ impl TextBullet {
 }
 
 /// TextAutonumberedBullet
+#[derive(Debug, Clone)]
 pub struct TextAutonumberedBullet {
     pub scheme: TextAutonumberScheme,
     pub start_at: Option<TextBulletStartAtNum>,
@@ -3515,6 +3600,7 @@ impl TextAutonumberedBullet {
 }
 
 /// TextTabStop
+#[derive(Default, Debug, Clone)]
 pub struct TextTabStop {
     pub position: Option<Coordinate32>,
     pub alignment: Option<TextTabAlignType>,
@@ -3537,6 +3623,7 @@ impl TextTabStop {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum TextUnderlineLine {
     FollowText,
     Line(Option<Box<LineProperties>>),
@@ -3562,6 +3649,7 @@ impl TextUnderlineLine {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum TextUnderlineFill {
     FollowText,
     Fill(FillProperties),
@@ -3590,6 +3678,7 @@ impl TextUnderlineFill {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct Hyperlink {
     pub relationship_id: Option<RelationshipId>,
     pub invalid_url: Option<String>,
@@ -3604,51 +3693,33 @@ pub struct Hyperlink {
 
 impl Hyperlink {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut relationship_id = None;
-        let mut invalid_url = None;
-        let mut action = None;
-        let mut target_frame = None;
-        let mut tooltip = None;
-        let mut history = None;
-        let mut highlight_click = None;
-        let mut end_sound = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "r:id" => relationship_id = Some(value.clone()),
-                "invalidUrl" => invalid_url = Some(value.clone()),
-                "action" => action = Some(value.clone()),
-                "tgtFrame" => target_frame = Some(value.clone()),
-                "tooltip" => tooltip = Some(value.clone()),
-                "history" => history = Some(parse_xml_bool(value)?),
-                "highlightClick" => highlight_click = Some(parse_xml_bool(value)?),
-                "endSnd" => end_sound = Some(parse_xml_bool(value)?),
+                "r:id" => instance.relationship_id = Some(value.clone()),
+                "invalidUrl" => instance.invalid_url = Some(value.clone()),
+                "action" => instance.action = Some(value.clone()),
+                "tgtFrame" => instance.target_frame = Some(value.clone()),
+                "tooltip" => instance.tooltip = Some(value.clone()),
+                "history" => instance.history = Some(parse_xml_bool(value)?),
+                "highlightClick" => instance.highlight_click = Some(parse_xml_bool(value)?),
+                "endSnd" => instance.end_sound = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let sound = None;
-        // TODO implement
-        // let sound = match xml_node.child_nodes.get(0) {
-        //     Some(node) => Some(EmbeddedWAVAudioFile::from_xml_element(node)?),
-        //     None => None,
-        // };
+        instance.sound = match xml_node.child_nodes.get(0) {
+            Some(node) => Some(EmbeddedWAVAudioFile::from_xml_element(node)?),
+            None => None,
+        };
 
-        Ok(Self {
-            relationship_id,
-            invalid_url,
-            action,
-            target_frame,
-            tooltip,
-            history,
-            highlight_click,
-            end_sound,
-            sound,
-        })
+        Ok(instance)
     }
 }
 
 /// TextCharacterProperties
+#[derive(Default, Debug, Clone)]
 pub struct TextCharacterProperties {
     pub kumimoji: Option<bool>,
     pub language: Option<TextLanguageID>,
@@ -3686,93 +3757,65 @@ pub struct TextCharacterProperties {
 
 impl TextCharacterProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextCharacterProperties> {
-        let mut kumimoji = None;
-        let mut language = None;
-        let mut alternative_language = None;
-        let mut font_size = None;
-        let mut bold = None;
-        let mut italic = None;
-        let mut underline = None;
-        let mut strikethrough = None;
-        let mut kerning = None;
-        let mut caps_type = None;
-        let mut spacing = None;
-        let mut normalize_heights = None;
-        let mut baseline = None;
-        let mut no_proofing = None;
-        let mut dirty = None;
-        let mut spelling_error = None;
-        let mut smarttag_clean = None;
-        let mut smarttag_id = None;
-        let mut bookmark_link_target = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "kumimoji" => kumimoji = Some(parse_xml_bool(value)?),
-                "lang" => language = Some(value.clone()),
-                "altLang" => alternative_language = Some(value.clone()),
-                "sz" => font_size = Some(value.parse::<TextFontSize>()?),
-                "b" => bold = Some(parse_xml_bool(value)?),
-                "i" => italic = Some(parse_xml_bool(value)?),
-                "u" => underline = Some(value.parse::<TextUnderlineType>()?),
-                "strike" => strikethrough = Some(value.parse::<TextStrikeType>()?),
-                "kern" => kerning = Some(value.parse::<TextNonNegativePoint>()?),
-                "cap" => caps_type = Some(value.parse::<TextCapsType>()?),
-                "spc" => spacing = Some(value.parse::<TextPoint>()?),
-                "normalizeH" => normalize_heights = Some(parse_xml_bool(value)?),
-                "baseline" => baseline = Some(value.parse::<Percentage>()?),
-                "noProof" => no_proofing = Some(parse_xml_bool(value)?),
-                "dirty" => dirty = Some(parse_xml_bool(value)?),
-                "err" => spelling_error = Some(parse_xml_bool(value)?),
-                "smtClean" => smarttag_clean = Some(parse_xml_bool(value)?),
-                "smtId" => smarttag_id = Some(value.parse::<u32>()?),
-                "bmk" => bookmark_link_target = Some(value.clone()),
+                "kumimoji" => instance.kumimoji = Some(parse_xml_bool(value)?),
+                "lang" => instance.language = Some(value.clone()),
+                "altLang" => instance.alternative_language = Some(value.clone()),
+                "sz" => instance.font_size = Some(value.parse()?),
+                "b" => instance.bold = Some(parse_xml_bool(value)?),
+                "i" => instance.italic = Some(parse_xml_bool(value)?),
+                "u" => instance.underline = Some(value.parse()?),
+                "strike" => instance.strikethrough = Some(value.parse()?),
+                "kern" => instance.kerning = Some(value.parse()?),
+                "cap" => instance.caps_type = Some(value.parse()?),
+                "spc" => instance.spacing = Some(value.parse()?),
+                "normalizeH" => instance.normalize_heights = Some(parse_xml_bool(value)?),
+                "baseline" => instance.baseline = Some(value.parse()?),
+                "noProof" => instance.no_proofing = Some(parse_xml_bool(value)?),
+                "dirty" => instance.dirty = Some(parse_xml_bool(value)?),
+                "err" => instance.spelling_error = Some(parse_xml_bool(value)?),
+                "smtClean" => instance.smarttag_clean = Some(parse_xml_bool(value)?),
+                "smtId" => instance.smarttag_id = Some(value.parse()?),
+                "bmk" => instance.bookmark_link_target = Some(value.clone()),
                 _ => (),
             }
         }
 
-        let mut line_properties = None;
-        let mut fill_properties = None;
-        let effect_properties = None;
-        let mut highlight_color = None;
-        let mut text_underline_line = None;
-        let mut text_underline_fill = None;
-        let mut latin_font = None;
-        let mut east_asian_font = None;
-        let mut complex_script_font = None;
-        let symbol_font = None;
-        let mut hyperlink_click = None;
-        let mut hyperlink_mouse_over = None;
-        let mut rtl = None;
-
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
             if FillProperties::is_choice_member(child_local_name) {
-                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
-            // TODO implement
-            //} else if EffectProperties::is_choice_member(child_local_name) {
-            //    effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+                instance.fill_properties = Some(FillProperties::from_xml_element(child_node)?);
+            } else if EffectProperties::is_choice_member(child_local_name) {
+                instance.effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
             } else if TextUnderlineLine::is_choice_member(child_local_name) {
-                text_underline_line = Some(TextUnderlineLine::from_xml_element(child_node)?);
+                instance.text_underline_line = Some(TextUnderlineLine::from_xml_element(child_node)?);
             } else if TextUnderlineFill::is_choice_member(child_local_name) {
-                text_underline_fill = Some(TextUnderlineFill::from_xml_element(child_node)?);
+                instance.text_underline_fill = Some(TextUnderlineFill::from_xml_element(child_node)?);
             } else {
                 match child_local_name {
-                    "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
+                    "ln" => instance.line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
                     "highlight" => {
                         let color_node = child_node
                             .child_nodes
                             .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_Color"))?;
-                        highlight_color = Some(Color::from_xml_element(color_node)?);
+                        instance.highlight_color = Some(Color::from_xml_element(color_node)?);
                     }
-                    "latin" => latin_font = Some(TextFont::from_xml_element(child_node)?),
-                    "ea" => east_asian_font = Some(TextFont::from_xml_element(child_node)?),
-                    "cs" => complex_script_font = Some(TextFont::from_xml_element(child_node)?),
-                    "hlinkClick" => hyperlink_click = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
-                    "hlinkMouseOver" => hyperlink_mouse_over = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                    "latin" => instance.latin_font = Some(TextFont::from_xml_element(child_node)?),
+                    "ea" => instance.east_asian_font = Some(TextFont::from_xml_element(child_node)?),
+                    "cs" => instance.complex_script_font = Some(TextFont::from_xml_element(child_node)?),
+                    "sym" => instance.symbol_font = Some(TextFont::from_xml_element(child_node)?),
+                    "hlinkClick" => instance.hyperlink_click = Some(Box::new(
+                        Hyperlink::from_xml_element(child_node)?
+                    )),
+                    "hlinkMouseOver" => instance.hyperlink_mouse_over = Some(Box::new(
+                        Hyperlink::from_xml_element(child_node)?
+                    )),
                     "rtl" => {
-                        rtl = match child_node.text {
+                        instance.rtl = match child_node.text {
                             Some(ref s) => Some(parse_xml_bool(s)?),
                             None => None,
                         }
@@ -3782,44 +3825,12 @@ impl TextCharacterProperties {
             }
         }
 
-        Ok(Self {
-            kumimoji,
-            language,
-            alternative_language,
-            font_size,
-            bold,
-            italic,
-            underline,
-            strikethrough,
-            kerning,
-            caps_type,
-            spacing,
-            normalize_heights,
-            baseline,
-            no_proofing,
-            dirty,
-            spelling_error,
-            smarttag_clean,
-            smarttag_id,
-            bookmark_link_target,
-            line_properties,
-            fill_properties,
-            effect_properties,
-            highlight_color,
-            text_underline_line,
-            text_underline_fill,
-            latin_font,
-            east_asian_font,
-            complex_script_font,
-            symbol_font,
-            hyperlink_click,
-            hyperlink_mouse_over,
-            rtl,
-        })
+        Ok(instance)
     }
 }
 
 /// TextParagraphProperties
+#[derive(Default, Debug, Clone)]
 pub struct TextParagraphProperties {
     pub margin_left: Option<TextMargin>,
     pub margin_right: Option<TextMargin>,
@@ -3845,54 +3856,34 @@ pub struct TextParagraphProperties {
 
 impl TextParagraphProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<TextParagraphProperties> {
-        let mut margin_left = None;
-        let mut margin_right = None;
-        let mut level = None;
-        let mut indent = None;
-        let mut align = None;
-        let mut default_tab_size = None;
-        let mut rtl = None;
-        let mut east_asian_line_break = None;
-        let mut font_align = None;
-        let mut latin_line_break = None;
-        let mut hanging_punctuations = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "marL" => margin_left = Some(value.parse::<TextMargin>()?),
-                "marR" => margin_right = Some(value.parse::<TextMargin>()?),
-                "lvl" => level = Some(value.parse::<TextIndentLevelType>()?),
-                "indent" => indent = Some(value.parse::<TextIndent>()?),
-                "algn" => align = Some(value.parse::<TextAlignType>()?),
-                "defTabSz" => default_tab_size = Some(value.parse::<Coordinate32>()?),
-                "rtl" => rtl = Some(parse_xml_bool(value)?),
-                "eaLnBrk" => east_asian_line_break = Some(parse_xml_bool(value)?),
-                "fontAlgn" => font_align = Some(value.parse::<TextFontAlignType>()?),
-                "latinLnBrk" => latin_line_break = Some(parse_xml_bool(value)?),
-                "hangingPunct" => hanging_punctuations = Some(parse_xml_bool(value)?),
+                "marL" => instance.margin_left = Some(value.parse()?),
+                "marR" => instance.margin_right = Some(value.parse()?),
+                "lvl" => instance.level = Some(value.parse()?),
+                "indent" => instance.indent = Some(value.parse()?),
+                "algn" => instance.align = Some(value.parse()?),
+                "defTabSz" => instance.default_tab_size = Some(value.parse()?),
+                "rtl" => instance.rtl = Some(parse_xml_bool(value)?),
+                "eaLnBrk" => instance.east_asian_line_break = Some(parse_xml_bool(value)?),
+                "fontAlgn" => instance.font_align = Some(value.parse()?),
+                "latinLnBrk" => instance.latin_line_break = Some(parse_xml_bool(value)?),
+                "hangingPunct" => instance.hanging_punctuations = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let mut line_spacing = None;
-        let mut space_before = None;
-        let mut space_after = None;
-        let mut bullet_color = None;
-        let mut bullet_size = None;
-        let mut bullet_typeface = None;
-        let mut bullet = None;
-        let mut tab_stop_list = Vec::new();
-        let mut default_run_properties = None;
-
         for child_node in &xml_node.child_nodes {
             if TextBulletColor::is_choice_member(child_node.local_name()) {
-                bullet_color = Some(TextBulletColor::from_xml_element(child_node)?);
+                instance.bullet_color = Some(TextBulletColor::from_xml_element(child_node)?);
             } else if TextBulletColor::is_choice_member(child_node.local_name()) {
-                bullet_size = Some(TextBulletSize::from_xml_element(child_node)?);
+                instance.bullet_size = Some(TextBulletSize::from_xml_element(child_node)?);
             } else if TextBulletTypeface::is_choice_member(child_node.local_name()) {
-                bullet_typeface = Some(TextBulletTypeface::from_xml_element(child_node)?);
+                instance.bullet_typeface = Some(TextBulletTypeface::from_xml_element(child_node)?);
             } else if TextBullet::is_choice_member(child_node.local_name()) {
-                bullet = Some(TextBullet::from_xml_element(child_node)?);
+                instance.bullet = Some(TextBullet::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
                     "lnSpc" => {
@@ -3900,56 +3891,38 @@ impl TextParagraphProperties {
                             .child_nodes
                             .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "lnSpc child"))?;
-                        line_spacing = Some(TextSpacing::from_xml_element(line_spacing_node)?);
+                        instance.line_spacing = Some(TextSpacing::from_xml_element(line_spacing_node)?);
                     }
                     "spcBef" => {
                         let space_before_node = child_node
                             .child_nodes
                             .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcBef child"))?;
-                        space_before = Some(TextSpacing::from_xml_element(space_before_node)?);
+                        instance.space_before = Some(TextSpacing::from_xml_element(space_before_node)?);
                     }
                     "spcAft" => {
                         let space_after_node = child_node
                             .child_nodes
                             .get(0)
                             .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "spcAft child"))?;
-                        space_after = Some(TextSpacing::from_xml_element(space_after_node)?);
+                        instance.space_after = Some(TextSpacing::from_xml_element(space_after_node)?);
                     }
-                    "tabLst" => tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
+                    "tabLst" => instance.tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
                     "defRPr" => {
-                        default_run_properties = Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
+                        instance.default_run_properties = Some(Box::new(
+                            TextCharacterProperties::from_xml_element(child_node)?
+                        ))
                     }
                     _ => (),
                 }
             }
         }
 
-        Ok(Self {
-            margin_left,
-            margin_right,
-            level,
-            indent,
-            align,
-            default_tab_size,
-            rtl,
-            east_asian_line_break,
-            font_align,
-            latin_line_break,
-            hanging_punctuations,
-            line_spacing,
-            space_before,
-            space_after,
-            bullet_color,
-            bullet_size,
-            bullet_typeface,
-            bullet,
-            tab_stop_list,
-            default_run_properties,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TextParagraph {
     pub properties: Option<Box<TextParagraphProperties>>,
     pub text_run_list: Vec<TextRun>,
@@ -3958,19 +3931,19 @@ pub struct TextParagraph {
 
 impl TextParagraph {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut properties = None;
-        let mut text_run_list = Vec::new();
-        let mut end_paragraph_char_properties = None;
+        let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
             let local_name = child_node.local_name();
             if TextRun::is_choice_member(local_name) {
-                text_run_list.push(TextRun::from_xml_element(child_node)?);
+                instance.text_run_list.push(TextRun::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
-                    "pPr" => properties = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?)),
+                    "pPr" => instance.properties = Some(Box::new(
+                        TextParagraphProperties::from_xml_element(child_node)?
+                    )),
                     "endParaRPr" => {
-                        end_paragraph_char_properties =
+                        instance.end_paragraph_char_properties =
                             Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
                     }
                     _ => (),
@@ -3978,14 +3951,11 @@ impl TextParagraph {
             }
         }
 
-        Ok(Self {
-            properties,
-            text_run_list,
-            end_paragraph_char_properties,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum TextRun {
     RegularTextRun(Box<RegularTextRun>),
     LineBreak(Box<TextLineBreak>),
@@ -4012,6 +3982,7 @@ impl TextRun {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RegularTextRun {
     pub char_properties: Option<Box<TextCharacterProperties>>,
     pub text: String,
@@ -4035,6 +4006,7 @@ impl RegularTextRun {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TextLineBreak {
     pub char_properties: Option<Box<TextCharacterProperties>>,
 }
@@ -4050,6 +4022,7 @@ impl TextLineBreak {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TextField {
     pub id: Guid,
     pub field_type: Option<String>,
@@ -4097,6 +4070,7 @@ impl TextField {
 }
 
 /// TextListStyle
+#[derive(Default, Debug, Clone)]
 pub struct TextListStyle {
     pub def_paragraph_props: Option<Box<TextParagraphProperties>>,
     pub lvl1_paragraph_props: Option<Box<TextParagraphProperties>>,
@@ -4112,68 +4086,49 @@ pub struct TextListStyle {
 
 impl TextListStyle {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut def_paragraph_props = None;
-        let mut lvl1_paragraph_props = None;
-        let mut lvl2_paragraph_props = None;
-        let mut lvl3_paragraph_props = None;
-        let mut lvl4_paragraph_props = None;
-        let mut lvl5_paragraph_props = None;
-        let mut lvl6_paragraph_props = None;
-        let mut lvl7_paragraph_props = None;
-        let mut lvl8_paragraph_props = None;
-        let mut lvl9_paragraph_props = None;
+        let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "defPPr" => {
-                    def_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl1pPr" => {
-                    lvl1_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl2pPr" => {
-                    lvl2_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl3pPr" => {
-                    lvl3_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl4pPr" => {
-                    lvl4_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl5pPr" => {
-                    lvl5_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl6pPr" => {
-                    lvl6_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl7pPr" => {
-                    lvl7_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl8pPr" => {
-                    lvl8_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
-                "lvl9pPr" => {
-                    lvl9_paragraph_props = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
-                }
+                "defPPr" => instance.def_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl1pPr" => instance.lvl1_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl2pPr" => instance.lvl2_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl3pPr" => instance.lvl3_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl4pPr" => instance.lvl4_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl5pPr" => instance.lvl5_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl6pPr" => instance.lvl6_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl7pPr" => instance.lvl7_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl8pPr" => instance.lvl8_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
+                "lvl9pPr" => instance.lvl9_paragraph_props = Some(Box::new(
+                    TextParagraphProperties::from_xml_element(child_node)?
+                )),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            def_paragraph_props,
-            lvl1_paragraph_props,
-            lvl2_paragraph_props,
-            lvl3_paragraph_props,
-            lvl4_paragraph_props,
-            lvl5_paragraph_props,
-            lvl6_paragraph_props,
-            lvl7_paragraph_props,
-            lvl8_paragraph_props,
-            lvl9_paragraph_props,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TextBody {
     pub body_properties: Box<TextBodyProperties>,
     pub list_style: Option<Box<TextListStyle>>,
@@ -4206,6 +4161,7 @@ impl TextBody {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TextBodyProperties {
     pub rotate_angle: Option<Angle>,
     pub paragraph_spacing: Option<bool>,
@@ -4228,95 +4184,54 @@ pub struct TextBodyProperties {
     pub compatible_line_spacing: Option<bool>,
     pub preset_text_warp: Option<Box<PresetTextShape>>,
     pub auto_fit_type: Option<TextAutoFit>,
+    // TODO implement
     //pub scene_3d: Option<Scene3D>,
     //pub text_3d: Option<Text3D>,
 }
 
 impl TextBodyProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut rotate_angle = None;
-        let mut paragraph_spacing = None;
-        let mut vertical_overflow = None;
-        let mut horizontal_overflow = None;
-        let mut vertical_type = None;
-        let mut wrap_type = None;
-        let mut left_inset = None;
-        let mut top_inset = None;
-        let mut right_inset = None;
-        let mut bottom_inset = None;
-        let mut column_count = None;
-        let mut space_between_columns = None;
-        let mut rtl_columns = None;
-        let mut is_from_word_art = None;
-        let mut anchor = None;
-        let mut anchor_center = None;
-        let mut force_antialias = None;
-        let mut upright = None;
-        let mut compatible_line_spacing = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "rot" => rotate_angle = Some(value.parse::<Angle>()?),
-                "spcFirstLastPara" => paragraph_spacing = Some(parse_xml_bool(value)?),
-                "vertOverflow" => vertical_overflow = Some(value.parse::<TextVertOverflowType>()?),
-                "horzOverflow" => horizontal_overflow = Some(value.parse::<TextHorzOverflowType>()?),
-                "vert" => vertical_type = Some(value.parse::<TextVerticalType>()?),
-                "wrap" => wrap_type = Some(value.parse::<TextWrappingType>()?),
-                "lIns" => left_inset = Some(value.parse::<Coordinate32>()?),
-                "tIns" => top_inset = Some(value.parse::<Coordinate32>()?),
-                "rIns" => right_inset = Some(value.parse::<Coordinate32>()?),
-                "bIns" => bottom_inset = Some(value.parse::<Coordinate32>()?),
-                "numCol" => column_count = Some(value.parse::<TextColumnCount>()?),
-                "spcCol" => space_between_columns = Some(value.parse::<PositiveCoordinate32>()?),
-                "rtlCol" => rtl_columns = Some(parse_xml_bool(value)?),
-                "fromWordArt" => is_from_word_art = Some(parse_xml_bool(value)?),
-                "anchor" => anchor = Some(value.parse::<TextAnchoringType>()?),
-                "anchorCtr" => anchor_center = Some(parse_xml_bool(value)?),
-                "forceAA" => force_antialias = Some(parse_xml_bool(value)?),
-                "upright" => upright = Some(parse_xml_bool(value)?),
-                "compatLnSpc" => compatible_line_spacing = Some(parse_xml_bool(value)?),
+                "rot" => instance.rotate_angle = Some(value.parse::<Angle>()?),
+                "spcFirstLastPara" => instance.paragraph_spacing = Some(parse_xml_bool(value)?),
+                "vertOverflow" => instance.vertical_overflow = Some(value.parse()?),
+                "horzOverflow" => instance.horizontal_overflow = Some(value.parse()?),
+                "vert" => instance.vertical_type = Some(value.parse()?),
+                "wrap" => instance.wrap_type = Some(value.parse()?),
+                "lIns" => instance.left_inset = Some(value.parse()?),
+                "tIns" => instance.top_inset = Some(value.parse()?),
+                "rIns" => instance.right_inset = Some(value.parse()?),
+                "bIns" => instance.bottom_inset = Some(value.parse()?),
+                "numCol" => instance.column_count = Some(value.parse()?),
+                "spcCol" => instance.space_between_columns = Some(value.parse()?),
+                "rtlCol" => instance.rtl_columns = Some(parse_xml_bool(value)?),
+                "fromWordArt" => instance.is_from_word_art = Some(parse_xml_bool(value)?),
+                "anchor" => instance.anchor = Some(value.parse()?),
+                "anchorCtr" => instance.anchor_center = Some(parse_xml_bool(value)?),
+                "forceAA" => instance.force_antialias = Some(parse_xml_bool(value)?),
+                "upright" => instance.upright = Some(parse_xml_bool(value)?),
+                "compatLnSpc" => instance.compatible_line_spacing = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let mut preset_text_warp = None;
-        let mut auto_fit_type = None;
-
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
             if TextAutoFit::is_choice_member(child_local_name) {
-                auto_fit_type = Some(TextAutoFit::from_xml_element(child_node)?);
+                instance.auto_fit_type = Some(TextAutoFit::from_xml_element(child_node)?);
             } else if child_local_name == "prstTxWarp" {
-                preset_text_warp = Some(Box::new(PresetTextShape::from_xml_element(child_node)?));
+                instance.preset_text_warp = Some(Box::new(PresetTextShape::from_xml_element(child_node)?));
             }
         }
 
-        Ok(Self {
-            rotate_angle,
-            paragraph_spacing,
-            vertical_overflow,
-            horizontal_overflow,
-            vertical_type,
-            wrap_type,
-            left_inset,
-            top_inset,
-            right_inset,
-            bottom_inset,
-            column_count,
-            space_between_columns,
-            rtl_columns,
-            is_from_word_art,
-            anchor,
-            anchor_center,
-            force_antialias,
-            upright,
-            compatible_line_spacing,
-            auto_fit_type,
-            preset_text_warp,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum TextAutoFit {
     NoAutoFit,
     NormalAutoFit(TextNormalAutoFit),
@@ -4343,6 +4258,7 @@ impl TextAutoFit {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct TextNormalAutoFit {
     pub font_scale: Option<TextFontScalePercent>,           // 100000
     pub line_spacing_reduction: Option<TextSpacingPercent>, // 0
@@ -4368,6 +4284,7 @@ impl TextNormalAutoFit {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PresetTextShape {
     pub preset: TextShapeType,
     pub adjust_value_list: Vec<GeomGuide>,
@@ -4394,6 +4311,7 @@ impl PresetTextShape {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FontScheme {
     pub name: String,
     pub major_font: Box<FontCollection>,
@@ -4428,6 +4346,7 @@ impl FontScheme {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FontCollection {
     pub latin: TextFont,
     pub east_asian: TextFont,
@@ -4465,6 +4384,7 @@ impl FontCollection {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct NonVisualDrawingProps {
     pub id: DrawingElementId,
     pub name: String,
@@ -4519,7 +4439,7 @@ impl NonVisualDrawingProps {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Locking {
     pub no_grouping: Option<bool>,            // false
     pub no_select: Option<bool>,              // false
@@ -4553,6 +4473,7 @@ impl Locking {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ShapeLocking {
     pub locking: Locking,
     pub no_text_edit: Option<bool>, // false
@@ -4575,6 +4496,7 @@ impl ShapeLocking {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct GroupLocking {
     pub no_grouping: Option<bool>,            // false
     pub no_ungrouping: Option<bool>,          // false
@@ -4587,39 +4509,26 @@ pub struct GroupLocking {
 
 impl GroupLocking {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut no_grouping = None;
-        let mut no_ungrouping = None;
-        let mut no_select = None;
-        let mut no_rotate = None;
-        let mut no_change_aspect_ratio = None;
-        let mut no_move = None;
-        let mut no_resize = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "noGrp" => no_grouping = Some(parse_xml_bool(value)?),
-                "noUngrp" => no_ungrouping = Some(parse_xml_bool(value)?),
-                "noSelect" => no_select = Some(parse_xml_bool(value)?),
-                "noRot" => no_rotate = Some(parse_xml_bool(value)?),
-                "noChangeAspect" => no_change_aspect_ratio = Some(parse_xml_bool(value)?),
-                "noMove" => no_move = Some(parse_xml_bool(value)?),
-                "noResize" => no_resize = Some(parse_xml_bool(value)?),
+                "noGrp" => instance.no_grouping = Some(parse_xml_bool(value)?),
+                "noUngrp" => instance.no_ungrouping = Some(parse_xml_bool(value)?),
+                "noSelect" => instance.no_select = Some(parse_xml_bool(value)?),
+                "noRot" => instance.no_rotate = Some(parse_xml_bool(value)?),
+                "noChangeAspect" => instance.no_change_aspect_ratio = Some(parse_xml_bool(value)?),
+                "noMove" => instance.no_move = Some(parse_xml_bool(value)?),
+                "noResize" => instance.no_resize = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            no_grouping,
-            no_ungrouping,
-            no_select,
-            no_rotate,
-            no_change_aspect_ratio,
-            no_move,
-            no_resize,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct GraphicalObjectFrameLocking {
     pub no_grouping: Option<bool>,      // false
     pub no_drilldown: Option<bool>,     // false
@@ -4629,6 +4538,27 @@ pub struct GraphicalObjectFrameLocking {
     pub no_resize: Option<bool>,        // false
 }
 
+impl GraphicalObjectFrameLocking {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut instance: Self = Default::default();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "noGrp" => instance.no_grouping = Some(parse_xml_bool(value)?),
+                "noDrilldown" => instance.no_drilldown = Some(parse_xml_bool(value)?),
+                "noSelect" => instance.no_select = Some(parse_xml_bool(value)?),
+                "noChangeAspect" => instance.no_change_aspect = Some(parse_xml_bool(value)?),
+                "noMove" => instance.no_move = Some(parse_xml_bool(value)?),
+                "noResize" => instance.no_resize = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ConnectorLocking {
     pub locking: Locking,
 }
@@ -4645,6 +4575,7 @@ impl ConnectorLocking {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PictureLocking {
     pub locking: Locking,
     pub no_crop: Option<bool>, // false
@@ -4666,6 +4597,7 @@ impl PictureLocking {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct NonVisualDrawingShapeProps {
     pub is_text_box: Option<bool>, // false
     pub shape_locks: Option<ShapeLocking>,
@@ -4690,6 +4622,7 @@ impl NonVisualDrawingShapeProps {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct NonVisualGroupDrawingShapeProps {
     pub locks: Option<GroupLocking>,
 }
@@ -4705,10 +4638,29 @@ impl NonVisualGroupDrawingShapeProps {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct NonVisualGraphicFrameProperties {
     pub graphic_frame_locks: Option<GraphicalObjectFrameLocking>,
 }
 
+impl NonVisualGraphicFrameProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let graphic_frame_locks = match xml_node.child_nodes.get(0) {
+            Some(node) => {
+                if node.local_name() == "graphicFrameLocks" {
+                    Some(GraphicalObjectFrameLocking::from_xml_element(node)?)
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };
+
+        Ok(Self { graphic_frame_locks })
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct NonVisualConnectorProperties {
     pub connector_locks: Option<ConnectorLocking>,
     pub start_connection: Option<Connection>,
@@ -4717,27 +4669,22 @@ pub struct NonVisualConnectorProperties {
 
 impl NonVisualConnectorProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut connector_locks = None;
-        let mut start_connection = None;
-        let mut end_connection = None;
+        let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cxnSpLocks" => connector_locks = Some(ConnectorLocking::from_xml_element(child_node)?),
-                "stCxn" => start_connection = Some(Connection::from_xml_element(child_node)?),
-                "endCxn" => end_connection = Some(Connection::from_xml_element(child_node)?),
+                "cxnSpLocks" => instance.connector_locks = Some(ConnectorLocking::from_xml_element(child_node)?),
+                "stCxn" => instance.start_connection = Some(Connection::from_xml_element(child_node)?),
+                "endCxn" => instance.end_connection = Some(Connection::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            connector_locks,
-            start_connection,
-            end_connection,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct NonVisualPictureProperties {
     pub prefer_relative_resize: Option<bool>, // true
     pub picture_locks: Option<PictureLocking>,
@@ -4762,6 +4709,7 @@ impl NonVisualPictureProperties {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Connection {
     pub id: DrawingElementId,
     pub shape_index: u32,
@@ -4787,36 +4735,152 @@ impl Connection {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct EmbeddedWAVAudioFile {
     pub embed_rel_id: RelationshipId,
     pub name: Option<String>,
-    pub built_in: Option<bool>, // false
+    //pub built_in: Option<bool>, // false
 }
 
+impl EmbeddedWAVAudioFile {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut embed_rel_id = None;
+        let mut name = None;
+        //let mut built_in = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "r:embed" => embed_rel_id = Some(value.clone()),
+                "name" => name = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let embed_rel_id = embed_rel_id
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:embed"))?;
+
+        Ok(Self { embed_rel_id, name })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AudioCDTime {
     pub track: u8,
     pub time: Option<u32>, // 0
 }
 
+impl AudioCDTime {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut track = None;
+        let mut time = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "track" => track = Some(value.parse()?),
+                "time" => time = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let track = track.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "track"))?;
+
+        Ok(Self { track, time })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AudioCD {
     pub start_time: AudioCDTime,
     pub end_time: AudioCDTime,
 }
 
+impl AudioCD {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut start_time = None;
+        let mut end_time = None;
+
+        for child_node in &xml_node.child_nodes {
+            match child_node.local_name() {
+                "st" => start_time = Some(AudioCDTime::from_xml_element(child_node)?),
+                "end" => end_time = Some(AudioCDTime::from_xml_element(child_node)?),
+                _ => (),
+            }
+        }
+
+        let start_time = start_time.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "st"))?;
+        let end_time = end_time.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "end"))?;
+
+        Ok(Self { start_time, end_time })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AudioFile {
     pub link: RelationshipId,
     pub content_type: Option<String>,
 }
 
+impl AudioFile {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut link = None;
+        let mut content_type = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "r:link" => link = Some(value.clone()),
+                "contentType" => content_type = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let link = link.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:link"))?;
+
+        Ok(Self { link, content_type })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct VideoFile {
     pub link: RelationshipId,
     pub content_type: Option<String>,
 }
 
+impl VideoFile {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut link = None;
+        let mut content_type = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "r:link" => link = Some(value.clone()),
+                "contentType" => content_type = Some(value.clone()),
+                _ => (),
+            }
+        }
+
+        let link = link.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:link"))?;
+
+        Ok(Self { link, content_type })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct QuickTimeFile {
     pub link: RelationshipId,
 }
 
+impl QuickTimeFile {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let link_attr = xml_node
+            .attribute("r:link")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:link"))?;
+        let link = link_attr.clone();
+
+        Ok(Self { link })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Media {
     AudioCd(AudioCD),
     WavAudioFile(EmbeddedWAVAudioFile),
@@ -4825,6 +4889,30 @@ pub enum Media {
     QuickTimeFile(QuickTimeFile),
 }
 
+impl Media {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>
+    {
+        match name.as_ref() {
+            "audioCd" | "wavAudioFile" | "audioFile" | "videoFile" | "quickTimeFile" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "audioCd" => Ok(Media::AudioCd(AudioCD::from_xml_element(xml_node)?)),
+            "wavAudioFile" => Ok(Media::WavAudioFile(EmbeddedWAVAudioFile::from_xml_element(xml_node)?)),
+            "audioFile" => Ok(Media::AudioFile(AudioFile::from_xml_element(xml_node)?)),
+            "videoFile" => Ok(Media::VideoFile(VideoFile::from_xml_element(xml_node)?)),
+            "quickTimeFile" => Ok(Media::QuickTimeFile(QuickTimeFile::from_xml_element(xml_node)?)),
+            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_Media"))),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct Transform2D {
     pub rotate_angle: Option<Angle>,   // 0
     pub flip_horizontal: Option<bool>, // false
@@ -4835,39 +4923,30 @@ pub struct Transform2D {
 
 impl Transform2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut rotate_angle = None;
-        let mut flip_horizontal = None;
-        let mut flip_vertical = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "rot" => rotate_angle = Some(value.parse()?),
-                "flipH" => flip_horizontal = Some(parse_xml_bool(value)?),
-                "flipV" => flip_vertical = Some(parse_xml_bool(value)?),
+                "rot" => instance.rotate_angle = Some(value.parse()?),
+                "flipH" => instance.flip_horizontal = Some(parse_xml_bool(value)?),
+                "flipV" => instance.flip_vertical = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let mut offset = None;
-        let mut extents = None;
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "off" => offset = Some(Point2D::from_xml_element(child_node)?),
-                "ext" => extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                "off" => instance.offset = Some(Point2D::from_xml_element(child_node)?),
+                "ext" => instance.extents = Some(PositiveSize2D::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            rotate_angle,
-            flip_horizontal,
-            flip_vertical,
-            offset,
-            extents,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct GroupTransform2D {
     pub rotate_angle: Option<Angle>,   // 0
     pub flip_horizontal: Option<bool>, // false
@@ -4880,50 +4959,38 @@ pub struct GroupTransform2D {
 
 impl GroupTransform2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut rotate_angle = None;
-        let mut flip_horizontal = None;
-        let mut flip_vertical = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "rot" => rotate_angle = Some(value.parse()?),
-                "flipH" => flip_horizontal = Some(parse_xml_bool(value)?),
-                "flipV" => flip_vertical = Some(parse_xml_bool(value)?),
+                "rot" => instance.rotate_angle = Some(value.parse()?),
+                "flipH" => instance.flip_horizontal = Some(parse_xml_bool(value)?),
+                "flipV" => instance.flip_vertical = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let mut offset = None;
-        let mut extents = None;
-        let mut child_offset = None;
-        let mut child_extents = None;
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "off" => offset = Some(Point2D::from_xml_element(child_node)?),
-                "ext" => extents = Some(PositiveSize2D::from_xml_element(child_node)?),
-                "chOff" => child_offset = Some(Point2D::from_xml_element(child_node)?),
-                "chExt" => child_extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                "off" => instance.offset = Some(Point2D::from_xml_element(child_node)?),
+                "ext" => instance.extents = Some(PositiveSize2D::from_xml_element(child_node)?),
+                "chOff" => instance.child_offset = Some(Point2D::from_xml_element(child_node)?),
+                "chExt" => instance.child_extents = Some(PositiveSize2D::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        Ok(Self {
-            rotate_angle,
-            flip_horizontal,
-            flip_vertical,
-            offset,
-            extents,
-            child_offset,
-            child_extents,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct GroupShapeProperties {
     pub black_and_white_mode: Option<BlackWhiteMode>,
     pub transform: Option<Box<GroupTransform2D>>,
     pub fill_properties: Option<FillProperties>,
     pub effect_properties: Option<EffectProperties>,
+    // TODO implement
     //pub scene_3d: Option<Scene3D>,
 }
 
@@ -4936,7 +5003,7 @@ impl GroupShapeProperties {
 
         let mut transform = None;
         let mut fill_properties = None;
-        let effect_properties = None;
+        let mut effect_properties = None;
 
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
@@ -4944,8 +5011,8 @@ impl GroupShapeProperties {
                 transform = Some(Box::new(GroupTransform2D::from_xml_element(child_node)?));
             } else if FillProperties::is_choice_member(child_local_name) {
                 fill_properties = Some(FillProperties::from_xml_element(child_node)?);
-                // } else if EffectProperties::is_choice_member(child_local_name) {
-                //     effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
+            } else if EffectProperties::is_choice_member(child_local_name) {
+                effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
             }
         }
 
@@ -4958,6 +5025,7 @@ impl GroupShapeProperties {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Geometry {
     Custom(Box<CustomGeometry2D>),
     Preset(Box<PresetGeometry2D>),
@@ -4984,6 +5052,7 @@ impl Geometry {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GeomGuide {
     pub name: GeomGuideName,
     pub formula: GeomGuideFormula,
@@ -5008,6 +5077,7 @@ impl GeomGuide {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum AdjustHandle {
     XY(Box<XYAdjustHandle>),
     Polar(Box<PolarAdjustHandle>),
@@ -5032,6 +5102,7 @@ impl AdjustHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum AdjCoordinate {
     Coordinate(Coordinate),
     GeomGuideName(GeomGuideName),
@@ -5048,6 +5119,7 @@ impl FromStr for AdjCoordinate {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum AdjAngle {
     Angle(Angle),
     GeomGuideName(GeomGuideName),
@@ -5064,6 +5136,7 @@ impl FromStr for AdjAngle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct AdjPoint2D {
     pub x: AdjCoordinate,
     pub y: AdjCoordinate,
@@ -5089,6 +5162,7 @@ impl AdjPoint2D {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GeomRect {
     pub left: AdjCoordinate,
     pub top: AdjCoordinate,
@@ -5127,6 +5201,7 @@ impl GeomRect {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct XYAdjustHandle {
     pub guide_reference_x: Option<GeomGuideName>,
     pub guide_reference_y: Option<GeomGuideName>,
@@ -5176,6 +5251,7 @@ impl XYAdjustHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PolarAdjustHandle {
     pub guide_reference_radial: Option<GeomGuideName>,
     pub guide_reference_angle: Option<GeomGuideName>,
@@ -5225,6 +5301,7 @@ impl PolarAdjustHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ConnectionSite {
     pub angle: AdjAngle,
     pub position: AdjPoint2D,
@@ -5247,6 +5324,7 @@ impl ConnectionSite {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Path2DCommand {
     Close,
     MoveTo(AdjPoint2D),
@@ -5256,6 +5334,75 @@ pub enum Path2DCommand {
     CubicBezTo(AdjPoint2D, AdjPoint2D, AdjPoint2D),
 }
 
+impl Path2DCommand {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>
+    {
+        match name.as_ref() {
+            "close" | "moveTo" | "lnTo" | "arcTo" | "quadBezTo" | "cubicBezTo" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "close" => Ok(Path2DCommand::Close),
+            "moveTo" => {
+                let pt_node = xml_node
+                    .child_nodes
+                    .get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                Ok(Path2DCommand::MoveTo(AdjPoint2D::from_xml_element(pt_node)?))
+            }
+            "lnTo" => {
+                let pt_node = xml_node
+                    .child_nodes
+                    .get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                Ok(Path2DCommand::LineTo(AdjPoint2D::from_xml_element(pt_node)?))
+            }
+            "arcTo" => Ok(Path2DCommand::ArcTo(Path2DArcTo::from_xml_element(xml_node)?)),
+            "quadBezTo" => {
+                let pt1_node = xml_node
+                    .child_nodes
+                    .get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                let pt2_node = xml_node
+                    .child_nodes
+                    .get(1)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                Ok(Path2DCommand::QuadBezierTo(
+                    AdjPoint2D::from_xml_element(pt1_node)?,
+                    AdjPoint2D::from_xml_element(pt2_node)?,
+                ))
+            }
+            "cubicBezTo" => {
+                let pt1_node = xml_node
+                    .child_nodes
+                    .get(0)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                let pt2_node = xml_node
+                    .child_nodes
+                    .get(1)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                let pt3_node = xml_node
+                    .child_nodes
+                    .get(2)
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "pt"))?;
+                Ok(Path2DCommand::CubicBezTo(
+                    AdjPoint2D::from_xml_element(pt1_node)?,
+                    AdjPoint2D::from_xml_element(pt2_node)?,
+                    AdjPoint2D::from_xml_element(pt3_node)?,
+                ))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_Path2DCommand")))
+        }
+    }
+
+}
+
+#[derive(Debug, Clone)]
 pub struct Path2DArcTo {
     pub width_radius: AdjCoordinate,
     pub height_radius: AdjCoordinate,
@@ -5294,6 +5441,7 @@ impl Path2DArcTo {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct Path2D {
     pub width: Option<PositiveCoordinate>,  // 0
     pub height: Option<PositiveCoordinate>, // 0
@@ -5305,90 +5453,30 @@ pub struct Path2D {
 
 impl Path2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut width = None;
-        let mut height = None;
-        let mut fill_mode = None;
-        let mut stroke = None;
-        let mut extrusion_ok = None;
+        let mut instance: Self = Default::default();
 
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
-                "w" => width = Some(value.parse()?),
-                "h" => height = Some(value.parse()?),
-                "fill" => fill_mode = Some(value.parse()?),
-                "stroke" => stroke = Some(parse_xml_bool(value)?),
-                "extrusionOk" => extrusion_ok = Some(parse_xml_bool(value)?),
+                "w" => instance.width = Some(value.parse()?),
+                "h" => instance.height = Some(value.parse()?),
+                "fill" => instance.fill_mode = Some(value.parse()?),
+                "stroke" => instance.stroke = Some(parse_xml_bool(value)?),
+                "extrusionOk" => instance.extrusion_ok = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
 
-        let mut commands = Vec::new();
         for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "close" => commands.push(Path2DCommand::Close),
-                "moveTo" => {
-                    let pt_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    commands.push(Path2DCommand::MoveTo(AdjPoint2D::from_xml_element(pt_node)?));
-                }
-                "lnTo" => {
-                    let pt_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    commands.push(Path2DCommand::LineTo(AdjPoint2D::from_xml_element(pt_node)?));
-                }
-                "arcTo" => commands.push(Path2DCommand::ArcTo(Path2DArcTo::from_xml_element(child_node)?)),
-                "quadBezTo" => {
-                    let pt1_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt2_node = child_node
-                        .child_nodes
-                        .get(1)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    commands.push(Path2DCommand::QuadBezierTo(
-                        AdjPoint2D::from_xml_element(pt1_node)?,
-                        AdjPoint2D::from_xml_element(pt2_node)?,
-                    ));
-                }
-                "cubicBezTo" => {
-                    let pt1_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt2_node = child_node
-                        .child_nodes
-                        .get(1)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    let pt3_node = child_node
-                        .child_nodes
-                        .get(2)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "pt"))?;
-                    commands.push(Path2DCommand::CubicBezTo(
-                        AdjPoint2D::from_xml_element(pt1_node)?,
-                        AdjPoint2D::from_xml_element(pt2_node)?,
-                        AdjPoint2D::from_xml_element(pt3_node)?,
-                    ));
-                }
-                _ => (),
+            if Path2DCommand::is_choice_member(child_node.local_name()) {
+                instance.commands.push(Path2DCommand::from_xml_element(child_node)?);
             }
         }
 
-        Ok(Self {
-            width,
-            height,
-            fill_mode,
-            stroke,
-            extrusion_ok,
-            commands,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct CustomGeometry2D {
     pub adjust_value_list: Vec<GeomGuide>,
     pub guide_list: Vec<GeomGuide>,
@@ -5400,56 +5488,45 @@ pub struct CustomGeometry2D {
 
 impl CustomGeometry2D {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut adjust_value_list = Vec::new();
-        let mut guide_list = Vec::new();
-        let mut adjust_handle_list = Vec::new();
-        let mut connection_site_list = Vec::new();
-        let mut rect = None;
-        let mut path_list = Vec::new();
+        let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "avLst" => {
                     for av_node in &child_node.child_nodes {
-                        adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
+                        instance.adjust_value_list.push(GeomGuide::from_xml_element(av_node)?);
                     }
                 }
                 "gdLst" => {
                     for gd_node in &child_node.child_nodes {
-                        guide_list.push(GeomGuide::from_xml_element(gd_node)?);
+                        instance.guide_list.push(GeomGuide::from_xml_element(gd_node)?);
                     }
                 }
                 "ahLst" => {
                     for ah_node in &child_node.child_nodes {
-                        adjust_handle_list.push(AdjustHandle::from_xml_element(ah_node)?);
+                        instance.adjust_handle_list.push(AdjustHandle::from_xml_element(ah_node)?);
                     }
                 }
                 "cxnLst" => {
                     for cxn_node in &child_node.child_nodes {
-                        connection_site_list.push(ConnectionSite::from_xml_element(cxn_node)?);
+                        instance.connection_site_list.push(ConnectionSite::from_xml_element(cxn_node)?);
                     }
                 }
-                "rect" => rect = Some(Box::new(GeomRect::from_xml_element(child_node)?)),
+                "rect" => instance.rect = Some(Box::new(GeomRect::from_xml_element(child_node)?)),
                 "pathLst" => {
                     for path_node in &child_node.child_nodes {
-                        path_list.push(Box::new(Path2D::from_xml_element(path_node)?));
+                        instance.path_list.push(Box::new(Path2D::from_xml_element(path_node)?));
                     }
                 }
                 _ => (),
             }
         }
 
-        Ok(Self {
-            adjust_value_list,
-            guide_list,
-            adjust_handle_list,
-            connection_site_list,
-            rect,
-            path_list,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PresetGeometry2D {
     pub adjust_value_list: Vec<GeomGuide>,
     pub preset: ShapeType,
@@ -5478,58 +5555,50 @@ impl PresetGeometry2D {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct ShapeProperties {
     pub black_and_white_mode: Option<BlackWhiteMode>,
     pub transform: Option<Box<Transform2D>>,
     pub geometry: Option<Geometry>,
     pub fill_properties: Option<FillProperties>,
     pub line_properties: Option<Box<LineProperties>>,
-    pub effect_properties: Option<Box<EffectProperties>>,
+    pub effect_properties: Option<EffectProperties>,
+    // TODO implement
     //pub scene_3d: Option<Scene3D>,
     //pub shape_3d: Option<Shape3D>,
 }
 
 impl ShapeProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let black_and_white_mode = match xml_node.attribute("bwMode") {
+        let mut instance: Self = Default::default();
+
+        instance.black_and_white_mode = match xml_node.attribute("bwMode") {
             Some(value) => Some(value.parse()?),
             None => None,
         };
 
-        let mut transform = None;
-        let mut geometry = None;
-        let mut fill_properties = None;
-        let mut line_properties = None;
-        let effect_properties = None;
-
         for child_node in &xml_node.child_nodes {
             let child_local_name = child_node.local_name();
             if Geometry::is_choice_member(child_local_name) {
-                geometry = Some(Geometry::from_xml_element(child_node)?);
+                instance.geometry = Some(Geometry::from_xml_element(child_node)?);
             } else if FillProperties::is_choice_member(child_local_name) {
-                fill_properties = Some(FillProperties::from_xml_element(child_node)?);
-            //} else if EffectProperties::is_choice_member(child_local_name) {
-            //    effect_properties = Some(EffectProperties::from_xml_element(child_node))?;
+                instance.fill_properties = Some(FillProperties::from_xml_element(child_node)?);
+            } else if EffectProperties::is_choice_member(child_local_name) {
+                instance.effect_properties = Some(EffectProperties::from_xml_element(child_node)?);
             } else {
                 match child_local_name {
-                    "xfrm" => transform = Some(Box::new(Transform2D::from_xml_element(child_node)?)),
-                    "ln" => line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
+                    "xfrm" => instance.transform = Some(Box::new(Transform2D::from_xml_element(child_node)?)),
+                    "ln" => instance.line_properties = Some(Box::new(LineProperties::from_xml_element(child_node)?)),
                     _ => (),
                 }
             }
         }
 
-        Ok(Self {
-            black_and_white_mode,
-            transform,
-            geometry,
-            fill_properties,
-            line_properties,
-            effect_properties,
-        })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ShapeStyle {
     pub line_reference: StyleMatrixReference,
     pub fill_reference: StyleMatrixReference,
@@ -5572,6 +5641,7 @@ impl ShapeStyle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FontReference {
     pub index: FontCollectionIndex,
     pub color: Option<Color>,
@@ -5593,46 +5663,194 @@ impl FontReference {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GraphicalObject {
     pub graphic_data: GraphicalObjectData,
 }
 
+impl GraphicalObject {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let graphic_data_node = xml_node
+            .child_nodes
+            .get(0)
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "graphicData"))?;
+        let graphic_data = GraphicalObjectData::from_xml_element(graphic_data_node)?;
+
+        Ok(Self { graphic_data })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct GraphicalObjectData {
+    // TODO implement
     //pub graphic_object: Vec<Any>,
     pub uri: String,
 }
 
+impl GraphicalObjectData {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let uri_attr = xml_node
+            .attribute("uri")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "uri"))?;
+        let uri = uri_attr.clone();
+
+        Ok(Self { uri })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum AnimationElementChoice {
     Diagram(AnimationDgmElement),
     Chart(AnimationChartElement),
 }
 
+impl AnimationElementChoice {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>
+    {
+        match name.as_ref() {
+            "dgm" | "chart" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "dgm" => Ok(AnimationElementChoice::Diagram(AnimationDgmElement::from_xml_element(xml_node)?)),
+            "chart" => Ok(AnimationElementChoice::Chart(AnimationChartElement::from_xml_element(xml_node)?)),
+            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct AnimationDgmElement {
     pub id: Option<Guid>,                 // {00000000-0000-0000-0000-000000000000}
     pub build_step: Option<DgmBuildStep>, // sp
 }
 
+impl AnimationDgmElement {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut instance: Self = Default::default();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "id" => instance.id = Some(value.clone()),
+                "bldStep" => instance.build_step = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AnimationChartElement {
     pub series_index: Option<i32>,   // -1
     pub category_index: Option<i32>, // -1
     pub build_step: ChartBuildStep,
 }
 
+impl AnimationChartElement {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut series_index = None;
+        let mut category_index = None;
+        let mut build_step = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_ref() {
+                "seriesIdx" => series_index = Some(value.parse()?),
+                "categoryIdx" => category_index = Some(value.parse()?),
+                "bldStep" => build_step = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let build_step = build_step.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "bldStep"))?;
+
+        Ok(Self { series_index, category_index, build_step })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum AnimationGraphicalObjectBuildProperties {
     BuildDiagram(AnimationDgmBuildProperties),
     BuildChart(AnimationChartBuildProperties),
 }
 
+impl AnimationGraphicalObjectBuildProperties {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>
+    {
+        match name.as_ref() {
+            "bldDgm" | "bldChart" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "bldDgm" => Ok(AnimationGraphicalObjectBuildProperties::BuildDiagram(
+                AnimationDgmBuildProperties::from_xml_element(xml_node)?
+            )),
+            "bldChart" => Ok(AnimationGraphicalObjectBuildProperties::BuildChart(
+                AnimationChartBuildProperties::from_xml_element(xml_node)?
+            )),
+            _ => Err(Box::new(
+                NotGroupMemberError::new(xml_node.name.clone(), "CT_AnimationGraphicalObjectBuildProperties")
+            )),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct AnimationDgmBuildProperties {
     pub build_type: Option<AnimationDgmBuildType>, // allAtOnce
     pub reverse: Option<bool>,                     // false
 }
 
+impl AnimationDgmBuildProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut instance: Self = Default::default();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "bld" => instance.build_type = Some(value.parse()?),
+                "rev" => instance.reverse = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct AnimationChartBuildProperties {
     pub build_type: Option<AnimationChartBuildType>, // allAtOnce
     pub animate_bg: Option<bool>,                    // true
 }
 
+impl AnimationChartBuildProperties {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut instance: Self = Default::default();
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "bld" => instance.build_type = Some(value.parse()?),
+                "animBg" => instance.animate_bg = Some(parse_xml_bool(value)?),
+                _ => (),
+            }
+        }
+
+        Ok(instance)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct OfficeStyleSheet {
     pub name: Option<String>, // ""
     pub theme_elements: Box<BaseStyles>,
@@ -5666,9 +5884,7 @@ impl OfficeStyleSheet {
                 "objectDefaults" => object_defaults = Some(ObjectStyleDefaults::from_xml_element(child_node)?),
                 "extraClrSchemeLst" => {
                     for extra_color_scheme_node in &child_node.child_nodes {
-                        extra_color_scheme_list.push(
-                            ColorSchemeAndMapping::from_xml_element(extra_color_scheme_node)?
-                        );
+                        extra_color_scheme_list.push(ColorSchemeAndMapping::from_xml_element(extra_color_scheme_node)?);
                     }
                 }
                 "custClrLst" => {
@@ -5693,6 +5909,7 @@ impl OfficeStyleSheet {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BaseStyles {
     pub color_scheme: Box<ColorScheme>,
     pub font_scheme: FontScheme,
@@ -5728,6 +5945,7 @@ impl BaseStyles {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct StyleMatrix {
     pub name: Option<String>,                      // ""
     pub fill_style_list: Vec<FillProperties>,      // minOccurs: 3
@@ -5741,7 +5959,7 @@ impl StyleMatrix {
         let name = xml_node.attribute("name").cloned();
         let mut fill_style_list = Vec::new();
         let mut line_style_list = Vec::new();
-        let effect_style_list = Vec::new();
+        let mut effect_style_list = Vec::new();
         let mut bg_fill_style_list = Vec::new();
 
         for child_node in &xml_node.child_nodes {
@@ -5756,7 +5974,11 @@ impl StyleMatrix {
                         line_style_list.push(Box::new(LineProperties::from_xml_element(line_style_node)?));
                     }
                 }
-                // TODO: effect_style_list
+                "effectStyleLst" => {
+                    for effect_style_node in &child_node.child_nodes {
+                        effect_style_list.push(EffectStyleItem::from_xml_element(effect_style_node)?);
+                    }
+                }
                 "bgFillStyleLst" => {
                     for bg_fill_style_node in &child_node.child_nodes {
                         bg_fill_style_list.push(FillProperties::from_xml_element(bg_fill_style_node)?);
@@ -5767,36 +5989,43 @@ impl StyleMatrix {
         }
 
         if fill_style_list.len() < 3 {
-            return Err(LimitViolationError::new(
+            return Err(Box::new(LimitViolationError::new(
                 xml_node.name.clone(),
                 "fillStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
                 fill_style_list.len() as u32,
-            )
-            .into());
+            )));
         }
 
         if line_style_list.len() < 3 {
-            return Err(LimitViolationError::new(
+            return Err(Box::new(LimitViolationError::new(
                 xml_node.name.clone(),
                 "lnStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
                 line_style_list.len() as u32,
-            )
-            .into());
+            )));
+        }
+
+        if effect_style_list.len() < 3 {
+            return Err(Box::new(LimitViolationError::new(
+                xml_node.name.clone(),
+                "effectStyleLst",
+                Limit::Value(3),
+                Limit::Unbounded,
+                effect_style_list.len() as u32,
+            )));
         }
 
         if bg_fill_style_list.len() < 3 {
-            return Err(LimitViolationError::new(
+            return Err(Box::new(LimitViolationError::new(
                 xml_node.name.clone(),
                 "bgFillStyleLst",
                 Limit::Value(3),
                 Limit::Unbounded,
                 bg_fill_style_list.len() as u32,
-            )
-            .into());
+            )));
         }
 
         Ok(Self {
@@ -5809,6 +6038,7 @@ impl StyleMatrix {
     }
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct ObjectStyleDefaults {
     pub shape_definition: Option<Box<DefaultShapeDefinition>>,
     pub line_definition: Option<Box<DefaultShapeDefinition>>,
@@ -5817,23 +6047,28 @@ pub struct ObjectStyleDefaults {
 
 impl ObjectStyleDefaults {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut shape_definition = None;
-        let mut line_definition = None;
-        let mut text_definition = None;
+        let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "spDef" => shape_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?)),
-                "lnDef" => line_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?)),
-                "txDef" => text_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?)),
+                "spDef" => instance.shape_definition = Some(Box::new(
+                    DefaultShapeDefinition::from_xml_element(child_node)?
+                )),
+                "lnDef" => instance.line_definition = Some(Box::new(
+                    DefaultShapeDefinition::from_xml_element(child_node)?
+                )),
+                "txDef" => instance.text_definition = Some(Box::new(
+                    DefaultShapeDefinition::from_xml_element(child_node)?
+                )),
                 _ => (),
             }
         }
 
-        Ok(Self { shape_definition, line_definition, text_definition })
+        Ok(instance)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DefaultShapeDefinition {
     pub shape_properties: Box<ShapeProperties>,
     pub text_body_properties: Box<TextBodyProperties>,
@@ -5851,9 +6086,7 @@ impl DefaultShapeDefinition {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "spPr" => shape_properties = Some(Box::new(ShapeProperties::from_xml_element(child_node)?)),
-                "bodyPr" => text_body_properties = Some(Box::new(
-                    TextBodyProperties::from_xml_element(child_node)?
-                )),
+                "bodyPr" => text_body_properties = Some(Box::new(TextBodyProperties::from_xml_element(child_node)?)),
                 "lstStyle" => text_list_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?)),
                 "style" => shape_style = Some(Box::new(ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),

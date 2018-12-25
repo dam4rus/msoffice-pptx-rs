@@ -2,7 +2,7 @@ macro_rules! decl_simple_type_enum {
     (pub enum $name:ident {
         $($variant:ident = $str_value:expr),*,
     }) => {
-        #[derive(Debug, PartialEq)]
+        #[derive(Debug, Clone, Copy, PartialEq)]
         pub enum $name {
             $($variant),*,
         }
