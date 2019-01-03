@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
+use log::{info};
 
 /// Document
 pub struct PPTXDocument {
@@ -25,11 +26,11 @@ impl PPTXDocument {
         let pptx_file = File::open(&pptx_path)?;
         let mut zipper = ZipArchive::new(&pptx_file)?;
 
-        println!("parsing docProps/app.xml");
+        info!("parsing docProps/app.xml");
         let app = AppInfo::from_zip(&mut zipper).map(|val| val.into()).ok();
-        println!("parsing docProps/core.xml");
+        info!("parsing docProps/core.xml");
         let core = Core::from_zip(&mut zipper).map(|val| val.into()).ok();
-        println!("parsing ppt/presentation.xml");
+        info!("parsing ppt/presentation.xml");
         let presentation = crate::pml::Presentation::from_zip(&mut zipper)
             .map(|val| val.into())
             .ok();
@@ -42,14 +43,12 @@ impl PPTXDocument {
         let mut slide_rels_map = HashMap::new();
         let mut medias = Vec::new();
 
-        println!();
-
         for i in 0..zipper.len() {
             let mut zip_file = zipper.by_index(i)?;
 
             let file_path = PathBuf::from(zip_file.name());
             if file_path.starts_with("ppt/theme") {
-                println!("parsing theme file: {}", zip_file.name());
+                info!("parsing theme file: {}", zip_file.name());
                 theme_map.insert(
                     file_path,
                     Box::new(crate::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?),
@@ -59,7 +58,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide master relationship file: {}", zip_file.name());
+                info!("parsing slide master relationship file: {}", zip_file.name());
                 slide_master_rels_map.insert(
                     file_path,
                     crate::relationship::relationships_from_zip_file(&mut zip_file)?,
@@ -69,7 +68,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide master file: {}", zip_file.name());
+                info!("parsing slide master file: {}", zip_file.name());
                 slide_master_map.insert(
                     file_path,
                     Box::new(crate::pml::SlideMaster::from_zip_file(&mut zip_file)?),
@@ -79,7 +78,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide layout relationship file: {}", zip_file.name());
+                info!("parsing slide layout relationship file: {}", zip_file.name());
                 slide_layout_rels_map.insert(
                     file_path,
                     crate::relationship::relationships_from_zip_file(&mut zip_file)?,
@@ -89,7 +88,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide layout file: {}", zip_file.name());
+                info!("parsing slide layout file: {}", zip_file.name());
                 slide_layout_map.insert(
                     file_path,
                     Box::new(crate::pml::SlideLayout::from_zip_file(&mut zip_file)?),
@@ -99,7 +98,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide relationship file: {}", zip_file.name());
+                info!("parsing slide relationship file: {}", zip_file.name());
                 slide_rels_map.insert(
                     file_path,
                     crate::relationship::relationships_from_zip_file(&mut zip_file)?,
@@ -109,7 +108,7 @@ impl PPTXDocument {
                     continue;
                 }
 
-                println!("parsing slide file: {}", zip_file.name());
+                info!("parsing slide file: {}", zip_file.name());
                 slide_map.insert(file_path, Box::new(crate::pml::Slide::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/media") {
                 medias.push(file_path);
@@ -136,6 +135,7 @@ impl PPTXDocument {
 #[cfg(test)]
 #[test]
 fn test_sample_pptx() {
+    simple_logger::init().unwrap();
     let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let sample_pptx_path = test_dir.join("tests/samplepptx.pptx");
 

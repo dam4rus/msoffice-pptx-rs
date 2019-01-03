@@ -17,3 +17,7 @@ exclude = [
 [dependencies]
 quick-xml = "0.13.1"
 zip = "0.4.2"
+log = "0.4.6"
+
+[dev-dependencies]
+simple_logger = "1.0.1"

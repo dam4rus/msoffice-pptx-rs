@@ -7,6 +7,7 @@ use crate::xml::{parse_xml_bool, XmlNode};
 use std::io::Read;
 use std::str::FromStr;
 use zip::read::ZipFile;
+use log::{trace, error};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
@@ -2170,7 +2171,7 @@ impl LineDashProperties {
                     if child_node.local_name() == "ds" {
                         match DashStop::from_xml_element(child_node) {
                             Ok(val) => dash_vec.push(val),
-                            Err(err) => println!("Failed to parse 'ds' element: {}", err),
+                            Err(err) => error!("Failed to parse 'ds' element: {}", err),
                         }
                     }
                 }
@@ -3178,7 +3179,7 @@ pub struct EffectList {
 
 impl EffectList {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        println!("parsing EffectList '{}'", xml_node.name);
+        trace!("parsing EffectList '{}'", xml_node.name);
         let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
@@ -3242,7 +3243,7 @@ pub struct EffectStyleItem {
 
 impl EffectStyleItem {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        println!("parsing EffectStyleItem '{}'", xml_node.name);
+        trace!("parsing EffectStyleItem '{}'", xml_node.name);
         let mut effect_props = None;
 
         for child_node in &xml_node.child_nodes {
@@ -5906,7 +5907,7 @@ impl OfficeStyleSheet {
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        println!("parsing OfficeStyleSheet '{}'", xml_node.name);
+        trace!("parsing OfficeStyleSheet '{}'", xml_node.name);
         let name = xml_node.attribute("name").cloned();
         let mut theme_elements = None;
         let mut object_defaults = None;
@@ -5953,7 +5954,7 @@ pub struct BaseStyles {
 
 impl BaseStyles {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        println!("parsing BaseStyles '{}'", xml_node.name);
+        trace!("parsing BaseStyles '{}'", xml_node.name);
         let mut color_scheme = None;
         let mut font_scheme = None;
         let mut format_scheme = None;
@@ -5992,7 +5993,7 @@ pub struct StyleMatrix {
 
 impl StyleMatrix {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        println!("parsing StyleMatrix '{}'", xml_node.name);
+        trace!("parsing StyleMatrix '{}'", xml_node.name);
         let name = xml_node.attribute("name").cloned();
         let mut fill_style_list = Vec::new();
         let mut line_style_list = Vec::new();
