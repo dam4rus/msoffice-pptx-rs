@@ -1,9 +1,9 @@
 use crate::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use crate::relationship::RelationshipId;
 use crate::xml::{parse_xml_bool, XmlNode};
-use ::std::io::{Read, Seek};
-use ::std::str::FromStr;
-use ::zip::read::ZipFile;
+use std::io::{Read, Seek};
+use std::str::FromStr;
+use zip::read::ZipFile;
 
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
@@ -460,7 +460,7 @@ impl IndexRange {
             match attr.as_str() {
                 "st" => start = Some(value.parse()?),
                 "end" => end = Some(value.parse()?),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -489,7 +489,7 @@ impl BackgroundProperties {
         let mut effect = None;
 
         for child_node in &xml_node.child_nodes {
-            use crate::drawingml::{FillProperties, EffectProperties};
+            use crate::drawingml::{EffectProperties, FillProperties};
 
             if FillProperties::is_choice_member(child_node.local_name()) {
                 fill = Some(FillProperties::from_xml_element(child_node)?);
@@ -619,9 +619,9 @@ impl ApplicationNonVisualDrawingProps {
             } else {
                 match child_node.local_name() {
                     "ph" => instance.placeholder = Some(Placeholder::from_xml_element(child_node)?),
-                    "custDataLst" => instance.customer_data_list = Some(
-                        CustomerDataList::from_xml_element(child_node)?
-                    ),
+                    "custDataLst" => {
+                        instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?)
+                    }
                     _ => (),
                 }
             }
@@ -644,7 +644,7 @@ pub enum ShapeGroup {
 impl ShapeGroup {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "sp" | "grpSp" | "graphicFrame" | "cxnSp" | "pic" | "contentPart" => true,
@@ -658,10 +658,10 @@ impl ShapeGroup {
             "grpSp" => Ok(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(
                 xml_node,
             )?))),
-            "graphicFrame" => Ok(ShapeGroup::GraphicFrame(Box::new(GraphicalObjectFrame::from_xml_element(xml_node)?))),
-            "cxnSp" => Ok(ShapeGroup::Connector(Box::new(Connector::from_xml_element(
-                xml_node,
-            )?))),
+            "graphicFrame" => Ok(ShapeGroup::GraphicFrame(Box::new(
+                GraphicalObjectFrame::from_xml_element(xml_node)?,
+            ))),
+            "cxnSp" => Ok(ShapeGroup::Connector(Box::new(Connector::from_xml_element(xml_node)?))),
             "pic" => Ok(ShapeGroup::Picture(Box::new(Picture::from_xml_element(xml_node)?))),
             "contentPart" => {
                 let attr = xml_node
@@ -669,7 +669,10 @@ impl ShapeGroup {
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
                 Ok(ShapeGroup::ContentPart(attr.clone()))
             }
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_ShapeGroup"))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_ShapeGroup",
+            ))),
         }
     }
 }
@@ -785,7 +788,9 @@ impl GroupShape {
                 shape_array.push(ShapeGroup::from_xml_element(child_node)?);
             } else {
                 match child_local_name {
-                    "nvGrpSpPr" => non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?)),
+                    "nvGrpSpPr" => {
+                        non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
+                    }
                     "grpSpPr" => {
                         group_shape_props = Some(crate::drawingml::GroupShapeProperties::from_xml_element(child_node)?)
                     }
@@ -870,20 +875,20 @@ impl GraphicalObjectFrame {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "nvGraphicFramePr" => non_visual_props = Some(
-                    Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?)
-                ),
+                "nvGraphicFramePr" => {
+                    non_visual_props = Some(Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?))
+                }
                 "xfrm" => transform = Some(Box::new(crate::drawingml::Transform2D::from_xml_element(child_node)?)),
                 "graphic" => graphic = Some(crate::drawingml::GraphicalObject::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        let non_visual_props = 
+        let non_visual_props =
             non_visual_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvGraphicFramePr"))?;
         let transform = transform.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "xfrm"))?;
         let graphic = graphic.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "graphic"))?;
-        
+
         Ok(Self {
             black_white_mode,
             non_visual_props,
@@ -908,25 +913,31 @@ impl GraphicalObjectFrameNonVisual {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "cNvPr" => drawing_props = Some(Box::new(
-                    crate::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?
-                )),
-                "cNvGraphicFramePr" => graphic_frame_props = Some(
-                    crate::drawingml::NonVisualGraphicFrameProperties::from_xml_element(child_node)?
-                ),
+                "cNvPr" => {
+                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "cNvGraphicFramePr" => {
+                    graphic_frame_props = Some(crate::drawingml::NonVisualGraphicFrameProperties::from_xml_element(
+                        child_node,
+                    )?)
+                }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
             }
         }
 
-        let drawing_props = 
-            drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
-        let graphic_frame_props =
-            graphic_frame_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvGraphicFramePr"))?;
-        let app_props =
-            app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
+        let drawing_props = drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvPr"))?;
+        let graphic_frame_props = graphic_frame_props
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvGraphicFramePr"))?;
+        let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
 
-        Ok(Self { drawing_props, graphic_frame_props, app_props })
+        Ok(Self {
+            drawing_props,
+            graphic_frame_props,
+            app_props,
+        })
     }
 }
 
@@ -1340,8 +1351,8 @@ impl SlideMasterIdListEntry {
             }
         }
 
-        let relationship_id = relationship_id
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
+        let relationship_id =
+            relationship_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
 
         Ok(Self { id, relationship_id })
     }
@@ -1358,7 +1369,9 @@ impl NotesMasterIdListEntry {
             .attribute("r:id")
             .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
 
-        Ok(Self { relationship_id: r_id_attr.clone() })
+        Ok(Self {
+            relationship_id: r_id_attr.clone(),
+        })
     }
 }
 
@@ -1373,7 +1386,9 @@ impl HandoutMasterIdListEntry {
             .attribute("r:id")
             .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
 
-        Ok(Self { relationship_id: r_id_attr.clone() })
+        Ok(Self {
+            relationship_id: r_id_attr.clone(),
+        })
     }
 }
 
@@ -1390,15 +1405,18 @@ impl SlideMasterTextStyles {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "titleStyle" => instance.title_styles = Some(Box::new(
-                    crate::drawingml::TextListStyle::from_xml_element(child_node)?
-                )),
-                "bodyStyle" => instance.body_styles = Some(Box::new(
-                    crate::drawingml::TextListStyle::from_xml_element(child_node)?
-                )),
-                "otherStyle" => instance.other_styles = Some(Box::new(
-                    crate::drawingml::TextListStyle::from_xml_element(child_node)?
-                )),
+                "titleStyle" => {
+                    instance.title_styles =
+                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
+                "bodyStyle" => {
+                    instance.body_styles =
+                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
+                "otherStyle" => {
+                    instance.other_styles =
+                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }
@@ -1569,40 +1587,69 @@ pub enum SlideTransitionGroup {
 impl SlideTransitionGroup {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
-            "blinds" | "checker" | "circle" | "dissolve" | "comb" | "cover" | "cut" | "diamond" | "fade" | "newsflash"
-            | "plus" | "pull" | "push" | "random" | "randomBar" | "split" | "strips" | "wedge" | "wheel" | "wipe"
-            | "zoom" => true,
+            "blinds" | "checker" | "circle" | "dissolve" | "comb" | "cover" | "cut" | "diamond" | "fade"
+            | "newsflash" | "plus" | "pull" | "push" | "random" | "randomBar" | "split" | "strips" | "wedge"
+            | "wheel" | "wipe" | "zoom" => true,
             _ => false,
         }
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "blinds" => Ok(SlideTransitionGroup::Blinds(OrientationTransition::from_xml_element(xml_node)?)),
-            "checker" => Ok(SlideTransitionGroup::Checker(OrientationTransition::from_xml_element(xml_node)?)),
+            "blinds" => Ok(SlideTransitionGroup::Blinds(OrientationTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "checker" => Ok(SlideTransitionGroup::Checker(OrientationTransition::from_xml_element(
+                xml_node,
+            )?)),
             "circle" => Ok(SlideTransitionGroup::Circle),
             "dissolve" => Ok(SlideTransitionGroup::Dissolve),
-            "comb" => Ok(SlideTransitionGroup::Comb(OrientationTransition::from_xml_element(xml_node)?)),
-            "cover" => Ok(SlideTransitionGroup::Cover(EightDirectionTransition::from_xml_element(xml_node)?)),
-            "cut" => Ok(SlideTransitionGroup::Cut(OptionalBlackTransition::from_xml_element(xml_node)?)),
+            "comb" => Ok(SlideTransitionGroup::Comb(OrientationTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "cover" => Ok(SlideTransitionGroup::Cover(EightDirectionTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "cut" => Ok(SlideTransitionGroup::Cut(OptionalBlackTransition::from_xml_element(
+                xml_node,
+            )?)),
             "diamond" => Ok(SlideTransitionGroup::Diamond),
-            "fade" => Ok(SlideTransitionGroup::Fade(OptionalBlackTransition::from_xml_element(xml_node)?)),
+            "fade" => Ok(SlideTransitionGroup::Fade(OptionalBlackTransition::from_xml_element(
+                xml_node,
+            )?)),
             "newsflash" => Ok(SlideTransitionGroup::Newsflash),
             "plus" => Ok(SlideTransitionGroup::Plus),
-            "pull" => Ok(SlideTransitionGroup::Pull(EightDirectionTransition::from_xml_element(xml_node)?)),
-            "push" => Ok(SlideTransitionGroup::Push(SideDirectionTransition::from_xml_element(xml_node)?)),
+            "pull" => Ok(SlideTransitionGroup::Pull(EightDirectionTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "push" => Ok(SlideTransitionGroup::Push(SideDirectionTransition::from_xml_element(
+                xml_node,
+            )?)),
             "random" => Ok(SlideTransitionGroup::Random),
-            "randomBar" => Ok(SlideTransitionGroup::RandomBar(OrientationTransition::from_xml_element(xml_node)?)),
-            "split" => Ok(SlideTransitionGroup::Split(SplitTransition::from_xml_element(xml_node)?)),
-            "strips" => Ok(SlideTransitionGroup::Strips(CornerDirectionTransition::from_xml_element(xml_node)?)),
+            "randomBar" => Ok(SlideTransitionGroup::RandomBar(
+                OrientationTransition::from_xml_element(xml_node)?,
+            )),
+            "split" => Ok(SlideTransitionGroup::Split(SplitTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "strips" => Ok(SlideTransitionGroup::Strips(
+                CornerDirectionTransition::from_xml_element(xml_node)?,
+            )),
             "wedge" => Ok(SlideTransitionGroup::Wedge),
-            "wheel" => Ok(SlideTransitionGroup::Wheel(WheelTransition::from_xml_element(xml_node)?)),
-            "wipe" => Ok(SlideTransitionGroup::Wipe(SideDirectionTransition::from_xml_element(xml_node)?)),
+            "wheel" => Ok(SlideTransitionGroup::Wheel(WheelTransition::from_xml_element(
+                xml_node,
+            )?)),
+            "wipe" => Ok(SlideTransitionGroup::Wipe(SideDirectionTransition::from_xml_element(
+                xml_node,
+            )?)),
             "zoom" => Ok(SlideTransitionGroup::Zoom(InOutTransition::from_xml_element(xml_node)?)),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_SlideTransition"))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_SlideTransition",
+            ))),
         }
     }
 }
@@ -1639,7 +1686,7 @@ pub enum TransitionSoundAction {
 impl TransitionSoundAction {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "stSnd" | "endSnd" => true,
@@ -1649,9 +1696,14 @@ impl TransitionSoundAction {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "stSnd" => Ok(TransitionSoundAction::StartSound(TransitionStartSoundAction::from_xml_element(xml_node)?)),
+            "stSnd" => Ok(TransitionSoundAction::StartSound(
+                TransitionStartSoundAction::from_xml_element(xml_node)?,
+            )),
             "endSnd" => Ok(TransitionSoundAction::EndSound),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "CT_TransitionSoundAction"))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_TransitionSoundAction",
+            ))),
         }
     }
 }
@@ -1694,7 +1746,6 @@ impl SlideTransition {
     }
 }
 
-
 #[derive(Default, Debug, Clone)]
 pub struct SlideTiming {
     pub time_node_list: Vec<TimeNodeGroup>,
@@ -1709,14 +1760,16 @@ impl SlideTiming {
             match child_node.local_name() {
                 "tnLst" => {
                     for time_node in &child_node.child_nodes {
-                        instance.time_node_list.push(TimeNodeGroup::from_xml_element(time_node)?);
+                        instance
+                            .time_node_list
+                            .push(TimeNodeGroup::from_xml_element(time_node)?);
                     }
-                },
+                }
                 "bldLst" => {
                     for build_node in &child_node.child_nodes {
                         instance.build_list.push(Build::from_xml_element(build_node)?);
                     }
-                },
+                }
                 _ => (),
             }
         }
@@ -1736,7 +1789,7 @@ pub enum Build {
 impl Build {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "bldP" | "bldDgm" | "bldOleChart" | "bldGraphic" => true,
@@ -1746,11 +1799,18 @@ impl Build {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "bldP" => Ok(Build::Paragraph(Box::new(TLBuildParagraph::from_xml_element(xml_node)?))),
+            "bldP" => Ok(Build::Paragraph(Box::new(TLBuildParagraph::from_xml_element(
+                xml_node,
+            )?))),
             "bldDgm" => Ok(Build::Diagram(Box::new(TLBuildDiagram::from_xml_element(xml_node)?))),
             "bldOleChart" => Ok(Build::OleChart(Box::new(TLOleBuildChart::from_xml_element(xml_node)?))),
-            "bldGraphic" => Ok(Build::Graphic(Box::new(TLGraphicalObjectBuild::from_xml_element(xml_node)?))),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "CT_BuildList"))),
+            "bldGraphic" => Ok(Build::Graphic(Box::new(TLGraphicalObjectBuild::from_xml_element(
+                xml_node,
+            )?))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_BuildList",
+            ))),
         }
     }
 }
@@ -1764,7 +1824,7 @@ pub struct TLBuildParagraph {
     pub auto_update_anim_bg: Option<bool>,   // true
     pub reverse: Option<bool>,               // false
     pub auto_advance_time: Option<TLTime>,   // indefinite
-    pub template_list: Vec<TLTemplate>, // size: 0-9
+    pub template_list: Vec<TLTemplate>,      // size: 0-9
 }
 
 impl TLBuildParagraph {
@@ -1808,7 +1868,7 @@ impl TLBuildParagraph {
             build_common: TLBuildCommonAttributes {
                 shape_id,
                 group_id,
-                ui_expand
+                ui_expand,
             },
             build_type,
             build_level,
@@ -2000,9 +2060,12 @@ impl TLGraphicalObjectBuild {
 
         let build_choice = match xml_node.child_nodes.get(0) {
             Some(child_node) => TLGraphicalObjectBuildChoice::from_xml_element(child_node)?,
-            None => return Err(Box::new(
-                MissingChildNodeError::new(xml_node.name.clone(), "TLGraphicalObjectBuildChoice")
-            ))
+            None => {
+                return Err(Box::new(MissingChildNodeError::new(
+                    xml_node.name.clone(),
+                    "TLGraphicalObjectBuildChoice",
+                )))
+            }
         };
 
         let shape_id = shape_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
@@ -2028,7 +2091,7 @@ pub enum TLGraphicalObjectBuildChoice {
 impl TLGraphicalObjectBuildChoice {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "bldAsOne" | "bldSub" => true,
@@ -2040,9 +2103,12 @@ impl TLGraphicalObjectBuildChoice {
         match xml_node.local_name() {
             "bldAsOne" => Ok(TLGraphicalObjectBuildChoice::BuildAsOne),
             "bldSub" => Ok(TLGraphicalObjectBuildChoice::BuildSubElements(
-                crate::drawingml::AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?
+                crate::drawingml::AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?,
             )),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TLGraphicalObjectBuildChoice"))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLGraphicalObjectBuildChoice",
+            ))),
         }
     }
 }
@@ -2067,7 +2133,7 @@ pub enum TimeNodeGroup {
 impl TimeNodeGroup {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "par" | "seq" | "excl" | "anim" | "animClr" | "animEffect" | "animMotion" | "animRot" | "animScale"
@@ -2078,28 +2144,47 @@ impl TimeNodeGroup {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "par" => Ok(TimeNodeGroup::Parallel(Box::new(TLCommonTimeNodeData::from_xml_element(xml_node)?))),
-            "seq" => Ok(TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::from_xml_element(xml_node)?))),
-            "excl" => Ok(TimeNodeGroup::Exclusive(Box::new(TLCommonTimeNodeData::from_xml_element(xml_node)?))),
-            "anim" => Ok(TimeNodeGroup::Animate(Box::new(TLAnimateBehavior::from_xml_element(xml_node)?))),
-            "animClr" => Ok(TimeNodeGroup::AnimateColor(Box::new(TLAnimateColorBehavior::from_xml_element(xml_node)?))),
+            "par" => Ok(TimeNodeGroup::Parallel(Box::new(
+                TLCommonTimeNodeData::from_xml_element(xml_node)?,
+            ))),
+            "seq" => Ok(TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::from_xml_element(
+                xml_node,
+            )?))),
+            "excl" => Ok(TimeNodeGroup::Exclusive(Box::new(
+                TLCommonTimeNodeData::from_xml_element(xml_node)?,
+            ))),
+            "anim" => Ok(TimeNodeGroup::Animate(Box::new(TLAnimateBehavior::from_xml_element(
+                xml_node,
+            )?))),
+            "animClr" => Ok(TimeNodeGroup::AnimateColor(Box::new(
+                TLAnimateColorBehavior::from_xml_element(xml_node)?,
+            ))),
             "animEffect" => Ok(TimeNodeGroup::AnimateEffect(Box::new(
-                TLAnimateEffectBehavior::from_xml_element(xml_node)?
+                TLAnimateEffectBehavior::from_xml_element(xml_node)?,
             ))),
             "animMotion" => Ok(TimeNodeGroup::AnimateMotion(Box::new(
-                TLAnimateMotionBehavior::from_xml_element(xml_node)?
+                TLAnimateMotionBehavior::from_xml_element(xml_node)?,
             ))),
             "animRot" => Ok(TimeNodeGroup::AnimateRotation(Box::new(
-                TLAnimateRotationBehavior::from_xml_element(xml_node)?
+                TLAnimateRotationBehavior::from_xml_element(xml_node)?,
             ))),
             "animScale" => Ok(TimeNodeGroup::AnimateScale(Box::new(
-                TLAnimateScaleBehavior::from_xml_element(xml_node)?
+                TLAnimateScaleBehavior::from_xml_element(xml_node)?,
             ))),
-            "cmd" => Ok(TimeNodeGroup::Command(Box::new(TLCommandBehavior::from_xml_element(xml_node)?))),
+            "cmd" => Ok(TimeNodeGroup::Command(Box::new(TLCommandBehavior::from_xml_element(
+                xml_node,
+            )?))),
             "set" => Ok(TimeNodeGroup::Set(Box::new(TLSetBehavior::from_xml_element(xml_node)?))),
-            "audio" => Ok(TimeNodeGroup::Audio(Box::new(TLMediaNodeAudio::from_xml_element(xml_node)?))),
-            "video" => Ok(TimeNodeGroup::Video(Box::new(TLMediaNodeVideo::from_xml_element(xml_node)?))),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TimeNodeGroup"))),
+            "audio" => Ok(TimeNodeGroup::Audio(Box::new(TLMediaNodeAudio::from_xml_element(
+                xml_node,
+            )?))),
+            "video" => Ok(TimeNodeGroup::Video(Box::new(TLMediaNodeVideo::from_xml_element(
+                xml_node,
+            )?))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TimeNodeGroup",
+            ))),
         }
     }
 }
@@ -2240,7 +2325,7 @@ impl TLAnimateColorBehavior {
 
         let mut color_space = None;
         let mut direction = None;
-        
+
         for (attr, value) in &xml_node.attributes {
             match attr.as_str() {
                 "clrSpc" => color_space = Some(value.parse()?),
@@ -2258,10 +2343,9 @@ impl TLAnimateColorBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "by" => {
-                    let by_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLByAnimateColorTransform"))?;
+                    let by_node = child_node.child_nodes.get(0).ok_or_else(|| {
+                        MissingChildNodeError::new(child_node.name.clone(), "TLByAnimateColorTransform")
+                    })?;
                     by = Some(TLByAnimateColorTransform::from_xml_element(by_node)?);
                 }
                 "from" => {
@@ -2282,7 +2366,7 @@ impl TLAnimateColorBehavior {
             }
         }
 
-        let common_behavior_data = 
+        let common_behavior_data =
             common_behavior_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cBhvr"))?;
 
         Ok(Self {
@@ -2332,7 +2416,7 @@ impl TLAnimateEffectBehavior {
                         .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?;
                     progress = Some(TLAnimVariant::from_xml_element(progress_node)?);
-                },
+                }
                 _ => (),
             }
         }
@@ -2554,7 +2638,7 @@ impl TLSetBehavior {
                         .get(0)
                         .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?;
                     to = Some(TLAnimVariant::from_xml_element(to_node)?);
-                },
+                }
                 _ => (),
             }
         }
@@ -2660,13 +2744,13 @@ pub enum TLTimeAnimateValueTime {
 
 impl FromStr for TLTimeAnimateValueTime {
     type Err = crate::error::ParseEnumError;
-    
+
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         match s {
             "indefinite" => Ok(TLTimeAnimateValueTime::Indefinite),
             _ => Ok(TLTimeAnimateValueTime::Percentage(
-                s.parse().map_err(|_| Self::Err::new("TLTimeAnimateValueTime"))?)
-            ),
+                s.parse().map_err(|_| Self::Err::new("TLTimeAnimateValueTime"))?,
+            )),
         }
     }
 }
@@ -2683,7 +2767,7 @@ pub enum TLAnimVariant {
 impl TLAnimVariant {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "boolVal" | "intVal" | "fltVal" | "strVal" | "clrVal" => true,
@@ -2722,7 +2806,9 @@ impl TLAnimVariant {
                     .child_nodes
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Color"))?;
-                Ok(TLAnimVariant::Color(crate::drawingml::Color::from_xml_element(child_node)?))
+                Ok(TLAnimVariant::Color(crate::drawingml::Color::from_xml_element(
+                    child_node,
+                )?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TLAnimVariant").into()),
         }
@@ -2787,11 +2873,14 @@ impl TLCommonBehaviorData {
                     }
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "attrName")));
+                        return Err(Box::new(MissingChildNodeError::new(
+                            child_node.name.clone(),
+                            "attrName",
+                        )));
                     }
 
                     attr_name_list = Some(vec);
-                },
+                }
                 _ => (),
             }
         }
@@ -2881,7 +2970,7 @@ pub enum TLTimeConditionTriggerGroup {
 impl TLTimeConditionTriggerGroup {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "tgtEl" | "tn" | "rtn" => true,
@@ -2899,20 +2988,23 @@ impl TLTimeConditionTriggerGroup {
                 Ok(TLTimeConditionTriggerGroup::TargetElement(
                     TLTimeTargetElement::from_xml_element(target_element_node)?,
                 ))
-            },
+            }
             "tn" => {
                 let val_attr = xml_node
                     .attribute("val")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TLTimeConditionTriggerGroup::TimeNode(val_attr.parse()?))
-            },
+            }
             "rtn" => {
                 let val_attr = xml_node
                     .attribute("val")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TLTimeConditionTriggerGroup::RuntimeNode(val_attr.parse()?))
-            },
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_TLTimeConditionTriggerGroup")))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_TLTimeConditionTriggerGroup",
+            ))),
         }
     }
 }
@@ -2928,7 +3020,7 @@ pub enum TLTimeTargetElement {
 impl TLTimeTargetElement {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "sldTgt" | "sndTgt" | "spTgt" | "inkTgt" => true,
@@ -2940,22 +3032,27 @@ impl TLTimeTargetElement {
         match xml_node.local_name() {
             "sldTgt" => Ok(TLTimeTargetElement::SlideTarget),
             "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
-                crate::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?
+                crate::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
             )),
             "spTgt" => {
                 let child_node = xml_node
                     .child_nodes
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_TLShapeTargetElement"))?;
-                Ok(TLTimeTargetElement::ShapeTarget(TLShapeTargetElement::from_xml_element(child_node)?))
-            },
+                Ok(TLTimeTargetElement::ShapeTarget(
+                    TLShapeTargetElement::from_xml_element(child_node)?,
+                ))
+            }
             "inkTgt" => {
                 let spid_attr = xml_node
                     .attribute("spid")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
-                 Ok(TLTimeTargetElement::InkTarget(spid_attr.parse()?))
-            },
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "CT_TLTimeTargetElement"))),
+                Ok(TLTimeTargetElement::InkTarget(spid_attr.parse()?))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_TLTimeTargetElement",
+            ))),
         }
     }
 }
@@ -2994,7 +3091,7 @@ pub enum TLShapeTargetElementGroup {
 impl TLShapeTargetElementGroup {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "bg" | "subSp" | "oleChartEl" | "txEl" | "graphicEl" => true,
@@ -3010,14 +3107,15 @@ impl TLShapeTargetElementGroup {
                     .attribute("spid")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
                 Ok(TLShapeTargetElementGroup::SubShape(spid_attr.parse()?))
-            },
+            }
             "oleChartEl" => Ok(TLShapeTargetElementGroup::OleChartElement(
-                TLOleChartTargetElement::from_xml_element(xml_node)?
+                TLOleChartTargetElement::from_xml_element(xml_node)?,
             )),
-            "txEl" => Ok(TLShapeTargetElementGroup::TextElement(match xml_node.child_nodes.get(0) {
+            "txEl" => Ok(TLShapeTargetElementGroup::TextElement(
+                match xml_node.child_nodes.get(0) {
                     Some(child_node) => Some(TLTextTargetElement::from_xml_element(child_node)?),
                     None => None,
-                }
+                },
             )),
             "graphicEl" => {
                 let child_node = xml_node
@@ -3026,10 +3124,13 @@ impl TLShapeTargetElementGroup {
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
 
                 Ok(TLShapeTargetElementGroup::GraphicElement(
-                    crate::drawingml::AnimationElementChoice::from_xml_element(child_node)?
+                    crate::drawingml::AnimationElementChoice::from_xml_element(child_node)?,
                 ))
-            },
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TLShapeTargetElementGroup")))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLShapeTargetElementGroup",
+            ))),
         }
     }
 }
@@ -3068,7 +3169,7 @@ pub enum TLTextTargetElement {
 impl TLTextTargetElement {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "charRg" | "pRg" => true,
@@ -3079,8 +3180,13 @@ impl TLTextTargetElement {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "charRg" => Ok(TLTextTargetElement::CharRange(IndexRange::from_xml_element(xml_node)?)),
-            "pRg" => Ok(TLTextTargetElement::ParagraphRange(IndexRange::from_xml_element(xml_node)?)),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TLTextTargetElement"))),
+            "pRg" => Ok(TLTextTargetElement::ParagraphRange(IndexRange::from_xml_element(
+                xml_node,
+            )?)),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLTextTargetElement",
+            ))),
         }
     }
 }
@@ -3174,7 +3280,7 @@ impl TLCommonTimeNodeData {
                 "afterEffect" => instance.after_effect = Some(parse_xml_bool(value)?),
                 "nodeType" => instance.node_type = Some(value.parse()?),
                 "nodePh" => instance.node_placeholder = Some(parse_xml_bool(value)?),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -3191,7 +3297,7 @@ impl TLCommonTimeNodeData {
                     }
 
                     instance.start_condition_list = Some(vec);
-                },
+                }
                 "endCondLst" => {
                     let mut vec = Vec::new();
                     for cond_node in &child_node.child_nodes {
@@ -3203,7 +3309,7 @@ impl TLCommonTimeNodeData {
                     }
 
                     instance.end_condition_list = Some(vec);
-                },
+                }
                 "endSync" => instance.end_sync = Some(TLTimeCondition::from_xml_element(child_node)?),
                 "iterate" => instance.iterate = Some(TLIterateData::from_xml_element(child_node)?),
                 "childTnLst" => {
@@ -3213,11 +3319,14 @@ impl TLCommonTimeNodeData {
                     }
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "TimeNode")));
+                        return Err(Box::new(MissingChildNodeError::new(
+                            child_node.name.clone(),
+                            "TimeNode",
+                        )));
                     }
 
                     instance.child_time_node_list = Some(vec);
-                },
+                }
                 "subTnLst" => {
                     let mut vec = Vec::new();
                     for time_node in &child_node.child_nodes {
@@ -3225,11 +3334,14 @@ impl TLCommonTimeNodeData {
                     }
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "TimeNode")));
+                        return Err(Box::new(MissingChildNodeError::new(
+                            child_node.name.clone(),
+                            "TimeNode",
+                        )));
                     }
 
                     instance.sub_time_node_list = Some(vec);
-                },
+                }
                 _ => (),
             }
         }
@@ -3247,7 +3359,7 @@ pub enum TLIterateDataChoice {
 impl TLIterateDataChoice {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "tmAbs" | "tmPct" => true,
@@ -3262,14 +3374,17 @@ impl TLIterateDataChoice {
                     .attribute("val")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TLIterateDataChoice::Absolute(val_attr.parse()?))
-            },
+            }
             "tmPct" => {
                 let val_attr = xml_node
                     .attribute("val")
                     .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
                 Ok(TLIterateDataChoice::Percent(val_attr.parse()?))
-            },
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TLIterateDataChoice"))),
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLIterateDataChoice",
+            ))),
         }
     }
 }
@@ -3299,7 +3414,7 @@ impl TLIterateData {
             .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLIterateDataChoice"))?;
         let interval = TLIterateDataChoice::from_xml_element(interval_node)?;
-        
+
         Ok(Self {
             iterate_type,
             backwards,
@@ -3317,7 +3432,7 @@ pub enum TLByAnimateColorTransform {
 impl TLByAnimateColorTransform {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "rgb" | "hsl" => true,
@@ -3327,9 +3442,16 @@ impl TLByAnimateColorTransform {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "rgb" => Ok(TLByAnimateColorTransform::Rgb(TLByRgbColorTransform::from_xml_element(xml_node)?)),
-            "hsl" => Ok(TLByAnimateColorTransform::Hsl(TLByHslColorTransform::from_xml_element(xml_node)?)),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TLByAnimateColorTransform")))
+            "rgb" => Ok(TLByAnimateColorTransform::Rgb(TLByRgbColorTransform::from_xml_element(
+                xml_node,
+            )?)),
+            "hsl" => Ok(TLByAnimateColorTransform::Hsl(TLByHslColorTransform::from_xml_element(
+                xml_node,
+            )?)),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLByAnimateColorTransform",
+            ))),
         }
     }
 }
@@ -3742,7 +3864,7 @@ impl PhotoAlbum {
                 "showCaptions" => instance.show_captions = Some(parse_xml_bool(value)?),
                 "layout" => instance.layout = Some(value.parse()?),
                 "frame" => instance.frame = Some(value.parse()?),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -3798,10 +3920,10 @@ impl Kinsoku {
             }
         }
 
-        let invalid_start_chars = invalid_start_chars
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "invalStChars"))?;
-        let invalid_end_chars = invalid_end_chars
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "invalEndChars"))?;
+        let invalid_start_chars =
+            invalid_start_chars.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "invalStChars"))?;
+        let invalid_end_chars =
+            invalid_end_chars.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "invalEndChars"))?;
 
         Ok(Self {
             language,
@@ -3906,32 +4028,36 @@ impl Presentation {
             match child_node.local_name() {
                 "sldMasterIdLst" => {
                     for slide_master_id_node in &child_node.child_nodes {
-                        instance.slide_master_id_list.push(
-                            SlideMasterIdListEntry::from_xml_element(slide_master_id_node)?,
-                        );
+                        instance
+                            .slide_master_id_list
+                            .push(SlideMasterIdListEntry::from_xml_element(slide_master_id_node)?);
                     }
                 }
                 "notesMasterIdLst" => {
                     for notes_master_id_node in &child_node.child_nodes {
-                        instance.notes_master_id_list.push(
-                            NotesMasterIdListEntry::from_xml_element(notes_master_id_node)?,
-                        );
+                        instance
+                            .notes_master_id_list
+                            .push(NotesMasterIdListEntry::from_xml_element(notes_master_id_node)?);
                     }
                 }
                 "handoutMasterIdLst" => {
                     for handout_master_id_node in &child_node.child_nodes {
-                        instance.handout_master_id_list.push(
-                            HandoutMasterIdListEntry::from_xml_element(handout_master_id_node)?,
-                        );
+                        instance
+                            .handout_master_id_list
+                            .push(HandoutMasterIdListEntry::from_xml_element(handout_master_id_node)?);
                     }
                 }
                 "sldIdLst" => {
                     for slide_id_node in &child_node.child_nodes {
-                        instance.slide_id_list.push(SlideIdListEntry::from_xml_element(slide_id_node)?);
+                        instance
+                            .slide_id_list
+                            .push(SlideIdListEntry::from_xml_element(slide_id_node)?);
                     }
                 }
                 "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
-                "notesSz" => instance.notes_size = Some(crate::drawingml::PositiveSize2D::from_xml_element(child_node)?),
+                "notesSz" => {
+                    instance.notes_size = Some(crate::drawingml::PositiveSize2D::from_xml_element(child_node)?)
+                }
                 "smartTags" => {
                     let r_id_attr = child_node
                         .attribute("r:id")
@@ -3940,25 +4066,28 @@ impl Presentation {
                 }
                 "embeddedFontLst" => {
                     for embedded_font_node in &child_node.child_nodes {
-                        instance.embedded_font_list.push(Box::new(
-                            EmbeddedFontListEntry::from_xml_element(embedded_font_node)?
-                        ));
+                        instance
+                            .embedded_font_list
+                            .push(Box::new(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?));
                     }
                 }
                 "custShowLst" => {
                     for custom_show_node in &child_node.child_nodes {
-                        instance.custom_show_list.push(CustomShow::from_xml_element(custom_show_node)?);
+                        instance
+                            .custom_show_list
+                            .push(CustomShow::from_xml_element(custom_show_node)?);
                     }
                 }
                 "photoAlbum" => instance.photo_album = Some(PhotoAlbum::from_xml_element(child_node)?),
                 "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
-                "defaultTextStyle" => instance.default_text_style = Some(Box::new(
-                    crate::drawingml::TextListStyle::from_xml_element(child_node)?
-                )),
-                "modifyVerifier" => instance.modify_verifier = Some(Box::new(
-                    ModifyVerifier::from_xml_element(child_node)?
-                )),
+                "defaultTextStyle" => {
+                    instance.default_text_style =
+                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                }
+                "modifyVerifier" => {
+                    instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }

@@ -52,7 +52,7 @@ impl PPTXDocument {
                 println!("parsing theme file: {}", zip_file.name());
                 theme_map.insert(
                     file_path,
-                    Box::new(crate::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?)
+                    Box::new(crate::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?),
                 );
             } else if file_path.starts_with("ppt/slideMasters/_rels") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
@@ -110,10 +110,7 @@ impl PPTXDocument {
                 }
 
                 println!("parsing slide file: {}", zip_file.name());
-                slide_map.insert(
-                    file_path,
-                    Box::new(crate::pml::Slide::from_zip_file(&mut zip_file)?),
-                );
+                slide_map.insert(file_path, Box::new(crate::pml::Slide::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/media") {
                 medias.push(file_path);
             }
@@ -135,7 +132,6 @@ impl PPTXDocument {
         })
     }
 }
-
 
 #[cfg(test)]
 #[test]

@@ -132,13 +132,12 @@ where
     }
 }
 
-
 #[cfg(test)]
 #[test]
 fn test_xml_parser() {
-    use ::std::fs::File;
-    use ::std::path::PathBuf;
-    use ::std::io::Read;
+    use std::fs::File;
+    use std::io::Read;
+    use std::path::PathBuf;
 
     let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let sample_xml_file = test_dir.join("tests/presentation.xml");
@@ -174,4 +173,3 @@ fn test_xml_parser() {
     assert_eq!(lvl1_ppr_defrpr_node.attribute("sz").unwrap(), "1800");
     assert_eq!(lvl1_ppr_defrpr_node.attribute("kern").unwrap(), "1200");
 }
-

@@ -3218,13 +3218,16 @@ impl EffectProperties {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "effectLst" => Ok(EffectProperties::EffectList(Box::new(
-                EffectList::from_xml_element(xml_node)?,
-            ))),
+            "effectLst" => Ok(EffectProperties::EffectList(Box::new(EffectList::from_xml_element(
+                xml_node,
+            )?))),
             "effectDag" => Ok(EffectProperties::EffectContainer(Box::new(
                 EffectContainer::from_xml_element(xml_node)?,
             ))),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_EffectProperties"))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_EffectProperties",
+            ))),
         }
     }
 }
@@ -3249,9 +3252,9 @@ impl EffectStyleItem {
             }
         }
 
-        let effect_props = effect_props
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_EffectProperties"))?;
-        
+        let effect_props =
+            effect_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_EffectProperties"))?;
+
         Ok(Self { effect_props })
     }
 }
@@ -3281,9 +3284,9 @@ pub enum BlipEffect {
 impl BlipEffect {
     pub fn is_choice_member(name: &str) -> bool {
         match name {
-            "alphaBiLevel" | "alphaCeiling" | "alphaFloor" | "alphaInv" | "alphaMod" | "alphaModFixed" | "alphaRepl"
-            | "biLevel" | "blur" | "clrChange" | "clrRepl" | "duotone" | "fillOverlay" | "grayscl" | "hsl" | "lum"
-            | "tint" => true,
+            "alphaBiLevel" | "alphaCeiling" | "alphaFloor" | "alphaInv" | "alphaMod" | "alphaModFixed"
+            | "alphaRepl" | "biLevel" | "blur" | "clrChange" | "clrRepl" | "duotone" | "fillOverlay" | "grayscl"
+            | "hsl" | "lum" | "tint" => true,
             _ => false,
         }
     }
@@ -3295,16 +3298,24 @@ impl BlipEffect {
             )?)),
             "alphaCeiling" => Ok(BlipEffect::AlphaCeiling),
             "alphaFloor" => Ok(BlipEffect::AlphaFloor),
-            "alphaInv" => Ok(BlipEffect::AlphaInverse(AlphaInverseEffect::from_xml_element(xml_node)?)),
-            "alphaMod" => Ok(BlipEffect::AlphaModulate(AlphaModulateEffect::from_xml_element(xml_node)?)),
+            "alphaInv" => Ok(BlipEffect::AlphaInverse(AlphaInverseEffect::from_xml_element(
+                xml_node,
+            )?)),
+            "alphaMod" => Ok(BlipEffect::AlphaModulate(AlphaModulateEffect::from_xml_element(
+                xml_node,
+            )?)),
             "alphaModFixed" => Ok(BlipEffect::AlphaModulateFixed(
-                AlphaModulateFixedEffect::from_xml_element(xml_node)?
+                AlphaModulateFixedEffect::from_xml_element(xml_node)?,
             )),
-            "alphaRepl" => Ok(BlipEffect::AlphaReplace(AlphaReplaceEffect::from_xml_element(xml_node)?)),
+            "alphaRepl" => Ok(BlipEffect::AlphaReplace(AlphaReplaceEffect::from_xml_element(
+                xml_node,
+            )?)),
             "biLevel" => Ok(BlipEffect::BiLevel(BiLevelEffect::from_xml_element(xml_node)?)),
             "blur" => Ok(BlipEffect::Blur(BlurEffect::from_xml_element(xml_node)?)),
             "clrChange" => Ok(BlipEffect::ColorChange(ColorChangeEffect::from_xml_element(xml_node)?)),
-            "clrRepl" => Ok(BlipEffect::ColorReplace(ColorReplaceEffect::from_xml_element(xml_node)?)),
+            "clrRepl" => Ok(BlipEffect::ColorReplace(ColorReplaceEffect::from_xml_element(
+                xml_node,
+            )?)),
             "duotone" => Ok(BlipEffect::Duotone(DuotoneEffect::from_xml_element(xml_node)?)),
             "fillOverlay" => Ok(BlipEffect::FillOverlay(FillOverlayEffect::from_xml_element(xml_node)?)),
             "grayscl" => Ok(BlipEffect::Grayscale),
@@ -3810,12 +3821,10 @@ impl TextCharacterProperties {
                     "ea" => instance.east_asian_font = Some(TextFont::from_xml_element(child_node)?),
                     "cs" => instance.complex_script_font = Some(TextFont::from_xml_element(child_node)?),
                     "sym" => instance.symbol_font = Some(TextFont::from_xml_element(child_node)?),
-                    "hlinkClick" => instance.hyperlink_click = Some(Box::new(
-                        Hyperlink::from_xml_element(child_node)?
-                    )),
-                    "hlinkMouseOver" => instance.hyperlink_mouse_over = Some(Box::new(
-                        Hyperlink::from_xml_element(child_node)?
-                    )),
+                    "hlinkClick" => instance.hyperlink_click = Some(Box::new(Hyperlink::from_xml_element(child_node)?)),
+                    "hlinkMouseOver" => {
+                        instance.hyperlink_mouse_over = Some(Box::new(Hyperlink::from_xml_element(child_node)?))
+                    }
                     "rtl" => {
                         instance.rtl = match child_node.text {
                             Some(ref s) => Some(parse_xml_bool(s)?),
@@ -3911,9 +3920,8 @@ impl TextParagraphProperties {
                     }
                     "tabLst" => instance.tab_stop_list.push(TextTabStop::from_xml_element(child_node)?),
                     "defRPr" => {
-                        instance.default_run_properties = Some(Box::new(
-                            TextCharacterProperties::from_xml_element(child_node)?
-                        ))
+                        instance.default_run_properties =
+                            Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
                     }
                     _ => (),
                 }
@@ -3941,9 +3949,9 @@ impl TextParagraph {
                 instance.text_run_list.push(TextRun::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
-                    "pPr" => instance.properties = Some(Box::new(
-                        TextParagraphProperties::from_xml_element(child_node)?
-                    )),
+                    "pPr" => {
+                        instance.properties = Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                    }
                     "endParaRPr" => {
                         instance.end_paragraph_char_properties =
                             Some(Box::new(TextCharacterProperties::from_xml_element(child_node)?))
@@ -4092,36 +4100,46 @@ impl TextListStyle {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "defPPr" => instance.def_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl1pPr" => instance.lvl1_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl2pPr" => instance.lvl2_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl3pPr" => instance.lvl3_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl4pPr" => instance.lvl4_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl5pPr" => instance.lvl5_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl6pPr" => instance.lvl6_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl7pPr" => instance.lvl7_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl8pPr" => instance.lvl8_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
-                "lvl9pPr" => instance.lvl9_paragraph_props = Some(Box::new(
-                    TextParagraphProperties::from_xml_element(child_node)?
-                )),
+                "defPPr" => {
+                    instance.def_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl1pPr" => {
+                    instance.lvl1_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl2pPr" => {
+                    instance.lvl2_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl3pPr" => {
+                    instance.lvl3_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl4pPr" => {
+                    instance.lvl4_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl5pPr" => {
+                    instance.lvl5_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl6pPr" => {
+                    instance.lvl6_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl7pPr" => {
+                    instance.lvl7_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl8pPr" => {
+                    instance.lvl8_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
+                "lvl9pPr" => {
+                    instance.lvl9_paragraph_props =
+                        Some(Box::new(TextParagraphProperties::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }
@@ -4758,8 +4776,7 @@ impl EmbeddedWAVAudioFile {
             }
         }
 
-        let embed_rel_id = embed_rel_id
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:embed"))?;
+        let embed_rel_id = embed_rel_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:embed"))?;
 
         Ok(Self { embed_rel_id, name })
     }
@@ -4894,7 +4911,7 @@ pub enum Media {
 impl Media {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "audioCd" | "wavAudioFile" | "audioFile" | "videoFile" | "quickTimeFile" => true,
@@ -5339,7 +5356,7 @@ pub enum Path2DCommand {
 impl Path2DCommand {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "close" | "moveTo" | "lnTo" | "arcTo" | "quadBezTo" | "cubicBezTo" => true,
@@ -5398,10 +5415,12 @@ impl Path2DCommand {
                     AdjPoint2D::from_xml_element(pt3_node)?,
                 ))
             }
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "EG_Path2DCommand")))
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_Path2DCommand",
+            ))),
         }
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -5506,12 +5525,16 @@ impl CustomGeometry2D {
                 }
                 "ahLst" => {
                     for ah_node in &child_node.child_nodes {
-                        instance.adjust_handle_list.push(AdjustHandle::from_xml_element(ah_node)?);
+                        instance
+                            .adjust_handle_list
+                            .push(AdjustHandle::from_xml_element(ah_node)?);
                     }
                 }
                 "cxnLst" => {
                     for cxn_node in &child_node.child_nodes {
-                        instance.connection_site_list.push(ConnectionSite::from_xml_element(cxn_node)?);
+                        instance
+                            .connection_site_list
+                            .push(ConnectionSite::from_xml_element(cxn_node)?);
                     }
                 }
                 "rect" => instance.rect = Some(Box::new(GeomRect::from_xml_element(child_node)?)),
@@ -5709,7 +5732,7 @@ pub enum AnimationElementChoice {
 impl AnimationElementChoice {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "dgm" | "chart" => true,
@@ -5719,9 +5742,16 @@ impl AnimationElementChoice {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "dgm" => Ok(AnimationElementChoice::Diagram(AnimationDgmElement::from_xml_element(xml_node)?)),
-            "chart" => Ok(AnimationElementChoice::Chart(AnimationChartElement::from_xml_element(xml_node)?)),
-            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))),
+            "dgm" => Ok(AnimationElementChoice::Diagram(AnimationDgmElement::from_xml_element(
+                xml_node,
+            )?)),
+            "chart" => Ok(AnimationElementChoice::Chart(AnimationChartElement::from_xml_element(
+                xml_node,
+            )?)),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_AnimationElementChoice",
+            ))),
         }
     }
 }
@@ -5772,7 +5802,11 @@ impl AnimationChartElement {
 
         let build_step = build_step.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "bldStep"))?;
 
-        Ok(Self { series_index, category_index, build_step })
+        Ok(Self {
+            series_index,
+            category_index,
+            build_step,
+        })
     }
 }
 
@@ -5785,7 +5819,7 @@ pub enum AnimationGraphicalObjectBuildProperties {
 impl AnimationGraphicalObjectBuildProperties {
     pub fn is_choice_member<T>(name: T) -> bool
     where
-        T: AsRef<str>
+        T: AsRef<str>,
     {
         match name.as_ref() {
             "bldDgm" | "bldChart" => true,
@@ -5796,14 +5830,15 @@ impl AnimationGraphicalObjectBuildProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bldDgm" => Ok(AnimationGraphicalObjectBuildProperties::BuildDiagram(
-                AnimationDgmBuildProperties::from_xml_element(xml_node)?
+                AnimationDgmBuildProperties::from_xml_element(xml_node)?,
             )),
             "bldChart" => Ok(AnimationGraphicalObjectBuildProperties::BuildChart(
-                AnimationChartBuildProperties::from_xml_element(xml_node)?
+                AnimationChartBuildProperties::from_xml_element(xml_node)?,
             )),
-            _ => Err(Box::new(
-                NotGroupMemberError::new(xml_node.name.clone(), "CT_AnimationGraphicalObjectBuildProperties")
-            )),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_AnimationGraphicalObjectBuildProperties",
+            ))),
         }
     }
 }
@@ -6053,15 +6088,15 @@ impl ObjectStyleDefaults {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "spDef" => instance.shape_definition = Some(Box::new(
-                    DefaultShapeDefinition::from_xml_element(child_node)?
-                )),
-                "lnDef" => instance.line_definition = Some(Box::new(
-                    DefaultShapeDefinition::from_xml_element(child_node)?
-                )),
-                "txDef" => instance.text_definition = Some(Box::new(
-                    DefaultShapeDefinition::from_xml_element(child_node)?
-                )),
+                "spDef" => {
+                    instance.shape_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?))
+                }
+                "lnDef" => {
+                    instance.line_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?))
+                }
+                "txDef" => {
+                    instance.text_definition = Some(Box::new(DefaultShapeDefinition::from_xml_element(child_node)?))
+                }
                 _ => (),
             }
         }
