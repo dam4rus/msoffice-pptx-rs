@@ -2861,7 +2861,7 @@ impl OuterShadowEffect {
                 "kx" => skew_x = Some(value.parse()?),
                 "ky" => skew_y = Some(value.parse()?),
                 "algn" => alignment = Some(value.parse()?),
-                "rotWithShape" => rotate_with_shape = Some(value.parse()?),
+                "rotWithShape" => rotate_with_shape = Some(parse_xml_bool(value)?),
                 _ => (),
             }
         }
@@ -3178,6 +3178,7 @@ pub struct EffectList {
 
 impl EffectList {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        println!("parsing EffectList '{}'", xml_node.name);
         let mut instance: Self = Default::default();
 
         for child_node in &xml_node.child_nodes {
@@ -3238,6 +3239,7 @@ pub struct EffectStyleItem {
 
 impl EffectStyleItem {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        println!("parsing EffectStyleItem '{}'", xml_node.name);
         let mut effect_props = None;
 
         for child_node in &xml_node.child_nodes {
@@ -5865,13 +5867,11 @@ impl OfficeStyleSheet {
         zip_file.read_to_string(&mut xml_string)?;
         let xml_node = XmlNode::from_str(xml_string.as_str())?;
 
-        match Self::from_xml_element(&xml_node) {
-            Ok(v) => Ok(v),
-            Err(err) => Err(err),
-        }
+        Self::from_xml_element(&xml_node)
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        println!("parsing OfficeStyleSheet '{}'", xml_node.name);
         let name = xml_node.attribute("name").cloned();
         let mut theme_elements = None;
         let mut object_defaults = None;
@@ -5918,6 +5918,7 @@ pub struct BaseStyles {
 
 impl BaseStyles {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        println!("parsing BaseStyles '{}'", xml_node.name);
         let mut color_scheme = None;
         let mut font_scheme = None;
         let mut format_scheme = None;
@@ -5956,6 +5957,7 @@ pub struct StyleMatrix {
 
 impl StyleMatrix {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        println!("parsing StyleMatrix '{}'", xml_node.name);
         let name = xml_node.attribute("name").cloned();
         let mut fill_style_list = Vec::new();
         let mut line_style_list = Vec::new();
