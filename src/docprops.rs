@@ -1,4 +1,4 @@
-use crate::xml::XmlNode;
+use msoffice_shared::xml::XmlNode;
 use std::io::{Read, Seek};
 
 /// AppInfo

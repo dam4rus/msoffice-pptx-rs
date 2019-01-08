@@ -1,6 +1,7 @@
-use crate::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
-use crate::relationship::RelationshipId;
-use crate::xml::{parse_xml_bool, XmlNode};
+use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError, ParseEnumError};
+use msoffice_shared::relationship::RelationshipId;
+use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use msoffice_shared::decl_simple_type_enum;
 use std::io::{Read, Seek};
 use std::str::FromStr;
 use zip::read::ZipFile;
@@ -11,9 +12,9 @@ pub type SlideMasterId = u32; // TODO: 2147483648 <= n
 pub type Index = u32;
 pub type TLTimeNodeId = u32;
 pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
-pub type SlideSizeCoordinate = crate::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
+pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
 pub type Name = String;
-pub type TLSubShapeId = crate::drawingml::ShapeId;
+pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
@@ -474,8 +475,8 @@ impl IndexRange {
 #[derive(Debug, Clone)]
 pub struct BackgroundProperties {
     pub shade_to_title: Option<bool>, // false
-    pub fill: crate::drawingml::FillProperties,
-    pub effect: Option<crate::drawingml::EffectProperties>,
+    pub fill: msoffice_shared::drawingml::FillProperties,
+    pub effect: Option<msoffice_shared::drawingml::EffectProperties>,
 }
 
 impl BackgroundProperties {
@@ -489,7 +490,7 @@ impl BackgroundProperties {
         let mut effect = None;
 
         for child_node in &xml_node.child_nodes {
-            use crate::drawingml::{EffectProperties, FillProperties};
+            use msoffice_shared::drawingml::{EffectProperties, FillProperties};
 
             if FillProperties::is_choice_member(child_node.local_name()) {
                 fill = Some(FillProperties::from_xml_element(child_node)?);
@@ -511,7 +512,7 @@ impl BackgroundProperties {
 #[derive(Debug, Clone)]
 pub enum BackgroundGroup {
     Properties(BackgroundProperties),
-    Reference(crate::drawingml::StyleMatrixReference),
+    Reference(msoffice_shared::drawingml::StyleMatrixReference),
 }
 
 impl BackgroundGroup {
@@ -528,7 +529,7 @@ impl BackgroundGroup {
                 xml_node,
             )?)),
             "bgRef" => Ok(BackgroundGroup::Reference(
-                crate::drawingml::StyleMatrixReference::from_xml_element(xml_node)?,
+                msoffice_shared::drawingml::StyleMatrixReference::from_xml_element(xml_node)?,
             )),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
@@ -537,7 +538,7 @@ impl BackgroundGroup {
 
 #[derive(Debug, Clone)]
 pub struct Background {
-    pub black_and_white_mode: Option<crate::drawingml::BlackWhiteMode>, // white
+    pub black_and_white_mode: Option<msoffice_shared::drawingml::BlackWhiteMode>, // white
     pub background: BackgroundGroup,
 }
 
@@ -594,7 +595,7 @@ pub struct ApplicationNonVisualDrawingProps {
     pub is_photo: Option<bool>,      // false
     pub is_user_drawn: Option<bool>, // false
     pub placeholder: Option<Placeholder>,
-    pub media: Option<crate::drawingml::Media>,
+    pub media: Option<msoffice_shared::drawingml::Media>,
     pub customer_data_list: Option<CustomerDataList>,
 }
 
@@ -611,7 +612,7 @@ impl ApplicationNonVisualDrawingProps {
         }
 
         for child_node in &xml_node.child_nodes {
-            use crate::drawingml::Media;
+            use msoffice_shared::drawingml::Media;
 
             let local_name = child_node.local_name();
             if Media::is_choice_member(local_name) {
@@ -681,9 +682,9 @@ impl ShapeGroup {
 pub struct Shape {
     pub use_bg_fill: Option<bool>, // false
     pub non_visual_props: Box<ShapeNonVisual>,
-    pub shape_props: Box<crate::drawingml::ShapeProperties>,
-    pub style: Option<Box<crate::drawingml::ShapeStyle>>,
-    pub text_body: Option<crate::drawingml::TextBody>,
+    pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
+    pub style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
+    pub text_body: Option<msoffice_shared::drawingml::TextBody>,
 }
 
 impl Shape {
@@ -702,12 +703,12 @@ impl Shape {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
                 "spPr" => {
-                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                    shape_props = Some(Box::new(msoffice_shared::drawingml::ShapeProperties::from_xml_element(
                         child_node,
                     )?))
                 }
-                "style" => style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
-                "txBody" => text_body = Some(crate::drawingml::TextBody::from_xml_element(child_node)?),
+                "style" => style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "txBody" => text_body = Some(msoffice_shared::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -728,8 +729,8 @@ impl Shape {
 
 #[derive(Debug, Clone)]
 pub struct ShapeNonVisual {
-    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
-    pub shape_drawing_props: crate::drawingml::NonVisualDrawingShapeProps,
+    pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
+    pub shape_drawing_props: msoffice_shared::drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -742,12 +743,12 @@ impl ShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvSpPr" => {
-                    shape_drawing_props = Some(crate::drawingml::NonVisualDrawingShapeProps::from_xml_element(
+                    shape_drawing_props = Some(msoffice_shared::drawingml::NonVisualDrawingShapeProps::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -772,7 +773,7 @@ impl ShapeNonVisual {
 #[derive(Debug, Clone)]
 pub struct GroupShape {
     pub non_visual_props: Box<GroupShapeNonVisual>,
-    pub group_shape_props: crate::drawingml::GroupShapeProperties,
+    pub group_shape_props: msoffice_shared::drawingml::GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
 }
 
@@ -792,7 +793,7 @@ impl GroupShape {
                         non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
                     }
                     "grpSpPr" => {
-                        group_shape_props = Some(crate::drawingml::GroupShapeProperties::from_xml_element(child_node)?)
+                        group_shape_props = Some(msoffice_shared::drawingml::GroupShapeProperties::from_xml_element(child_node)?)
                     }
                     _ => (),
                 }
@@ -814,8 +815,8 @@ impl GroupShape {
 
 #[derive(Debug, Clone)]
 pub struct GroupShapeNonVisual {
-    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
-    pub group_drawing_props: crate::drawingml::NonVisualGroupDrawingShapeProps,
+    pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
+    pub group_drawing_props: msoffice_shared::drawingml::NonVisualGroupDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -828,12 +829,12 @@ impl GroupShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvGrpSpPr" => {
-                    group_drawing_props = Some(crate::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
+                    group_drawing_props = Some(msoffice_shared::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -856,10 +857,10 @@ impl GroupShapeNonVisual {
 
 #[derive(Debug, Clone)]
 pub struct GraphicalObjectFrame {
-    pub black_white_mode: Option<crate::drawingml::BlackWhiteMode>,
+    pub black_white_mode: Option<msoffice_shared::drawingml::BlackWhiteMode>,
     pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
-    pub transform: Box<crate::drawingml::Transform2D>,
-    pub graphic: crate::drawingml::GraphicalObject,
+    pub transform: Box<msoffice_shared::drawingml::Transform2D>,
+    pub graphic: msoffice_shared::drawingml::GraphicalObject,
 }
 
 impl GraphicalObjectFrame {
@@ -878,8 +879,8 @@ impl GraphicalObjectFrame {
                 "nvGraphicFramePr" => {
                     non_visual_props = Some(Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?))
                 }
-                "xfrm" => transform = Some(Box::new(crate::drawingml::Transform2D::from_xml_element(child_node)?)),
-                "graphic" => graphic = Some(crate::drawingml::GraphicalObject::from_xml_element(child_node)?),
+                "xfrm" => transform = Some(Box::new(msoffice_shared::drawingml::Transform2D::from_xml_element(child_node)?)),
+                "graphic" => graphic = Some(msoffice_shared::drawingml::GraphicalObject::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -900,8 +901,8 @@ impl GraphicalObjectFrame {
 
 #[derive(Debug, Clone)]
 pub struct GraphicalObjectFrameNonVisual {
-    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
-    pub graphic_frame_props: crate::drawingml::NonVisualGraphicFrameProperties,
+    pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
+    pub graphic_frame_props: msoffice_shared::drawingml::NonVisualGraphicFrameProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -914,12 +915,12 @@ impl GraphicalObjectFrameNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvGraphicFramePr" => {
-                    graphic_frame_props = Some(crate::drawingml::NonVisualGraphicFrameProperties::from_xml_element(
+                    graphic_frame_props = Some(msoffice_shared::drawingml::NonVisualGraphicFrameProperties::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -944,8 +945,8 @@ impl GraphicalObjectFrameNonVisual {
 #[derive(Debug, Clone)]
 pub struct Connector {
     pub non_visual_props: Box<ConnectorNonVisual>,
-    pub shape_props: Box<crate::drawingml::ShapeProperties>,
-    pub shape_style: Option<Box<crate::drawingml::ShapeStyle>>,
+    pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
 }
 
 impl Connector {
@@ -958,11 +959,11 @@ impl Connector {
             match child_node.local_name() {
                 "nvCxnSpPr" => non_visual_props = Some(Box::new(ConnectorNonVisual::from_xml_element(child_node)?)),
                 "spPr" => {
-                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                    shape_props = Some(Box::new(msoffice_shared::drawingml::ShapeProperties::from_xml_element(
                         child_node,
                     )?))
                 }
-                "style" => shape_style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -981,8 +982,8 @@ impl Connector {
 
 #[derive(Debug, Clone)]
 pub struct ConnectorNonVisual {
-    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
-    pub connector_props: crate::drawingml::NonVisualConnectorProperties,
+    pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
+    pub connector_props: msoffice_shared::drawingml::NonVisualConnectorProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -995,12 +996,12 @@ impl ConnectorNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvCxnSpPr" => {
-                    connector_props = Some(crate::drawingml::NonVisualConnectorProperties::from_xml_element(
+                    connector_props = Some(msoffice_shared::drawingml::NonVisualConnectorProperties::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -1025,9 +1026,9 @@ impl ConnectorNonVisual {
 #[derive(Debug, Clone)]
 pub struct Picture {
     pub non_visual_props: Box<PictureNonVisual>,
-    pub blip_fill: Box<crate::drawingml::BlipFillProperties>,
-    pub shape_props: Box<crate::drawingml::ShapeProperties>,
-    pub shape_style: Option<Box<crate::drawingml::ShapeStyle>>,
+    pub blip_fill: Box<msoffice_shared::drawingml::BlipFillProperties>,
+    pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
+    pub shape_style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
 }
 
 impl Picture {
@@ -1041,16 +1042,16 @@ impl Picture {
             match child_node.local_name() {
                 "nvPicPr" => non_visual_props = Some(Box::new(PictureNonVisual::from_xml_element(child_node)?)),
                 "blipFill" => {
-                    blip_fill = Some(Box::new(crate::drawingml::BlipFillProperties::from_xml_element(
+                    blip_fill = Some(Box::new(msoffice_shared::drawingml::BlipFillProperties::from_xml_element(
                         child_node,
                     )?))
                 }
                 "spPr" => {
-                    shape_props = Some(Box::new(crate::drawingml::ShapeProperties::from_xml_element(
+                    shape_props = Some(Box::new(msoffice_shared::drawingml::ShapeProperties::from_xml_element(
                         child_node,
                     )?))
                 }
-                "style" => shape_style = Some(Box::new(crate::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -1071,8 +1072,8 @@ impl Picture {
 
 #[derive(Debug, Clone)]
 pub struct PictureNonVisual {
-    pub drawing_props: Box<crate::drawingml::NonVisualDrawingProps>,
-    pub picture_props: crate::drawingml::NonVisualPictureProperties,
+    pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
+    pub picture_props: msoffice_shared::drawingml::NonVisualPictureProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1085,12 +1086,12 @@ impl PictureNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(crate::drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvPicPr" => {
-                    picture_props = Some(crate::drawingml::NonVisualPictureProperties::from_xml_element(
+                    picture_props = Some(msoffice_shared::drawingml::NonVisualPictureProperties::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -1220,12 +1221,12 @@ impl Control {
 
 #[derive(Default, Debug, Clone)]
 pub struct OleAttributes {
-    pub shape_id: Option<crate::drawingml::ShapeId>,
+    pub shape_id: Option<msoffice_shared::drawingml::ShapeId>,
     pub name: Option<String>,       // ""
     pub show_as_icon: Option<bool>, // false
     pub id: Option<RelationshipId>,
-    pub image_width: Option<crate::drawingml::PositiveCoordinate32>,
-    pub image_height: Option<crate::drawingml::PositiveCoordinate32>,
+    pub image_width: Option<msoffice_shared::drawingml::PositiveCoordinate32>,
+    pub image_height: Option<msoffice_shared::drawingml::PositiveCoordinate32>,
 }
 
 impl OleAttributes {
@@ -1394,9 +1395,9 @@ impl HandoutMasterIdListEntry {
 
 #[derive(Default, Debug, Clone)]
 pub struct SlideMasterTextStyles {
-    pub title_styles: Option<Box<crate::drawingml::TextListStyle>>,
-    pub body_styles: Option<Box<crate::drawingml::TextListStyle>>,
-    pub other_styles: Option<Box<crate::drawingml::TextListStyle>>,
+    pub title_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
+    pub body_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
+    pub other_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
 }
 
 impl SlideMasterTextStyles {
@@ -1407,15 +1408,15 @@ impl SlideMasterTextStyles {
             match child_node.local_name() {
                 "titleStyle" => {
                     instance.title_styles =
-                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 "bodyStyle" => {
                     instance.body_styles =
-                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 "otherStyle" => {
                     instance.other_styles =
-                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 _ => (),
             }
@@ -1657,7 +1658,7 @@ impl SlideTransitionGroup {
 #[derive(Debug, Clone)]
 pub struct TransitionStartSoundAction {
     pub is_looping: Option<bool>, // false
-    pub sound_file: crate::drawingml::EmbeddedWAVAudioFile,
+    pub sound_file: msoffice_shared::drawingml::EmbeddedWAVAudioFile,
 }
 
 impl TransitionStartSoundAction {
@@ -1671,7 +1672,7 @@ impl TransitionStartSoundAction {
             .child_nodes
             .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "snd"))?;
-        let sound_file = crate::drawingml::EmbeddedWAVAudioFile::from_xml_element(sound_file_node)?;
+        let sound_file = msoffice_shared::drawingml::EmbeddedWAVAudioFile::from_xml_element(sound_file_node)?;
 
         Ok(Self { is_looping, sound_file })
     }
@@ -1883,8 +1884,8 @@ impl TLBuildParagraph {
 
 #[derive(Debug, Clone)]
 pub struct TLPoint {
-    pub x: crate::drawingml::Percentage,
-    pub y: crate::drawingml::Percentage,
+    pub x: msoffice_shared::drawingml::Percentage,
+    pub y: msoffice_shared::drawingml::Percentage,
 }
 
 impl TLPoint {
@@ -1914,7 +1915,7 @@ pub enum TLTime {
 }
 
 impl FromStr for TLTime {
-    type Err = crate::error::ParseEnumError;
+    type Err = msoffice_shared::error::ParseEnumError;
 
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         match s {
@@ -1954,7 +1955,7 @@ impl TLTemplate {
 
 #[derive(Debug, Clone)]
 pub struct TLBuildCommonAttributes {
-    pub shape_id: crate::drawingml::DrawingElementId,
+    pub shape_id: msoffice_shared::drawingml::DrawingElementId,
     pub group_id: u32,
     pub ui_expand: Option<bool>, // false
 }
@@ -2085,7 +2086,7 @@ impl TLGraphicalObjectBuild {
 #[derive(Debug, Clone)]
 pub enum TLGraphicalObjectBuildChoice {
     BuildAsOne,
-    BuildSubElements(crate::drawingml::AnimationGraphicalObjectBuildProperties),
+    BuildSubElements(msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties),
 }
 
 impl TLGraphicalObjectBuildChoice {
@@ -2103,7 +2104,7 @@ impl TLGraphicalObjectBuildChoice {
         match xml_node.local_name() {
             "bldAsOne" => Ok(TLGraphicalObjectBuildChoice::BuildAsOne),
             "bldSub" => Ok(TLGraphicalObjectBuildChoice::BuildSubElements(
-                crate::drawingml::AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?,
+                msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?,
             )),
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
@@ -2315,13 +2316,13 @@ pub struct TLAnimateColorBehavior {
     pub direction: Option<TLAnimateColorDirection>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLByAnimateColorTransform>,
-    pub from: Option<crate::drawingml::Color>,
-    pub to: Option<crate::drawingml::Color>,
+    pub from: Option<msoffice_shared::drawingml::Color>,
+    pub to: Option<msoffice_shared::drawingml::Color>,
 }
 
 impl TLAnimateColorBehavior {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        use crate::drawingml::Color;
+        use msoffice_shared::drawingml::Color;
 
         let mut color_space = None;
         let mut direction = None;
@@ -2439,7 +2440,7 @@ pub struct TLAnimateMotionBehavior {
     pub origin: Option<TLAnimateMotionBehaviorOrigin>,
     pub path: Option<String>,
     pub path_edit_mode: Option<TLAnimateMotionPathEditMode>,
-    pub rotate_angle: Option<crate::drawingml::Angle>,
+    pub rotate_angle: Option<msoffice_shared::drawingml::Angle>,
     pub points_types: Option<String>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLPoint>,
@@ -2504,9 +2505,9 @@ impl TLAnimateMotionBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateRotationBehavior {
-    pub by: Option<crate::drawingml::Angle>,
-    pub from: Option<crate::drawingml::Angle>,
-    pub to: Option<crate::drawingml::Angle>,
+    pub by: Option<msoffice_shared::drawingml::Angle>,
+    pub from: Option<msoffice_shared::drawingml::Angle>,
+    pub to: Option<msoffice_shared::drawingml::Angle>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
 }
 
@@ -2738,12 +2739,12 @@ impl TLTimeAnimateValue {
 
 #[derive(Debug, Clone)]
 pub enum TLTimeAnimateValueTime {
-    Percentage(crate::drawingml::PositiveFixedPercentage),
+    Percentage(msoffice_shared::drawingml::PositiveFixedPercentage),
     Indefinite,
 }
 
 impl FromStr for TLTimeAnimateValueTime {
-    type Err = crate::error::ParseEnumError;
+    type Err = msoffice_shared::error::ParseEnumError;
 
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         match s {
@@ -2761,7 +2762,7 @@ pub enum TLAnimVariant {
     Int(i32),
     Float(f32),
     String(String),
-    Color(crate::drawingml::Color),
+    Color(msoffice_shared::drawingml::Color),
 }
 
 impl TLAnimVariant {
@@ -2806,7 +2807,7 @@ impl TLAnimVariant {
                     .child_nodes
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Color"))?;
-                Ok(TLAnimVariant::Color(crate::drawingml::Color::from_xml_element(
+                Ok(TLAnimVariant::Color(msoffice_shared::drawingml::Color::from_xml_element(
                     child_node,
                 )?))
             }
@@ -2908,7 +2909,7 @@ impl TLCommonBehaviorData {
 
 #[derive(Debug, Clone)]
 pub struct TLCommonMediaNodeData {
-    pub volume: Option<crate::drawingml::PositiveFixedPercentage>, // 50000
+    pub volume: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 50000
     pub mute: Option<bool>,                                        // false
     pub number_of_slides: Option<u32>,                             // 1
     pub show_when_stopped: Option<bool>,                           // true
@@ -3012,7 +3013,7 @@ impl TLTimeConditionTriggerGroup {
 #[derive(Debug, Clone)]
 pub enum TLTimeTargetElement {
     SlideTarget,
-    SoundTarget(crate::drawingml::EmbeddedWAVAudioFile),
+    SoundTarget(msoffice_shared::drawingml::EmbeddedWAVAudioFile),
     ShapeTarget(TLShapeTargetElement),
     InkTarget(TLSubShapeId),
 }
@@ -3032,7 +3033,7 @@ impl TLTimeTargetElement {
         match xml_node.local_name() {
             "sldTgt" => Ok(TLTimeTargetElement::SlideTarget),
             "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
-                crate::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
+                msoffice_shared::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
             )),
             "spTgt" => {
                 let child_node = xml_node
@@ -3059,7 +3060,7 @@ impl TLTimeTargetElement {
 
 #[derive(Debug, Clone)]
 pub struct TLShapeTargetElement {
-    pub shape_id: crate::drawingml::DrawingElementId,
+    pub shape_id: msoffice_shared::drawingml::DrawingElementId,
     pub target: Option<TLShapeTargetElementGroup>,
 }
 
@@ -3085,7 +3086,7 @@ pub enum TLShapeTargetElementGroup {
     SubShape(TLSubShapeId),
     OleChartElement(TLOleChartTargetElement),
     TextElement(Option<TLTextTargetElement>),
-    GraphicElement(crate::drawingml::AnimationElementChoice),
+    GraphicElement(msoffice_shared::drawingml::AnimationElementChoice),
 }
 
 impl TLShapeTargetElementGroup {
@@ -3124,7 +3125,7 @@ impl TLShapeTargetElementGroup {
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
 
                 Ok(TLShapeTargetElementGroup::GraphicElement(
-                    crate::drawingml::AnimationElementChoice::from_xml_element(child_node)?,
+                    msoffice_shared::drawingml::AnimationElementChoice::from_xml_element(child_node)?,
                 ))
             }
             _ => Err(Box::new(NotGroupMemberError::new(
@@ -3227,9 +3228,9 @@ pub struct TLCommonTimeNodeData {
     pub duration: Option<TLTime>,
     pub repeat_count: Option<TLTime>, // 1000
     pub repeat_duration: Option<TLTime>,
-    pub speed: Option<crate::drawingml::Percentage>, // 100000
-    pub acceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
-    pub deceleration: Option<crate::drawingml::PositiveFixedPercentage>, // 0
+    pub speed: Option<msoffice_shared::drawingml::Percentage>, // 100000
+    pub acceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 0
+    pub deceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 0
     pub auto_reverse: Option<bool>,                  // false
     pub restart_type: Option<TLTimeNodeRestartType>,
     pub fill_type: Option<TLTimeNodeFillType>,
@@ -3353,7 +3354,7 @@ impl TLCommonTimeNodeData {
 #[derive(Debug, Clone)]
 pub enum TLIterateDataChoice {
     Absolute(TLTime),
-    Percent(crate::drawingml::PositivePercentage),
+    Percent(msoffice_shared::drawingml::PositivePercentage),
 }
 
 impl TLIterateDataChoice {
@@ -3458,9 +3459,9 @@ impl TLByAnimateColorTransform {
 
 #[derive(Debug, Clone)]
 pub struct TLByRgbColorTransform {
-    pub r: crate::drawingml::FixedPercentage,
-    pub g: crate::drawingml::FixedPercentage,
-    pub b: crate::drawingml::FixedPercentage,
+    pub r: msoffice_shared::drawingml::FixedPercentage,
+    pub g: msoffice_shared::drawingml::FixedPercentage,
+    pub b: msoffice_shared::drawingml::FixedPercentage,
 }
 
 impl TLByRgbColorTransform {
@@ -3488,9 +3489,9 @@ impl TLByRgbColorTransform {
 
 #[derive(Debug, Clone)]
 pub struct TLByHslColorTransform {
-    pub h: crate::drawingml::Angle,
-    pub s: crate::drawingml::FixedPercentage,
-    pub l: crate::drawingml::FixedPercentage,
+    pub h: msoffice_shared::drawingml::Angle,
+    pub s: msoffice_shared::drawingml::FixedPercentage,
+    pub l: msoffice_shared::drawingml::FixedPercentage,
 }
 
 impl TLByHslColorTransform {
@@ -3520,7 +3521,7 @@ impl TLByHslColorTransform {
 pub struct SlideMaster {
     pub preserve: Option<bool>, // false
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping: Box<crate::drawingml::ColorMapping>,
+    pub color_mapping: Box<msoffice_shared::drawingml::ColorMapping>,
     pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
@@ -3555,7 +3556,7 @@ impl SlideMaster {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMap" => {
-                    color_mapping = Some(Box::new(crate::drawingml::ColorMapping::from_xml_element(child_node)?))
+                    color_mapping = Some(Box::new(msoffice_shared::drawingml::ColorMapping::from_xml_element(child_node)?))
                 }
                 "sldLayoutIdLst" => {
                     for slide_layout_id_node in &child_node.child_nodes {
@@ -3597,7 +3598,7 @@ pub struct SlideLayout {
     pub show_master_shapes: Option<bool>,                 // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<msoffice_shared::drawingml::ColorMappingOverride>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
@@ -3646,7 +3647,7 @@ impl SlideLayout {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
                     color_mapping_override =
-                        Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                        Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -3680,7 +3681,7 @@ pub struct Slide {
     pub show_master_shapes: Option<bool>,                 // true
     pub show_master_placeholder_animations: Option<bool>, // true
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping_override: Option<crate::drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<msoffice_shared::drawingml::ColorMappingOverride>,
     pub transition: Option<Box<SlideTransition>>,
     pub timing: Option<SlideTiming>,
 }
@@ -3721,7 +3722,7 @@ impl Slide {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
                     color_mapping_override =
-                        Some(crate::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                        Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -3747,7 +3748,7 @@ impl Slide {
 /// EmbeddedFontListEntry
 #[derive(Debug, Clone)]
 pub struct EmbeddedFontListEntry {
-    pub font: crate::drawingml::TextFont,
+    pub font: msoffice_shared::drawingml::TextFont,
     pub regular: Option<RelationshipId>,
     pub bold: Option<RelationshipId>,
     pub italic: Option<RelationshipId>,
@@ -3764,7 +3765,7 @@ impl EmbeddedFontListEntry {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "font" => font = Some(crate::drawingml::TextFont::from_xml_element(child_node)?),
+                "font" => font = Some(msoffice_shared::drawingml::TextFont::from_xml_element(child_node)?),
                 "regular" => {
                     let id_attr = child_node
                         .attribute("r:id")
@@ -3962,7 +3963,7 @@ impl ModifyVerifier {
 /// Presentation
 #[derive(Default, Debug, Clone)]
 pub struct Presentation {
-    pub server_zoom: Option<crate::drawingml::Percentage>, // 50%
+    pub server_zoom: Option<msoffice_shared::drawingml::Percentage>, // 50%
     pub first_slide_num: Option<i32>,                      // 1
     pub show_special_pls_on_title_slide: Option<bool>,     // true
     pub rtl: Option<bool>,                                 // false
@@ -3979,14 +3980,14 @@ pub struct Presentation {
     pub handout_master_id_list: Vec<HandoutMasterIdListEntry>, // length = 1
     pub slide_id_list: Vec<SlideIdListEntry>,
     pub slide_size: Option<SlideSize>,
-    pub notes_size: Option<crate::drawingml::PositiveSize2D>,
+    pub notes_size: Option<msoffice_shared::drawingml::PositiveSize2D>,
     pub smart_tags: Option<RelationshipId>,
     pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
     pub custom_show_list: Vec<CustomShow>,
     pub photo_album: Option<PhotoAlbum>,
     pub customer_data_list: Option<CustomerDataList>,
     pub kinsoku: Option<Box<Kinsoku>>,
-    pub default_text_style: Option<Box<crate::drawingml::TextListStyle>>,
+    pub default_text_style: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
     pub modify_verifier: Option<Box<ModifyVerifier>>,
 }
 
@@ -4056,7 +4057,7 @@ impl Presentation {
                 }
                 "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
                 "notesSz" => {
-                    instance.notes_size = Some(crate::drawingml::PositiveSize2D::from_xml_element(child_node)?)
+                    instance.notes_size = Some(msoffice_shared::drawingml::PositiveSize2D::from_xml_element(child_node)?)
                 }
                 "smartTags" => {
                     let r_id_attr = child_node
@@ -4083,7 +4084,7 @@ impl Presentation {
                 "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
                 "defaultTextStyle" => {
                     instance.default_text_style =
-                        Some(Box::new(crate::drawingml::TextListStyle::from_xml_element(child_node)?))
+                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 "modifyVerifier" => {
                     instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))

@@ -1,6 +1,6 @@
 [package]
 name = "msoffice_pptx"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2018"
 description = "pptx file format deserializer"
 authors = ["Kalmár Róbert <rfrostkalmar@gmail.com>"]
@@ -15,9 +15,9 @@ exclude = [
 ]
 
 [dependencies]
-quick-xml = "0.13.1"
 zip = "0.4.2"
 log = "0.4.6"
+msoffice_shared = "0.1.0"
 
 [dev-dependencies]
 simple_logger = "1.0.1"

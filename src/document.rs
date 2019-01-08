@@ -11,13 +11,13 @@ pub struct PPTXDocument {
     pub app: Option<Box<AppInfo>>,
     pub core: Option<Box<Core>>,
     pub presentation: Option<Box<crate::pml::Presentation>>,
-    pub theme_map: HashMap<PathBuf, Box<crate::drawingml::OfficeStyleSheet>>,
+    pub theme_map: HashMap<PathBuf, Box<msoffice_shared::drawingml::OfficeStyleSheet>>,
     pub slide_master_map: HashMap<PathBuf, Box<crate::pml::SlideMaster>>,
     pub slide_layout_map: HashMap<PathBuf, Box<crate::pml::SlideLayout>>,
     pub slide_map: HashMap<PathBuf, Box<crate::pml::Slide>>,
-    pub slide_master_rels_map: HashMap<PathBuf, Vec<crate::relationship::Relationship>>,
-    pub slide_layout_rels_map: HashMap<PathBuf, Vec<crate::relationship::Relationship>>,
-    pub slide_rels_map: HashMap<PathBuf, Vec<crate::relationship::Relationship>>,
+    pub slide_master_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
+    pub slide_layout_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
+    pub slide_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
     pub medias: Vec<PathBuf>,
 }
 
@@ -51,7 +51,7 @@ impl PPTXDocument {
                 info!("parsing theme file: {}", zip_file.name());
                 theme_map.insert(
                     file_path,
-                    Box::new(crate::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?),
+                    Box::new(msoffice_shared::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?),
                 );
             } else if file_path.starts_with("ppt/slideMasters/_rels") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
@@ -61,7 +61,7 @@ impl PPTXDocument {
                 info!("parsing slide master relationship file: {}", zip_file.name());
                 slide_master_rels_map.insert(
                     file_path,
-                    crate::relationship::relationships_from_zip_file(&mut zip_file)?,
+                    msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slideMasters") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
@@ -81,7 +81,7 @@ impl PPTXDocument {
                 info!("parsing slide layout relationship file: {}", zip_file.name());
                 slide_layout_rels_map.insert(
                     file_path,
-                    crate::relationship::relationships_from_zip_file(&mut zip_file)?,
+                    msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slideLayouts") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
@@ -101,7 +101,7 @@ impl PPTXDocument {
                 info!("parsing slide relationship file: {}", zip_file.name());
                 slide_rels_map.insert(
                     file_path,
-                    crate::relationship::relationships_from_zip_file(&mut zip_file)?,
+                    msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slides") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
