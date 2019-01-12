@@ -448,7 +448,9 @@ decl_simple_type_enum! {
 
 #[derive(Debug, Clone)]
 pub struct IndexRange {
+    /// This attribute defines the start of the index range.
     pub start: Index,
+    /// This attribute defines the end of the index range.
     pub end: Index,
 }
 
@@ -474,6 +476,9 @@ impl IndexRange {
 
 #[derive(Debug, Clone)]
 pub struct BackgroundProperties {
+    /// Specifies whether the background of the slide is of a shade to title background type. This
+    /// kind of gradient fill is on the slide background and changes based on the placement of
+    /// the slide title placeholder.
     pub shade_to_title: Option<bool>, // false
     pub fill: msoffice_shared::drawingml::FillProperties,
     pub effect: Option<msoffice_shared::drawingml::EffectProperties>,
@@ -511,6 +516,8 @@ impl BackgroundProperties {
 
 #[derive(Debug, Clone)]
 pub enum BackgroundGroup {
+    /// This element specifies visual effects used to render the slide background. This includes any fill, image, or effects
+    /// that are to make up the background of the slide.
     Properties(BackgroundProperties),
     Reference(msoffice_shared::drawingml::StyleMatrixReference),
 }
@@ -538,6 +545,14 @@ impl BackgroundGroup {
 
 #[derive(Debug, Clone)]
 pub struct Background {
+    /// Specifies that the background should be rendered using only black and white coloring.
+    /// That is, the coloring information for the background should be converted to either black
+    /// or white when rendering the picture.
+    /// 
+    /// # Note
+    /// 
+    /// No gray is to be used in rendering this background, only stark black and stark
+    /// white.
     pub black_and_white_mode: Option<msoffice_shared::drawingml::BlackWhiteMode>, // white
     pub background: BackgroundGroup,
 }
@@ -564,11 +579,16 @@ impl Background {
 
 #[derive(Default, Debug, Clone)]
 pub struct Placeholder {
-    pub placeholder_type: Option<PlaceholderType>, // obj
-    pub orientation: Option<Direction>,            // horz
-    pub size: Option<PlaceholderSize>,             // full
-    pub index: Option<u32>,                        // 0
-    pub has_custom_prompt: Option<bool>,           // false
+    pub placeholder_type: Option<PlaceholderType>,
+    /// Specifies the orientation of a placeholder.
+    pub orientation: Option<Direction>,
+    /// Specifies the size of a placeholder.
+    pub size: Option<PlaceholderSize>,
+    /// Specifies the placeholder index. This is used when applying templates or changing
+    /// layouts to match a placeholder on one template/master to another.
+    pub index: Option<u32>,
+    /// Specifies whether the corresponding placeholder should have a custom prompt or not.
+    pub has_custom_prompt: Option<bool>,
 }
 
 impl Placeholder {
@@ -592,8 +612,16 @@ impl Placeholder {
 
 #[derive(Default, Debug, Clone)]
 pub struct ApplicationNonVisualDrawingProps {
-    pub is_photo: Option<bool>,      // false
+    /// Specifies whether the picture belongs to a photo album and should thus be included
+    /// when editing a photo album within the generating application.
+    pub is_photo: Option<bool>,
+    /// Specifies if the corresponding object has been drawn by the user and should thus not be
+    /// deleted. This allows for the flagging of slides that contain user drawn data.
     pub is_user_drawn: Option<bool>, // false
+    /// This element specifies that the corresponding shape should be represented by the generating application as a
+    /// placeholder. When a shape is considered a placeholder by the generating application it can have special
+    /// properties to alert the user that they can enter content into the shape. Different placeholder types are allowed
+    /// and can be specified by using the placeholder type attribute for this element.
     pub placeholder: Option<Placeholder>,
     pub media: Option<msoffice_shared::drawingml::Media>,
     pub customer_data_list: Option<CustomerDataList>,
@@ -634,6 +662,10 @@ impl ApplicationNonVisualDrawingProps {
 
 #[derive(Debug, Clone)]
 pub enum ShapeGroup {
+    /// This element specifies the existence of a single shape. A shape can either be a preset or a custom geometry,
+    /// defined using the DrawingML framework. In addition to a geometry each shape can have both visual and non-
+    /// visual properties attached. Text and corresponding styling information can also be attached to a shape. This
+    /// shape is specified along with all other shapes within either the shape tree or group shape elements.
     Shape(Box<Shape>),
     GroupShape(Box<GroupShape>),
     GraphicFrame(Box<GraphicalObjectFrame>),
@@ -680,7 +712,13 @@ impl ShapeGroup {
 
 #[derive(Debug, Clone)]
 pub struct Shape {
-    pub use_bg_fill: Option<bool>, // false
+    /// Specifies that the shape fill should be set to that of the slide background surface.
+    /// 
+    /// # Note
+    /// 
+    /// This attribute does not set the fill of the shape to be transparent but instead sets it
+    /// to be filled with the portion of the slide background that is directly behind it.
+    pub use_bg_fill: Option<bool>,
     pub non_visual_props: Box<ShapeNonVisual>,
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
     pub style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
@@ -731,6 +769,8 @@ impl Shape {
 pub struct ShapeNonVisual {
     pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
     pub shape_drawing_props: msoffice_shared::drawingml::NonVisualDrawingShapeProps,
+    /// This element specifies non-visual properties for objects. These properties include multimedia content associated
+    /// with an object and properties indicating how the object is to be used or displayed in different contexts.
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1116,6 +1156,8 @@ impl PictureNonVisual {
 #[derive(Debug, Clone)]
 pub struct CommonSlideData {
     pub name: Option<String>,
+    /// This element specifies the background appearance information for a slide. The slide background covers the
+    /// entire slide and is visible where no objects exist and as the background for transparent objects.
     pub background: Option<Box<Background>>,
     pub shape_tree: Box<GroupShape>,
     pub customer_data_list: Option<CustomerDataList>,
@@ -3745,13 +3787,92 @@ impl Slide {
     }
 }
 
-/// EmbeddedFontListEntry
 #[derive(Debug, Clone)]
 pub struct EmbeddedFontListEntry {
+    /// This element specifies specific properties describing an embedded font. Once specified, this font is available
+    /// for use within the presentation.
+    /// Within a font specification there can be regular, bold, italic and boldItalic versions of the font specified.
+    /// The actual font data for each of these is referenced using a relationships file that contains links to all
+    /// available fonts.
+    /// This font data contains font information for each of the characters to be made available in each version of 
+    /// the font.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:embeddedFont>
+    ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
+    ///   <p:regular r:id="rId2"/>
+    /// </p:embeddedFont>
+    /// ```
+    /// 
+    /// # Font Substitution Logic
+    /// 
+    /// If the specified font is not available on a system being used for rendering, then the attributes of this
+    /// element are to be utilized in selecting an alternate font.
+    /// 
+    /// # Note
+    /// 
+    /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
+    /// characters are to be stored in the corresponding font data files.
     pub font: msoffice_shared::drawingml::TextFont,
     pub regular: Option<RelationshipId>,
+    /// This element specifies a bold embedded font that is linked to a parent typeface. Once specified, this bold 
+    /// version of the given typeface name is available for use within the presentation. The actual font data is 
+    /// referenced using a relationships file that contains links to all fonts available. This font data contains font 
+    /// information for each of the characters to be made available.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:embeddedFont>
+    ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
+    ///   <p:bold r:id="rId2"/>
+    /// </p:embeddedFont>
+    /// ```
+    /// 
+    /// # Note
+    /// 
+    /// Not all characters for a typeface must be stored. It is up to the generating application to determine
+    /// which characters are to be stored in the corresponding font data files.
     pub bold: Option<RelationshipId>,
+    /// This element specifies an italic embedded font that is linked to a parent typeface. Once specified, this italic
+    /// version of the given typeface name is available for use within the presentation. The actual font data is
+    /// referenced using a relationships file that contains links to all fonts available. This font data contains font
+    /// information for each of the characters to be made available.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:embeddedFont>
+    ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
+    ///   <p:italic r:id="rId2"/>
+    /// </p:embeddedFont>
+    /// ```
+    /// 
+    /// # Note
+    /// 
+    /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
+    /// characters are to be stored in the corresponding font data files.
     pub italic: Option<RelationshipId>,
+    /// This element specifies a bold italic embedded font that is linked to a parent typeface. Once specified, this
+    /// bold italic version of the given typeface name is available for use within the presentation. The actual font
+    /// data is referenced using a relationships file that contains links to all fonts available. This font data 
+    /// contains font information for each of the characters to be made available.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:embeddedFont>
+    ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
+    ///   <p:boldItalic r:id="rId2"/>
+    /// </p:embeddedFont>
+    /// ```
+    /// 
+    /// # Note
+    /// 
+    /// Not all characters for a typeface must be stored. It is up to the generating application to determine
+    /// which characters are to be stored in the corresponding font data files.
     pub bold_italic: Option<RelationshipId>,
 }
 
@@ -3809,7 +3930,10 @@ impl EmbeddedFontListEntry {
 /// CustomShow
 #[derive(Debug, Clone)]
 pub struct CustomShow {
+    /// Specifies a name for the custom show.
     pub name: Name,
+    /// Specifies the identification number for this custom show. This should be unique among
+    /// all the custom shows within the corresponding presentation.
     pub id: u32,
     pub slides: Vec<RelationshipId>,
 }
@@ -3901,8 +4025,11 @@ impl HeaderFooter {
 
 #[derive(Debug, Clone)]
 pub struct Kinsoku {
+    /// Specifies the corresponding East Asian language that these settings apply to.
     pub language: Option<String>,
+    /// Specifies the characters that cannot start a line of text.
     pub invalid_start_chars: String,
+    /// Specifies the characters that cannot end a line of text.
     pub invalid_end_chars: String,
 }
 
@@ -3936,9 +4063,105 @@ impl Kinsoku {
 
 #[derive(Default, Debug, Clone)]
 pub struct ModifyVerifier {
+    /// Specifies the specific cryptographic hashing algorithm which shall be used along with the
+    /// salt attribute and input password in order to compute the hash value.
+    /// 
+    /// The following values are reserved:
+    /// * MD2: Specifies that the MD2 algorithm, as defined by RFC 1319, shall be used.
+    /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
+    /// publically known breaks.__
+    /// 
+    /// * MD4: Specifies that the MD4 algorithm, as defined by RFC 1320, shall be used.
+    /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
+    /// publically known breaks.__
+    /// 
+    /// * MD5: Specifies that the MD5 algorithm, as defined by RFC 1321, shall be used.
+    /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
+    /// publically known breaks.__
+    /// 
+    /// * RIPEMD-128: Specifies that the RIPEMD-128 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
+    /// publically known breaks.__
+    /// 
+    /// * RIPEMD-160: Specifies that the RIPEMD-160 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// * SHA-1: Specifies that the SHA-1 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// * SHA-256: Specifies that the SHA-256 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// * SHA-384: Specifies that the SHA-384 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// * SHA-512: Specifies that the SHA-512 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// * WHIRLPOOL: Specifies that the WHIRLPOOL algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an Office Open XML document with the following information stored in one of its protection elements:
+    /// ```xml
+    /// < ... algorithmName="SHA-1" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
+    /// ```
+    /// The algorithm_name attribute value of “SHA-1” specifies that the SHA-1 hashing algorithm must be used to
+    /// generate a hash from the user-defined password.
     pub algorithm_name: Option<String>,
+    /// Specifies the hash value for the password required to edit this chartsheet. This value shall
+    /// be compared with the resulting hash value after hashing the user-supplied password
+    /// using the algorithm specified by the preceding attributes and parent XML element, and if
+    /// the two values match, the protection shall no longer be enforced.
+    /// 
+    /// If this value is omitted, then the reservationPassword attribute shall contain the
+    /// password hash for the workbook.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an Office Open XML document with the following information stored in one of its protection elements:
+    /// ```xml
+    /// <... algorithmName="SHA-1" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
+    /// ```
+    /// The hashValue attribute value of 9oN7nWkCAyEZib1RomSJTjmPpCY= specifies that the
+    /// user-supplied password must be hashed using the pre-processing defined by the parent
+    /// element (if any) followed by the SHA-1 algorithm (specified via the algorithmName
+    /// attribute value of SHA-1 ) and that the resulting has value must be
+    /// 9oN7nWkCAyEZib1RomSJTjmPpCY= for the protection to be disabled.
     pub hash_value: Option<String>,
+    /// Specifies the salt which was prepended to the user-supplied password before it was
+    /// hashed using the hashing algorithm defined by the preceding attribute values to generate
+    /// the hashValue attribute, and which shall also be prepended to the user-supplied
+    /// password before attempting to generate a hash value for comparison. A salt is a random
+    /// string which is added to a user-supplied password before it is hashed in order to prevent
+    /// a malicious party from pre-calculating all possible password/hash combinations and
+    /// simply using those pre-calculated values (often referred to as a "dictionary attack").
+    /// 
+    /// If this attribute is omitted, then no salt shall be prepended to the user-supplied password
+    /// before it is hashed for comparison with the stored hash value.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an Office Open XML document with the following information stored in one of its protection elements:
+    /// ```xml
+    /// <... saltValue="ZUdHa+D8F/OAKP3I7ssUnQ==" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
+    /// ```
+    /// 
+    /// The saltValue attribute value of ZUdHa+D8F/OAKP3I7ssUnQ== specifies that the user-
+    /// supplied password must have this value prepended before it is run through the specified
+    /// hashing algorithm to generate a resulting hash value for comparison.
     pub salt_value: Option<String>,
+    /// Specifies the number of times the hashing function shall be iteratively run (runs using
+    /// each iteration's result plus a 4 byte value (0-based, little endian) containing the number
+    /// of the iteration as the input for the next iteration) when attempting to compare a user-
+    /// supplied password with the value stored in the hashValue attribute.
+    /// 
+    /// # Rationale
+    /// 
+    /// Running the algorithm many times increases the cost of exhaustive search
+    /// attacks correspondingly. Storing this value allows for the number of iterations to be
+    /// increased over time to accommodate faster hardware (and hence the ability to run more
+    /// iterations in less time).
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an Office Open XML document with the following information stored in one of its protection elements:
+    /// ```xml
+    /// <... spinCount="100000" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
+    /// ```
+    /// The spinCount attribute value of 100000 specifies that the hashing function must be run
+    /// one hundred thousand times to generate a hash value for comparison with the
+    /// hashValue attribute.
     pub spin_value: Option<u32>,
 }
 
@@ -3977,17 +4200,97 @@ pub struct Presentation {
     pub conformance: Option<ConformanceClass>,
     pub slide_master_id_list: Vec<SlideMasterIdListEntry>,
     pub notes_master_id_list: Vec<NotesMasterIdListEntry>, // length = 1
-    pub handout_master_id_list: Vec<HandoutMasterIdListEntry>, // length = 1
+    /// This element specifies a list of identification information for the handout master slides that are available
+    /// within the corresponding presentation.
+    /// A handout master is a slide that is specifically designed for printing as a handout.
+    /// 
+    /// The handoutMasterId specifies a handout master that is available within the corresponding presentation. A handout
+    /// master is a slide that is specifically designed for printing as a handout.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
+    ///   ...
+    ///   <p:handoutMasterIdLst>
+    ///     <p:handoutMasterId r:id="rId8"/>
+    ///   </p:handoutMasterIdLst>
+    ///   ...
+    /// </p:presentation>
+    /// ```
+    // TODO this should be optional
+    pub handout_master_id_list: Vec<HandoutMasterIdListEntry>,
     pub slide_id_list: Vec<SlideIdListEntry>,
     pub slide_size: Option<SlideSize>,
     pub notes_size: Option<msoffice_shared::drawingml::PositiveSize2D>,
     pub smart_tags: Option<RelationshipId>,
+    /// This element specifies a list of fonts that are embedded within the corresponding presentation. The font data
+    /// for these fonts is stored alongside the other document parts within the document container. The actual font 
+    /// data is referenced within the embeddedFont element.
+    /// 
+    /// The embeddedFont element specifies an embedded font. Once specified, this font is available for use within the 
+    /// presentation.
+    /// Within a font specification there can be regular, bold, italic and boldItalic versions of the font specified.
+    /// The actual font data for each of these is referenced using a relationships file that contains links to all 
+    /// available fonts.
+    /// This font data contains font information for each of the characters to be made available in each version of the
+    /// font.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:embeddedFont>
+    ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
+    ///   <p:regular r:id="rId2"/>
+    /// </p:embeddedFont>
+    /// ```
+    /// 
+    /// # Note
+    /// 
+    /// Not all characters for a typeface must be stored. It is up to the generating application to determine
+    /// which characters are to be stored in the corresponding font data files.
     pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
+    /// This element specifies a list of all custom shows that are available within the corresponding presentation.
+    /// A custom show is a defined slide sequence that allows for the displaying of the slides with the presentation in
+    /// any arbitrary order.
     pub custom_show_list: Vec<CustomShow>,
     pub photo_album: Option<PhotoAlbum>,
     pub customer_data_list: Option<CustomerDataList>,
+    /// This element specifies the presentation-wide kinsoku settings that define the line breaking behaviour of East
+    /// Asian text within the corresponding presentation.
     pub kinsoku: Option<Box<Kinsoku>>,
+    /// This element specifies the default text styles that are to be used within the presentation.
+    /// The text style defined here can be referenced when inserting a new slide if that slide is not associated with a
+    /// master slide or if no styling information has been otherwise specified for the text within the
+    /// presentation slide.
     pub default_text_style: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
+    /// This element specifies the write protection settings which have been applied to a PresentationML document.
+    /// Write protection refers to a mode in which the document's contents should not be modified, and the document
+    /// should not be resaved using the same file name.
+    /// 
+    /// When present, the application shall require a password to enable modifications to the document. If the
+    /// supplied password does not match the hash value in this attribute, then write protection shall be enabled.
+    /// If this element is omitted, then no write protection shall be applied to the current document.
+    /// Since this protection does not encrypt the document, malicious applications might circumvent its use.
+    /// 
+    /// The password supplied to the algorithm is to be a UTF-16LE encoded string; strings longer than 510 octets are
+    /// truncated to 510 octets. If there is a leading BOM character (U+FEFF) in the encoded password it is removed
+    /// before hash calculation. The attributes of this element specify the algorithm to be used to verify the password
+    /// provided by the user.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a PresentationML document that can only be opened in a write protected state unless a
+    /// password is provided, in which case the file would be opened in an editable state. This requirement would be
+    /// specified using the following PresentationML:
+    /// ```xml
+    /// <p:modifyVerifier p:algorithmName="SHA-512" ...
+    /// p:hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" ... />
+    /// ```
+    /// ...In order for the hosting application to enable edits to the document, the hosting application would have to
+    /// be provided with a password that the hosting application would then hash using the algorithm specified by the
+    /// algorithm attributes and compare to the value of the hashValue attribute ( 9oN7nWkCAyEZib1RomSJTjmPpCY= ).
+    /// If the two values matched, the file would be opened in an editable state.
     pub modify_verifier: Option<Box<ModifyVerifier>>,
 }
 
