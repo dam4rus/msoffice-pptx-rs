@@ -606,6 +606,7 @@ impl Background {
 
 #[derive(Default, Debug, Clone)]
 pub struct Placeholder {
+    /// Specifies what content type a placeholder is intended to contain.
     pub placeholder_type: Option<PlaceholderType>,
     /// Specifies the orientation of a placeholder.
     pub orientation: Option<Direction>,
@@ -778,6 +779,30 @@ pub enum ShapeGroup {
     /// </p:spTree>
     /// ```
     Connector(Box<Connector>),
+    /// This element specifies the existence of a picture object within the document.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following PresentationML that specifies the existence of a picture within a document.
+    /// This picture can have non-visual properties, a picture fill as well as shape properties attached to it.
+    /// 
+    /// ```xml
+    /// <p:pic>
+    ///   <p:nvPicPr>
+    ///     <p:cNvPr id="4" name="lake.JPG" descr="Picture of a Lake" />
+    ///     <p:cNvPicPr>
+    ///       <a:picLocks noChangeAspect="1"/>
+    ///     </p:cNvPicPr>
+    ///     <p:nvPr/>
+    ///   </p:nvPicPr>
+    ///   <p:blipFill>
+    ///   ...
+    ///   </p:blipFill>
+    ///   <p:spPr>
+    ///   ...
+    ///   </p:spPr>
+    /// </p:pic>
+    /// ```
     Picture(Box<Picture>),
     /// This element specifies a reference to XML content in a format not defined by ECMA-376.
     /// 
@@ -843,9 +868,42 @@ pub struct Shape {
     /// This attribute does not set the fill of the shape to be transparent but instead sets it
     /// to be filled with the portion of the slide background that is directly behind it.
     pub use_bg_fill: Option<bool>,
+    /// This element specifies all non-visual properties for a shape. This element is a container for the non-visual
+    /// identification properties, shape properties and application properties that are to be associated with a shape.
+    /// This allows for additional information that does not affect the appearance of the shape to be stored.
     pub non_visual_props: Box<ShapeNonVisual>,
+    /// This element specifies the visual shape properties that can be applied to a shape. These properties include the
+    /// shape fill, outline, geometry, effects, and 3D orientation.
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
-    pub style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
+    /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
+    /// the preset styles defined by the style matrix for the theme.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:style>
+    ///   <a:lnRef idx="3">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:lnRef>
+    ///   <a:fillRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:fillRef>
+    ///   <a:effectRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:effectRef>
+    ///   <a:fontRef idx="minor">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:fontRef>
+    /// </p:style>
+    /// ```
+    /// 
+    /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
+    /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
+    /// shape is to use the minor font defined by the theme.
+    pub shape_style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
+    /// This element specifies the existence of text to be contained within the corresponding shape. All visible text and
+    /// visible text related properties are contained within this element. There can be multiple paragraphs and within
+    /// paragraphs multiple runs of text.
     pub text_body: Option<msoffice_shared::drawingml::TextBody>,
 }
 
@@ -858,7 +916,7 @@ impl Shape {
 
         let mut non_visual_props = None;
         let mut shape_props = None;
-        let mut style = None;
+        let mut shape_style = None;
         let mut text_body = None;
 
         for child_node in &xml_node.child_nodes {
@@ -869,7 +927,7 @@ impl Shape {
                         child_node,
                     )?))
                 }
-                "style" => style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 "txBody" => text_body = Some(msoffice_shared::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
@@ -883,7 +941,7 @@ impl Shape {
             use_bg_fill,
             non_visual_props,
             shape_props,
-            style,
+            shape_style,
             text_body,
         })
     }
@@ -1062,6 +1120,8 @@ pub struct GraphicalObjectFrame {
     /// with a graphic frame.
     /// This allows for additional information that does not affect the appearance of the graphic frame to be stored.
     pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
+    /// This element specifies the transform to be applied to the corresponding graphic frame. This transformation is
+    /// applied to the graphic frame just as it would be for a shape or group shape.
     pub transform: Box<msoffice_shared::drawingml::Transform2D>,
     pub graphic: msoffice_shared::drawingml::GraphicalObject,
 }
@@ -1154,7 +1214,34 @@ pub struct Connector {
     /// connection shape. This allows for additional information that does not affect the appearance of the connection
     /// shape to be stored.
     pub non_visual_props: Box<ConnectorNonVisual>,
+    /// This element specifies the visual shape properties that can be applied to a shape. These properties include the
+    /// shape fill, outline, geometry, effects, and 3D orientation.
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
+    /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
+    /// the preset styles defined by the style matrix for the theme.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:style>
+    ///   <a:lnRef idx="3">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:lnRef>
+    ///   <a:fillRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:fillRef>
+    ///   <a:effectRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:effectRef>
+    ///   <a:fontRef idx="minor">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:fontRef>
+    /// </p:style>
+    /// ```
+    /// 
+    /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
+    /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
+    /// shape is to use the minor font defined by the theme.
     pub shape_style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
 }
 
@@ -1254,6 +1341,31 @@ pub struct Picture {
     pub non_visual_props: Box<PictureNonVisual>,
     pub blip_fill: Box<msoffice_shared::drawingml::BlipFillProperties>,
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
+    /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
+    /// the preset styles defined by the style matrix for the theme.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:style>
+    ///   <a:lnRef idx="3">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:lnRef>
+    ///   <a:fillRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:fillRef>
+    ///   <a:effectRef idx="1">
+    ///     <a:schemeClr val="accent3"/>
+    ///   </a:effectRef>
+    ///   <a:fontRef idx="minor">
+    ///     <a:schemeClr val="lt1"/>
+    ///   </a:fontRef>
+    /// </p:style>
+    /// ```
+    /// 
+    /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
+    /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
+    /// shape is to use the minor font defined by the theme.
     pub shape_style: Option<Box<msoffice_shared::drawingml::ShapeStyle>>,
 }
 
@@ -1388,6 +1500,39 @@ pub struct CommonSlideData {
     /// This element specifies the background appearance information for a slide. The slide background covers the
     /// entire slide and is visible where no objects exist and as the background for transparent objects.
     pub background: Option<Box<Background>>,
+    /// This element specifies all shape-based objects, either grouped or not, that can be referenced on a given slide. As
+    /// most objects within a slide are shapes, this represents the majority of content within a slide. Text and effects are
+    /// attached to shapes that are contained within the shape_tree element.
+    /// 
+    /// Each shape-based object within the shape tree, whether grouped or not, shall represent one unique level of z-
+    /// ordering on the slide. The z-order for each shape-based object shall be determined by the lexical ordering of
+    /// each shape-based object within the shape tree: the first shape-based object shall have the lowest z-order, while
+    /// the last shape-based object shall have the highest z-order.
+    /// 
+    /// The z-ordering of shape-based objects within the shape tree shall also determine the navigation (tab) order of
+    /// the shape-based objects: the shape-based object with the lowest z-order (the first shape in lexical order) shall be
+    /// first in navigation order, with objects being navigated in ascending z-order.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:sld>
+    ///   <p:cSld>
+    ///     <p:spTree>
+    ///       <p:nvGrpSpPr>
+    ///       ...
+    ///       </p:nvGrpSpPr>
+    ///       <p:grpSpPr>
+    ///       ...
+    ///       </p:grpSpPr>
+    ///       <p:sp>
+    ///       ...
+    ///       </p:sp>
+    ///     </p:spTree>
+    ///   </p:cSld>
+    ///   ...
+    /// </p:sld>
+    /// ```
     pub shape_tree: Box<GroupShape>,
     pub customer_data_list: Option<CustomerDataList>,
     /// This element specifies a list of embedded controls for the corresponding slide. Custom embedded controls can
@@ -1399,14 +1544,14 @@ impl CommonSlideData {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let name = xml_node.attribute("name").cloned();
         let mut background = None;
-        let mut opt_shape_tree = None;
+        let mut shape_tree = None;
         let mut customer_data_list = None;
         let mut control_list = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "bg" => background = Some(Box::new(Background::from_xml_element(child_node)?)),
-                "spTree" => opt_shape_tree = Some(Box::new(GroupShape::from_xml_element(child_node)?)),
+                "spTree" => shape_tree = Some(Box::new(GroupShape::from_xml_element(child_node)?)),
                 "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "controls" => {
                     let mut vec = Vec::new();
@@ -1420,7 +1565,7 @@ impl CommonSlideData {
             }
         }
 
-        let shape_tree = opt_shape_tree
+        let shape_tree = shape_tree
             .ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
 
         Ok(Self {
@@ -1437,6 +1582,10 @@ impl CommonSlideData {
 #[derive(Default, Debug, Clone)]
 pub struct CustomerDataList {
     pub customer_data_list: Vec<RelationshipId>,
+    /// This element specifies the existence of customer data in the form of tags. This allows for the storage of customer
+    /// data within the PresentationML framework. While this is similar to the ext tag in that it can be used store
+    /// information, this tag mainly focuses on referencing to other parts of the presentation document. This is
+    /// accomplished via the relationship identification attribute that is required for all specified tags.
     pub tags: Option<RelationshipId>,
 }
 
@@ -1671,6 +1820,10 @@ impl HandoutMasterIdListEntry {
 
 #[derive(Default, Debug, Clone)]
 pub struct SlideMasterTextStyles {
+    /// This element specifies the text formatting style for the title text within a master slide. This formatting is used on
+    /// all title text within related presentation slides. The text formatting is specified by utilizing the DrawingML
+    /// framework just as within a regular presentation slide. Within a title style there can be many different style types
+    /// defined as there are different kinds of text stored within a slide title.
     pub title_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
     /// This element specifies the text formatting style for all body text within a master slide.
     /// This formatting is used on all body text within presentation slides related to this master.
@@ -1679,6 +1832,16 @@ pub struct SlideMasterTextStyles {
     /// Within the bodyStyle element there can be many different style types defined as there are different kinds of
     /// text stored within the body of a slide.
     pub body_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
+    /// This element specifies the text formatting style for the all other text within a master slide. This formatting is
+    /// used on all text not covered by the title_styles or body_styles elements within related presentation slides. The text
+    /// formatting is specified by utilizing the DrawingML framework just as within a regular presentation slide. Within
+    /// the otherStyle element there can be many different style types defined as there are different kinds of text
+    /// stored within a slide.
+    /// 
+    /// # Note
+    /// 
+    /// The other_styles element is to be used for specifying the text formatting of text within a slide shape but
+    /// not within a text box. Text box styling is handled from within the body_styles element.
     pub other_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
 }
 
@@ -1993,8 +2156,19 @@ impl TransitionSoundAction {
 
 #[derive(Default, Debug, Clone)]
 pub struct SlideTransition {
-    pub speed: Option<TransitionSpeed>, // fast
-    pub advance_on_click: Option<bool>, // true
+    /// Specifies the transition speed that is to be used when transitioning from the current slide
+    /// to the next.
+    /// 
+    /// Defaults to TransitionSpeed::Fast
+    pub speed: Option<TransitionSpeed>,
+    /// Specifies whether a mouse click advances the slide or not. If this attribute is not specified
+    /// then a value of true is assumed.
+    /// 
+    /// Defaults to true
+    pub advance_on_click: Option<bool>,
+    /// Specifies the time, in milliseconds, after which the transition should start. This setting can
+    /// be used in conjunction with the advance_on_click attribute. If this attribute is not specified then it
+    /// is assumed that no auto-advance occurs.
     pub advance_on_time: Option<u32>,
     pub transition_type: Option<SlideTransitionGroup>,
     pub sound_action: Option<TransitionSoundAction>,
@@ -2032,6 +2206,21 @@ impl SlideTransition {
 #[derive(Default, Debug, Clone)]
 pub struct SlideTiming {
     pub time_node_list: Vec<TimeNodeGroup>,
+    /// This element specifies the list of graphic elements to build. This refers to how the different sub-shapes or sub-
+    /// components of a object are displayed. The different objects that can have build properties are text, diagrams,
+    /// and charts.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldGraphic spid="1" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldChart bld="category"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
     pub build_list: Vec<Build>,
 }
 
@@ -2063,9 +2252,65 @@ impl SlideTiming {
 
 #[derive(Debug, Clone)]
 pub enum Build {
+    /// This element specifies how to build paragraph level properties.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider having animation applied only to 1st level paragraphs. The <bldP> element should be used
+    /// as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldP spid="3" grpId="0" build="p"/>
+    /// </p:bldLst>
+    /// ```
     Paragraph(Box<TLBuildParagraph>),
+    /// This element specifies how to build the animation for a diagram.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following example where a chart is specified to be animated by category rather than as
+    /// one entity. Thus, the bldChart element should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:bdldLst>
+    ///   <p:bldGraphic spid="4" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldChart bld="category"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
     Diagram(Box<TLBuildDiagram>),
+    /// This element describes animation an a embedded Chart.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider displaying animation on a embedded graphical chart. The <bldOleChart>element should be
+    /// use as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldOleChart spid="1025" grpId="0"/>
+    /// </p:bldLst>
+    /// ```
     OleChart(Box<TLOleBuildChart>),
+    /// This element specifies how to build a graphical element.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider having a chart graphical element appear as a whole as opposed to by a category. The
+    /// <bldGraphic> element should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLdst>
+    ///   <p:bldGraphic spid="3" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldChart bld="category"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
     Graphic(Box<TLGraphicalObjectBuild>),
 }
 
@@ -2101,13 +2346,39 @@ impl Build {
 #[derive(Debug, Clone)]
 pub struct TLBuildParagraph {
     pub build_common: TLBuildCommonAttributes,
-    pub build_type: Option<TLParaBuildType>, // whole
-    pub build_level: Option<u32>,            // 1
-    pub animate_bg: Option<bool>,            // false
-    pub auto_update_anim_bg: Option<bool>,   // true
+    /// This attribute describe the build types.
+    /// 
+    /// Defaults to TLParaBuildType::Whole
+    pub build_type: Option<TLParaBuildType>,
+    /// This attribute describes the build level for the paragraph. It is only supported in
+    /// paragraph type builds i.e the build attribute shall also be set to "byParagraph" for this
+    /// attribute to apply.
+    /// 
+    /// Defaults to 1
+    pub build_level: Option<u32>,
+    /// This attribute indicates whether to animate the background of the shape associated with
+    /// the text.
+    /// 
+    /// Defaults to false
+    pub animate_bg: Option<bool>,
+    /// This attribute indicates whether to automatically update the "animateBg" setting to true
+    /// when the shape associated with the text has a fill or line.
+    /// 
+    /// Defaults to true
+    pub auto_update_anim_bg: Option<bool>,
+    /// This attribute is only supported in paragraph type builds. This specifies the direction of
+    /// the build relative to the order of the elements in the container. When this is set to "true",
+    /// the animations for the paragraphs are persisted in reverse order to the order of the
+    /// paragraphs themselves such that the last paragraph animates first.
+    /// 
+    /// Defaults to false
     pub reverse: Option<bool>,               // false
-    pub auto_advance_time: Option<TLTime>,   // indefinite
-    pub template_list: Vec<TLTemplate>,      // size: 0-9
+    /// This attribute specifies time after which to automatically advance the build to the next
+    /// step.
+    /// 
+    /// Defaults to TLTime::Indefinite
+    pub auto_advance_time: Option<TLTime>,
+    pub template_list: Option<Vec<TLTemplate>>,      // size: 0-9
 }
 
 impl TLBuildParagraph {
@@ -2137,12 +2408,16 @@ impl TLBuildParagraph {
             }
         }
 
-        let mut template_list = Vec::new();
-        if let Some(child_node) = xml_node.child_nodes.get(0) {
-            for template_node in &child_node.child_nodes {
-                template_list.push(TLTemplate::from_xml_element(template_node)?);
-            }
-        }
+        let template_list = match xml_node.child_nodes.get(0) {
+            Some(child_node) => {
+                let mut vec = Vec::new();
+                for template_node in &child_node.child_nodes {
+                    vec.push(TLTemplate::from_xml_element(template_node)?);
+                }
+                Some(vec)
+            },
+            None => None,
+        };
 
         let shape_id = shape_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
         let group_id = group_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "grpId"))?;
@@ -2237,15 +2512,28 @@ impl TLTemplate {
 
 #[derive(Debug, Clone)]
 pub struct TLBuildCommonAttributes {
+    /// This attribute specifies the shape to which the build applies.
     pub shape_id: msoffice_shared::drawingml::DrawingElementId,
+    /// This attribute ties effects persisted in the animation to the build information. The
+    /// attribute is used by the editor when changes to the build information are made.
+    /// GroupIDs are unique for a given shape. They are not guaranteed to be unique IDs across
+    /// all shapes on a slide.
     pub group_id: u32,
-    pub ui_expand: Option<bool>, // false
+    /// This attribute describes the view option indicating if the build should be displayed
+    /// expanded.
+    /// 
+    /// Defaults to false
+    pub ui_expand: Option<bool>,
 }
 
 #[derive(Debug, Clone)]
 pub struct TLBuildDiagram {
     pub build_common: TLBuildCommonAttributes,
-    pub build_type: Option<TLDiagramBuildType>, // whole
+    /// This attribute describes how the diagram is built. The animation animates the sub-
+    /// elements in the container in the particular order defined by this attribute.
+    /// 
+    /// Defaults to TLDiagramBuildType::Whole
+    pub build_type: Option<TLDiagramBuildType>,
 }
 
 impl TLBuildDiagram {
@@ -2282,8 +2570,15 @@ impl TLBuildDiagram {
 #[derive(Debug, Clone)]
 pub struct TLOleBuildChart {
     pub build_common: TLBuildCommonAttributes,
-    pub build_type: Option<TLOleChartBuildType>, // allAtOnce
-    pub animate_bg: Option<bool>,                // true
+    /// This attribute describes how the diagram is built. The animation animates the sub-
+    /// elements in the container in the particular order defined by this attribute.
+    /// 
+    /// Defaults to TLOleChartBuildType::AllAtOnce
+    pub build_type: Option<TLOleChartBuildType>,
+    /// This attribute describes whether to animate the background of the shape.
+    /// 
+    /// Defaults to true
+    pub animate_bg: Option<bool>,
 }
 
 impl TLOleBuildChart {
@@ -2367,6 +2662,20 @@ impl TLGraphicalObjectBuild {
 
 #[derive(Debug, Clone)]
 pub enum TLGraphicalObjectBuildChoice {
+    /// This element specifies in the build list to build the entire graphical object as one entity.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider having a graph appear as on entity as opposed to by category. The <bldAsOne> element
+    /// should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldGraphic spid="4" grpId="0">
+    ///     <p:bldAsOne/>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
     BuildAsOne,
     BuildSubElements(msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties),
 }
@@ -2401,14 +2710,177 @@ pub enum TimeNodeGroup {
     Parallel(Box<TLCommonTimeNodeData>),
     Sequence(Box<TLTimeNodeSequence>),
     Exclusive(Box<TLCommonTimeNodeData>),
+    /// This element is a generic animation element that requires little or no semantic understanding of the attribute
+    /// being animated. It can animate text within a shape or even the shape itself.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize text within a shape by changing the size of its font by 150%. The
+    /// <anim> element should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:anim to="1.5" calcmode="lin" valueType="num">
+    ///   <p:cBhvr override="childStyle">
+    ///     <p:cTn id="1" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="1">
+    ///         <p:txEl>
+    ///           <p:charRg st="1" end="4"/>
+    ///         </p:txEl>
+    ///       </p:spTgt>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>style.fontSize</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    /// </p:anim>
+    /// ```
     Animate(Box<TLAnimateBehavior>),
+    /// This animation element is responsible for animating the color of an object.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize a shape by changing its fill color to scheme color accent2. The
+    /// <animClr> element should be used as follows:
+    /// ```xml
+    /// <p:animClr clrSpc="rgb">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="1" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="1"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>fillcolor</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:to>
+    ///     <a:schemeClr val="accent2"/>
+    ///   </p:to>
+    /// </p:animClr>
+    /// ```
     AnimateColor(Box<TLAnimateColorBehavior>),
+    /// This animation behavior provides the ability to do image transform/filter effects on elements. Some visual
+    /// effects are dynamic in nature and have a progress that animates from 0 to 1 over a period of time to do visual
+    /// transitions between hidden and visible states. Other filters are static and apply a effects like a blur or drop-
+    /// shadow which aren't inherently time-based.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize a shape by creating an entrance animation using a "blinds" motion.
+    /// ```xml
+    /// <p:animEffect transition="in" filter="blinds(horizontal)">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="7" dur="500"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
     AnimateEffect(Box<TLAnimateEffectBehavior>),
+    /// Animate motion provides an abstracted way to move positioned elements. It provides the ability to specify
+    /// from/to/by motion as well as to use more detailed path descriptions for motion over polylines or bezier curves.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider animating a shape from its original position to the right.. The <animMotion> element should
+    /// be used as follows:
+    /// 
+    /// ```xml
+    /// <p:animMotion origin="layout" path="M 0 0 L 0.25 0 E" pathEditMode="relative">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="1" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="1"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>ppt_x</p:attrName>
+    ///       <p:attrName>ppt_y</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    /// </p:animMotion>
+    /// ```
     AnimateMotion(Box<TLAnimateMotionBehavior>),
+    /// This animation element is responsible for animating the rotation of an object. Rotation values set in the "by",
+    /// "to, and "from" attributes are specified in degrees measured to a 60,000th, i.e 1 degree is 60,000. Rotation
+    /// values can be larger than 360°.
+    /// 
+    /// The sign of the rotation angle specifies the direction for rotation. A negative rotation specifies that the rotation
+    /// should appear in the host to go counter-clockwise".
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize a shape by rotating it 360 degrees clockwise. The <animRot> element
+    /// should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:animRot by="21600000">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="5"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>r</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    /// </p:animRot>
+    /// ```
     AnimateRotation(Box<TLAnimateRotationBehavior>),
+    /// This animation element is responsible for animating the scale of an object. When animating the scale, the
+    /// element shall scale around the reference point of the element and the positioning system used should be
+    /// consistent with the one used for motion paths. When animating the width and height of an element, all of the
+    /// width/height animation values are calculated first then the scale animations are applied on top of that. So for
+    /// example, an animation from 0 to 100 of the width with a concurrent scale from 100% to 200% would result in
+    /// the element appearing to scale from 0 to 200.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize a shape by scaling it larger by 150%. The <animScale> element should
+    /// be used as follows:
+    /// 
+    /// ```xml
+    /// <p:childTnLst>
+    ///   <p:animScale>
+    ///     <p:cBhvr>
+    ///       <p:cTn id="6" dur="2000" fill="hold"/>
+    ///       <p:tgtEl>
+    ///         <p:spTgt spid="5"/>
+    ///       </p:tgtEl>
+    ///     </p:cBhvr>
+    ///     <p:by x="150000" y="150000"/>
+    ///   </p:animScale>
+    /// </p:childTnLst>
+    /// ```
     AnimateScale(Box<TLAnimateScaleBehavior>),
     Command(Box<TLCommandBehavior>),
     Set(Box<TLSetBehavior>),
+    /// This element is used to include audio during an animation. This element specifies that this node within the
+    /// animation tree triggers the playback of an audio file; the actual audio file used is specified by the sndTgt
+    /// element (§19.5.70).
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider adding applause sound to an animation sequence. The audio element is used as follows:
+    /// 
+    /// ```xml
+    /// <p:cTn ...>
+    ///   <p:stCondLst>...</p:stCondLst>
+    ///   <p:childTnLst>...</p:childTnLst>
+    ///   <p:subTnLst>
+    ///     <p:audio>
+    ///       <p:cMediaNode vol="50%">...
+    ///         <p:tgtEl>
+    ///           <p:sndTgt r:embed="rId2" />
+    ///         </p:tgtEl>
+    ///       </p:cMediaNode>
+    ///     </p:audio>
+    ///   </p:subTnLst>
+    /// </p:cTn>
+    /// ```
+    /// 
+    /// The audio element specifies the location of the audio playback within the animation; its child sndTgt element
+    /// specifies that the audio to be played is the target of the relationship with ID rId2.
     Audio(Box<TLMediaNodeAudio>),
     Video(Box<TLMediaNodeVideo>),
 }
@@ -2534,10 +3006,16 @@ impl TLTimeNodeSequence {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateBehavior {
+    /// This attribute specifies a relative offset value for the animation with respect to its
+    /// position before the start of the animation.
     pub by: Option<String>,
+    /// This attribute specifies the starting value of the animation.
     pub from: Option<String>,
+    /// This attribute specifies the ending value for the animation as a percentage.
     pub to: Option<String>,
+    /// This attribute specifies the interpolation mode for the animation.
     pub calc_mode: Option<TLAnimateBehaviorCalcMode>,
+    /// This attribute specifies the type of property value.
     pub value_type: Option<TLAnimateBehaviorValueType>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub time_animate_value_list: Vec<TLTimeAnimateValue>,
@@ -2594,7 +3072,19 @@ impl TLAnimateBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateColorBehavior {
+    /// This attribute specifies the color space in which to interpolate the animation. Values for
+    /// example can be HSL & RGB.
+    /// 
+    /// The values for from/to/by/etc. can still be specified in any supported color format
+    /// without affecting the color space within which the animation happens.
+    /// 
+    /// The RGB color space is best used for doing animations between two different colors since
+    /// it doesn't require going through any other hues between the two colors specified. The
+    /// HSL space is useful for animating through a rainbow of colors or for modifying just the
+    /// saturation by 30% for example.
     pub color_space: Option<TLAnimateColorSpace>,
+    /// This attribute specifies which direction to cycle the hue around the color wheel. Values
+    /// are clockwise or counter clockwise. Default is clockwise.
     pub direction: Option<TLAnimateColorDirection>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLByAnimateColorTransform>,
@@ -2665,8 +3155,66 @@ impl TLAnimateColorBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateEffectBehavior {
+    /// This attribute specifies whether to transition the element in or out or treat it as a static
+    /// filter. The values are "None", "In" and "Out", and the default value is "In".
+    /// 
+    /// When a value of "In" is specified, the element is not visible at the start of the animation
+    /// and is completely visible be the end of the duration. When "Out" is specified, the element
+    /// is visible at the start and not visible at the end of the effect. This visibility is in addition to
+    /// the effect of setting CSS visibility or display attributes.
     pub transition: Option<TLAnimateEffectTransition>,
+    /// This attribute specifies the animation types and subtypes to be used for the effect.
+    /// Multiple animations are allowed to be listed so that in the event that a superseding
+    /// animation (leftmost) cannot be rendered, a fallback animation is available. That is, the
+    /// rendering application parses the list from left to right until a supported animation is
+    /// found.
+    /// 
+    /// The syntax used for the filter attribute value is as follows: "type(subtype);type(subtype)".
+    /// Subtype can be a string value such as "fromLeft" or a numerical value depending on the
+    /// type specified.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animEffect transition="in" filter="blinds(horizontal);blinds(vertical)">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="7" dur="500"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgtspid="5"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
+    /// 
+    /// There are two animation filters shown in this example. The first is the blinds (horizontal),
+    /// which the rendering application is to use as the primary animation effect. If, however,
+    /// the rendering application does not support this animation, the blinds (vertical) animation
+    /// is used. In this example there are only two animation filters listed, a primary and a
+    /// fallback, but it is possible to list multiple fallback filters using the syntax defined above.
     pub filter: Option<String>,
+    /// This attribute specifies a list of properties that coincide with the effect specified.
+    /// Although there are many animation types allowed, this attribute allows the setting of
+    /// specific property settings in order to describe an even wider variety of animation types.
+    /// 
+    /// The syntax used for the prLst attribute value is as follows: “name:value;name:value”.
+    /// When multiple animation types are listed in the filter attribute, the rendering application
+    /// attempts to apply each property value even though some might not apply to it.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animEffect filter="image" prLst="opacity: 0.5">
+    ///   <p:cBhvr rctx="IE">
+    ///     <p:cTn id="7" dur="indefinite"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgtspid="3"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
+    /// 
+    /// The animation filter specified is an image filter type that has a specific property called
+    /// opacity set to a value of 0.5.
     pub property_list: Option<String>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub progress: Option<TLAnimVariant>,
@@ -2719,10 +3267,31 @@ impl TLAnimateEffectBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateMotionBehavior {
+    /// Specifies what the origin of the motion path is relative to such as the layout of the slide,
+    /// or the parent.
     pub origin: Option<TLAnimateMotionBehaviorOrigin>,
+    /// Specifies the path primitive followed by coordinates for the animation motion. The
+    /// allowed values that are understood within a path are as follows:
+    /// 
+    /// M = move to, L = line to, C = curve to, Z=close loop, E=end
+    /// UPPERCASE = absolute coords, lowercase = relative coords
+    /// Thus total allowed set = {M,L,C,Z,E,m,l,c,z,e)
+    /// 
+    /// # Example
+    /// 
+    /// The following string is a sample path.
+    /// path: “M 0 0 L 1 1 c 1 2 3 4 4 4 Z”
     pub path: Option<String>,
+    /// This attribute specifies how the motion path moves when the target element is moved.
     pub path_edit_mode: Option<TLAnimateMotionPathEditMode>,
+    /// The attribute describes the relative angle of the motion path.
     pub rotate_angle: Option<msoffice_shared::drawingml::Angle>,
+    /// This attribute describes the point type of the points in the path attribute. The allowed
+    /// values that are understood for the ptsTypes attribute are as follows:
+    /// 
+    /// A = Auto, F = Corner, T = Straight, S = Smooth
+    /// UPPERCASE = Straight Line follows point, lowercase = curve follows point.
+    /// Thus, the total allowed set = {A,F,T,S,a,f,t,s}
     pub points_types: Option<String>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLPoint>,
@@ -2787,8 +3356,11 @@ impl TLAnimateMotionBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateRotationBehavior {
+    /// This attribute describes the relative offset value for the animation.
     pub by: Option<msoffice_shared::drawingml::Angle>,
+    /// This attribute describes the starting value for the animation.
     pub from: Option<msoffice_shared::drawingml::Angle>,
+    /// This attribute describes the ending value for the animation.
     pub to: Option<msoffice_shared::drawingml::Angle>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
 }
@@ -2825,6 +3397,8 @@ impl TLAnimateRotationBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLAnimateScaleBehavior {
+    /// This attribute specifies whether to zoom the contents of an object when doing a scaling
+    /// animation.
     pub zoom_contents: Option<bool>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     pub by: Option<TLPoint>,
@@ -2938,7 +3512,10 @@ impl TLSetBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLMediaNodeAudio {
-    pub is_narration: Option<bool>, // false
+    /// This attribute indicates whether the audio is a narration for the slide.
+    /// 
+    /// Defaults to false
+    pub is_narration: Option<bool>,
     pub common_media_node_data: Box<TLCommonMediaNodeData>,
 }
 
@@ -3110,6 +3687,145 @@ pub struct TLCommonBehaviorData {
     pub override_type: Option<TLBehaviorOverrideType>,
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
+    /// This element is used to describe a list of attributes in which to apply an animation to.
+    /// 
+    /// The elements of this list is used to contain an attribute value for an Attribute Name List. This value defines the specific
+    /// attribute that an animation should be applied to, such as fill, style, and shadow, etc. A specific property is
+    /// defined by using a "property.sub-property" format which is often extended to multiple sub properties as seen in
+    /// the allowed values below.
+    /// 
+    /// Allowed property values:
+    /// * style.opacity
+    /// * style.rotation
+    /// * style.visibility
+    /// * style.color
+    /// * style.fontSize
+    /// * style.fontWeight
+    /// * style.fontStyle
+    /// * style.fontFamily
+    /// * style.textEffectEmboss
+    /// * style.textShadow
+    /// * style.textTransform
+    /// * style.textDecorationUnderline
+    /// * style.textEffectOutline
+    /// * style.textDecorationLineThrough
+    /// * style.sRotation
+    /// * imageData.cropTop
+    /// * imageData.cropBottom
+    /// * imageData.cropLeft
+    /// * imageData.cropRight
+    /// * imageData.gain
+    /// * imageData.blacklevel
+    /// * imageData.gamma
+    /// * imageData.grayscale
+    /// * imageData.chromakey
+    /// * fill.on
+    /// * fill.type
+    /// * fill.color
+    /// * fill.opacity
+    /// * fill.color2
+    /// * fill.method
+    /// * fill.opacity2
+    /// * fill.angle
+    /// * fill.focus
+    /// * fill.focusposition.x
+    /// * fill.focusposition.y
+    /// * fill.focussize.x
+    /// * fill.focussize.y
+    /// * stroke.on
+    /// * stroke.color
+    /// * stroke.weight
+    /// * stroke.opacity
+    /// * stroke.linestyle
+    /// * stroke.dashstyle
+    /// * stroke.filltype
+    /// * stroke.src
+    /// * stroke.color2
+    /// * stroke.imagesize.x
+    /// * stroke.imagesize.y
+    /// * stroke.startArrow
+    /// * stroke.endArrow
+    /// * stroke.startArrowWidth
+    /// * stroke.startArrowLength
+    /// * stroke.endArrowWidth
+    /// * stroke.endArrowLength
+    /// * shadow.on
+    /// * shadow.type
+    /// * shadow.color
+    /// * shadow.color2
+    /// * shadow.opacity
+    /// * shadow.offset.x
+    /// * shadow.offset.y
+    /// * shadow.offset2.x
+    /// * shadow.offset2.y
+    /// * shadow.origin.x
+    /// * shadow.origin.y
+    /// * shadow.matrix.xtox
+    /// * shadow.matrix.ytox
+    /// * shadow.matrix.xtoy
+    /// * shadow.matrix.ytoy
+    /// * shadow.matrix.perspectiveX
+    /// * shadow.matrix.perspectiveY
+    /// * skew.on
+    /// * skew.offset.x
+    /// * skew.offset.y
+    /// * skew.origin.x
+    /// * skew.origin.y
+    /// * skew.matrix.xtox
+    /// * skew.matrix.ytox
+    /// * skew.matrix.xtoy
+    /// * skew.matrix.ytoy
+    /// * skew.matrix.perspectiveX
+    /// * skew.matrix.perspectiveY
+    /// * extrusion.on
+    /// * extrusion.type
+    /// * extrusion.render
+    /// * extrusion.viewpointorigin.x
+    /// * extrusion.viewpointorigin.y
+    /// * extrusion.viewpoint.x
+    /// * extrusion.viewpoint.y
+    /// * extrusion.viewpoint.z
+    /// * extrusion.plane
+    /// * extrusion.skewangle
+    /// * extrusion.skewamt
+    /// * extrusion.backdepth,
+    /// * extrusion.foredepth
+    /// * extrusion.orientation.x
+    /// * extrusion.orientation.y
+    /// * extrusion.orientation.zand
+    /// * extrusion.orientationangle
+    /// * extrusion.color,
+    /// * extrusion.rotationangle.x
+    /// * extrusion.rotationangle.y
+    /// * extrusion.lockrotationcenter
+    /// * extrusion.autorotationcenter
+    /// * extrusion.rotationcenter.x
+    /// * extrusion.rotationcenter.y
+    /// * extrusion.rotationcenter.z
+    /// * extrusion.colormode.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize the txt font size within the body of a shape. The attribute would be
+    /// 'style.fontSize' and this can be done by doing the following:
+    /// 
+    /// ```xml
+    /// <p:anim to="1.5" calcmode="lin" valueType="num">
+    ///   <p:cBhvr override="childStyle">
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="3">
+    ///         <p:txEl>
+    ///           <p:charRg st="4294967295" end="4294967295"/>
+    ///         </p:txEl>
+    ///       </p:spTgt>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>style.fontSize</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    /// </p:anim>
+    /// ```
     pub attr_name_list: Option<Vec<String>>,
 }
 
@@ -3364,6 +4080,19 @@ impl TLShapeTargetElement {
 
 #[derive(Debug, Clone)]
 pub enum TLShapeTargetElementGroup {
+    /// This element is used to specify animating the background of an object.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider adding animation to the background of Shape Id 3. The <bg> tag can be used as follows:
+    /// 
+    /// ```xml
+    /// <p:tgtEl>
+    ///   <p:spTgt spid="3">
+    ///     <p:bg/>
+    ///   </p:spTgt>
+    /// </p:tgtEl>
+    /// ```
     Background,
     SubShape(TLSubShapeId),
     OleChartElement(TLOleChartTargetElement),
@@ -3799,9 +4528,22 @@ impl TLByHslColorTransform {
     }
 }
 
+/// This element specifies an instance of a slide master slide. Within a slide master slide are contained all elements
+/// that describe the objects and their corresponding formatting for within a presentation slide. Within a slide
+/// master slide are two main elements. The common_slide_data element specifies the common slide elements such as shapes and
+/// their attached text bodies. Then the text_styles element specifies the formatting for the text within each of these
+/// shapes. The other properties within a slide master slide specify other properties for within a presentation slide
+/// such as color information, headers and footers, as well as timing and transition information for all corresponding
+/// presentation slides.
 #[derive(Debug, Clone)]
 pub struct SlideMaster {
-    pub preserve: Option<bool>, // false
+    /// Specifies whether the corresponding slide layout is deleted when all the slides that follow
+    /// that layout are deleted. If this attribute is not specified then a value of false should be
+    /// assumed by the generating application. This would mean that the slide would in fact be
+    /// deleted if no slides within the presentation were related to it.
+    /// 
+    /// Defaults to false
+    pub preserve: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
     /// This element specifies the mapping layer that transforms one color scheme definition to another. Each attribute
     /// represents a color name that can be referenced in this master, and the value is the corresponding color in the
@@ -3815,13 +4557,32 @@ pub struct SlideMaster {
     /// accent6="accent6" hlink="hlink" folHlink="folHlink"/>
     /// ```
     pub color_mapping: Box<msoffice_shared::drawingml::ColorMapping>,
-    pub slide_layout_id_list: Vec<SlideLayoutIdListEntry>,
+    /// This element specifies the existence of the slide layout identification list. This list is contained within the slide
+    /// master and is used to determine which layouts are being used within the slide master file. Each layout within the
+    /// list of slide layouts has its own identification number and relationship identifier that uniquely identifies it within
+    /// both the presentation document and the particular master slide within which it is used.
+    /// 
+    /// The SlideLayoutIdListEntry specifies the relationship information for each slide layout that is used within the slide master.
+    /// The slide master has relationship identifiers that it uses internally for determining the slide layouts that should be
+    /// used. Then, to resolve what these slide layouts should be the sldLayoutId elements in the sldLayoutIdLst are
+    /// utilized.
+    pub slide_layout_id_list: Option<Vec<SlideLayoutIdListEntry>>,
+    /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
+    /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
+    /// complete.
     pub transition: Option<Box<SlideTransition>>,
+    /// This element specifies the timing information for handling all animations and timed events within the
+    /// corresponding slide. This information is tracked via time nodes within the timing element. More information on
+    /// the specifics of these time nodes and how they are to be defined can be found within the Animation section of
+    /// the PresentationML framework.
     pub timing: Option<SlideTiming>,
     /// This element specifies the header and footer information for a slide. Headers and footers consist of
     /// placeholders for text that should be consistent across all slides and slide types, such as a date and time, slide
     /// numbering, and custom header and footer text.
     pub header_footer: Option<HeaderFooter>,
+    /// This element specifies the text styles within a slide master. Within this element is the styling information for title
+    /// text, the body text and other slide text as well. This element is only for use within the Slide Master and thus sets
+    /// the text styles for the corresponding presentation slides.
     pub text_styles: Option<SlideMasterTextStyles>,
 }
 
@@ -3842,7 +4603,7 @@ impl SlideMaster {
 
         let mut common_slide_data = None;
         let mut color_mapping = None;
-        let mut slide_layout_id_list = Vec::new();
+        let mut slide_layout_id_list = None;
         let mut transition = None;
         let mut timing = None;
         let mut header_footer = None;
@@ -3857,9 +4618,11 @@ impl SlideMaster {
                     )
                 }
                 "sldLayoutIdLst" => {
+                    let mut vec = Vec::new();
                     for slide_layout_id_node in &child_node.child_nodes {
-                        slide_layout_id_list.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
+                        vec.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
                     }
+                    slide_layout_id_list = Some(vec);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -3887,17 +4650,50 @@ impl SlideMaster {
     }
 }
 
+/// This element specifies an instance of a slide layout. The slide layout contains in essence a template slide design
+/// that can be applied to any existing slide. When applied to an existing slide all corresponding content should be
+/// mapped to the new slide layout.
+/// 
+/// 
 #[derive(Debug, Clone)]
 pub struct SlideLayout {
-    pub matching_name: Option<String>,                    // ""
-    pub slide_layout_type: Option<SlideLayoutType>,       // cust
-    pub preserve: Option<bool>,                           // false
-    pub is_user_drawn: Option<bool>,                      // false
-    pub show_master_shapes: Option<bool>,                 // true
-    pub show_master_placeholder_animations: Option<bool>, // true
+    /// Specifies a name to be used in place of the name attribute within the cSld element. This
+    /// is used for layout matching in response to layout changes and template applications.
+    /// 
+    /// Defaults to ""
+    pub matching_name: Option<String>,
+    /// Specifies the slide layout type that is used by this slide.
+    /// 
+    /// Defaults to SlideLayoutType::Custom
+    pub slide_layout_type: Option<SlideLayoutType>,
+    /// Specifies whether the corresponding slide layout is deleted when all the slides that follow
+    /// that layout are deleted. If this attribute is not specified then a value of false should be
+    /// assumed by the generating application. This would mean that the slide would in fact be
+    /// deleted if no slides within the presentation were related to it.
+    /// 
+    /// Defaults to false
+    pub preserve: Option<bool>,
+    /// Specifies if the corresponding object has been drawn by the user and should thus not be
+    /// deleted. This allows for the flagging of slides that contain user drawn data.
+    pub is_user_drawn: Option<bool>,
+    /// Specifies if shapes on the master slide should be shown on slides or not.
+    /// 
+    /// Defaults to true
+    pub show_master_shapes: Option<bool>,
+    /// Specifies whether or not to display animations on placeholders from the master slide.
+    /// 
+    /// Defaults to true
+    pub show_master_placeholder_animations: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
     pub color_mapping_override: Option<msoffice_shared::drawingml::ColorMappingOverride>,
+    /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
+    /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
+    /// complete.
     pub transition: Option<Box<SlideTransition>>,
+    /// This element specifies the timing information for handling all animations and timed events within the
+    /// corresponding slide. This information is tracked via time nodes within the timing element. More information on
+    /// the specifics of these time nodes and how they are to be defined can be found within the Animation section of
+    /// the PresentationML framework.
     pub timing: Option<SlideTiming>,
     pub header_footer: Option<HeaderFooter>,
 }
@@ -3973,11 +4769,38 @@ impl SlideLayout {
     }
 }
 
+/// This element specifies a slide within a slide list. The slide list is used to specify an ordering of slides.
+/// 
+/// # Xml example
+/// 
+/// ```xml
+/// <p:custShowLst>
+///   <p:custShow name="Custom Show 1" id="0">
+///     <p:sldLst>
+///       <p:sld r:id="rId4"/>
+///       <p:sld r:id="rId3"/>
+///       <p:sld r:id="rId2"/>
+///       <p:sld r:id="rId5"/>
+///     </p:sldLst>
+///   </p:custShow>
+/// </p:custShowLst>
+/// ```
+/// In the above example the order specified to present the slides is slide 4, then 3, 2 and finally 5.
 #[derive(Debug, Clone)]
 pub struct Slide {
-    pub show: Option<bool>,                               // true
-    pub show_master_shapes: Option<bool>,                 // true
-    pub show_master_placeholder_animations: Option<bool>, // true
+    /// Specifies that the current slide should be shown in slide show. If this attribute is omitted
+    /// then a value of true is assumed.
+    /// 
+    /// Defaults to true
+    pub show: Option<bool>,
+    /// Specifies if shapes on the master slide should be shown on slides or not.
+    /// 
+    /// Defaults to true
+    pub show_master_shapes: Option<bool>,
+    /// Specifies whether or not to display animations on placeholders from the master slide.
+    /// 
+    /// Defaults to true
+    pub show_master_placeholder_animations: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
     /// This element provides a mechanism with which to override the color schemes listed within the
     /// SlideMaster::color_mapping element.
@@ -3985,7 +4808,14 @@ pub struct Slide {
     /// If the ColorMappingOverride::Override element is present, it defines a new color scheme specific to the
     /// parent notes slide, presentation slide, or slide layout.
     pub color_mapping_override: Option<msoffice_shared::drawingml::ColorMappingOverride>,
+    /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
+    /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
+    /// complete.
     pub transition: Option<Box<SlideTransition>>,
+    /// This element specifies the timing information for handling all animations and timed events within the
+    /// corresponding slide. This information is tracked via time nodes within the timing element. More information on
+    /// the specifics of these time nodes and how they are to be defined can be found within the Animation section of
+    /// the PresentationML framework.
     pub timing: Option<SlideTiming>,
 }
 
