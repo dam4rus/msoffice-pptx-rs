@@ -1873,7 +1873,10 @@ impl SlideMasterTextStyles {
 
 #[derive(Default, Debug, Clone)]
 pub struct OrientationTransition {
-    pub direction: Option<Direction>, // horz
+    /// This attribute specifies a horizontal or vertical transition.
+    /// 
+    /// Defaults to Direction::Horizontal
+    pub direction: Option<Direction>,
 }
 
 impl OrientationTransition {
@@ -1905,7 +1908,11 @@ impl EightDirectionTransition {
 
 #[derive(Default, Debug, Clone)]
 pub struct OptionalBlackTransition {
-    pub through_black: Option<bool>, // false
+    /// This attribute specifies if the transition starts from a black screen (and then transition the
+    /// new slide over black).
+    /// 
+    /// Defaults to false
+    pub through_black: Option<bool>,
 }
 
 impl OptionalBlackTransition {
@@ -2007,15 +2014,124 @@ impl InOutTransition {
 
 #[derive(Debug, Clone)]
 pub enum SlideTransitionGroup {
+    /// This element describes the blinds slide transition effect, which uses a set of horizontal or vertical bars and wipes
+    /// them either left-to-right or top-to-bottom, respectively, until the new slide is fully shown. The rendering of this
+    /// transition depends upon the attributes specified.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:blinds dir="horz"/>
+    /// </p:transition>
+    /// ```
     Blinds(OrientationTransition),
+    /// This element describes the checker slide transition effect, which uses a set of horizontal or vertical
+    /// checkerboard squares and wipes them either left-to-right or top-to-bottom, respectively, until the new slide is
+    /// fully shown. The rendering of this transition depends upon the attributes specified.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:checker dir="horz"/>
+    /// </p:transition>
+    /// ```
     Checker(OrientationTransition),
+    /// This element describes the circle slide transition effect, which uses a circle pattern centered on the slide that
+    /// increases in size until the new slide is fully shown. The rendering of this transition has been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:circle/>
+    /// </p:transition>
+    /// ```
     Circle,
+    /// This element describes the dissolve slide transition effect, which uses a set of randomly placed squares on the
+    /// slide that continue to be added to until the new slide is fully shown. The rendering of this transition has been
+    /// shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:dissolve/>
+    /// </p:transition>
+    /// ```
     Dissolve,
+    /// This element describes the comb slide transition effect, which uses a set of horizontal or vertical bars and wipes
+    /// them from one end of the slide to the other until the new slide is fully shown. The rendering of this transition
+    /// depends upon the attributes specified which have been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:comb dir="horz"/>
+    /// </p:transition>
+    /// ```
     Comb(OrientationTransition),
+    /// This element describes the cover slide transition effect, which moves the new slide in from an off-screen
+    /// location, continually covering more of the previous slide until the new slide is fully shown. The rendering of this
+    /// transition depends upon the attributes specified which have been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:cover dir="d"/>
+    /// </p:transition>
+    /// ```
     Cover(EightDirectionTransition),
+    /// This element describes the cut slide transition effect, which simply replaces the previous slide with the new slide
+    /// instantaneously. No animation is used, but an option exists to cut to a black screen before showing the new
+    /// slide. The rendering of this transition depends upon the attributes specified which have been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:cut thruBlk="0"/>
+    /// </p:transition>
+    /// ```
     Cut(OptionalBlackTransition),
+    /// This element describes the diamond slide transition effect, which uses a diamond pattern centered on the slide
+    /// that increases in size until the new slide is fully shown. The rendering of this transition has been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:diamond/>
+    /// </p:transition>
+    /// ```
     Diamond,
+    /// This element describes the fade slide transition effect, which smoothly fades the previous slide either directly to
+    /// the new slide or first to a black screen and then to the new slide. The rendering of this transition depends upon
+    /// the attributes specified which have been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:fade thruBlk="0"/>
+    /// </p:transition>
+    /// ```
     Fade(OptionalBlackTransition),
+    /// This element describes the newsflash slide transition effect, which grows and spins the new slide counterclockwise
+    /// into place over the previous slide. The rendering of this transition has been shown below.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following case in which the “newsflash” slide transition is applied to a slide, along with a
+    /// set of attributes.
+    /// ```xml
+    /// <p:transition>
+    ///   <p:newsflash/>
+    /// </p:transition>
+    /// ```
     Newsflash,
     Plus,
     Pull(EightDirectionTransition),
@@ -2126,6 +2242,17 @@ impl TransitionStartSoundAction {
 #[derive(Debug, Clone)]
 pub enum TransitionSoundAction {
     StartSound(TransitionStartSoundAction),
+    /// This element stops all previous sounds during a slide transition.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:transition>
+    ///   <p:sndAc>
+    ///     <p:endSnd/>
+    ///   </p:sndAc>
+    /// </p:transition>
+    /// ```
     EndSound,
 }
 
@@ -2677,6 +2804,21 @@ pub enum TLGraphicalObjectBuildChoice {
     /// </p:bldLst>
     /// ```
     BuildAsOne,
+    /// This element specifies the animation properties of a graphical object's sub-elements.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider applying animation to a graphical element consisting of a diagram. The <bldSub> element
+    /// should be used as follows:
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldGraphic spid="5" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldDgm bld="one"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
     BuildSubElements(msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties),
 }
 
@@ -2709,6 +2851,8 @@ impl TLGraphicalObjectBuildChoice {
 pub enum TimeNodeGroup {
     Parallel(Box<TLCommonTimeNodeData>),
     Sequence(Box<TLTimeNodeSequence>),
+    /// This element describes the Exclusive time node. This time node is used to pause all other timelines when it is
+    /// activated.
     Exclusive(Box<TLCommonTimeNodeData>),
     /// This element is a generic animation element that requires little or no semantic understanding of the attribute
     /// being animated. It can animate text within a shape or even the shape itself.
@@ -2853,6 +2997,10 @@ pub enum TimeNodeGroup {
     /// </p:childTnLst>
     /// ```
     AnimateScale(Box<TLAnimateScaleBehavior>),
+    /// This element describes the several non-durational commands that can be executed within a timeline. This can
+    /// be used to send events, call functions on elements, and send verbs to embedded objects. For example “Object
+    /// Action” effects for Embedded objects and Media commands for sounds/movies such as "PlayFrom(0.0)" and
+    /// "togglePause".
     Command(Box<TLCommandBehavior>),
     Set(Box<TLSetBehavior>),
     /// This element is used to include audio during an animation. This element specifies that this node within the
@@ -2899,21 +3047,11 @@ impl TimeNodeGroup {
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
-            "par" => Ok(TimeNodeGroup::Parallel(Box::new(
-                TLCommonTimeNodeData::from_xml_element(xml_node)?,
-            ))),
-            "seq" => Ok(TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::from_xml_element(
-                xml_node,
-            )?))),
-            "excl" => Ok(TimeNodeGroup::Exclusive(Box::new(
-                TLCommonTimeNodeData::from_xml_element(xml_node)?,
-            ))),
-            "anim" => Ok(TimeNodeGroup::Animate(Box::new(TLAnimateBehavior::from_xml_element(
-                xml_node,
-            )?))),
-            "animClr" => Ok(TimeNodeGroup::AnimateColor(Box::new(
-                TLAnimateColorBehavior::from_xml_element(xml_node)?,
-            ))),
+            "par" => Ok(TimeNodeGroup::Parallel(Box::new(TLCommonTimeNodeData::from_xml_element(xml_node)?))),
+            "seq" => Ok(TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::from_xml_element(xml_node)?))),
+            "excl" => Ok(TimeNodeGroup::Exclusive(Box::new(TLCommonTimeNodeData::from_xml_element(xml_node)?))),
+            "anim" => Ok(TimeNodeGroup::Animate(Box::new(TLAnimateBehavior::from_xml_element(xml_node)?))),
+            "animClr" => Ok(TimeNodeGroup::AnimateColor(Box::new(TLAnimateColorBehavior::from_xml_element(xml_node)?))),
             "animEffect" => Ok(TimeNodeGroup::AnimateEffect(Box::new(
                 TLAnimateEffectBehavior::from_xml_element(xml_node)?,
             ))),
@@ -2926,20 +3064,11 @@ impl TimeNodeGroup {
             "animScale" => Ok(TimeNodeGroup::AnimateScale(Box::new(
                 TLAnimateScaleBehavior::from_xml_element(xml_node)?,
             ))),
-            "cmd" => Ok(TimeNodeGroup::Command(Box::new(TLCommandBehavior::from_xml_element(
-                xml_node,
-            )?))),
+            "cmd" => Ok(TimeNodeGroup::Command(Box::new(TLCommandBehavior::from_xml_element(xml_node)?))),
             "set" => Ok(TimeNodeGroup::Set(Box::new(TLSetBehavior::from_xml_element(xml_node)?))),
-            "audio" => Ok(TimeNodeGroup::Audio(Box::new(TLMediaNodeAudio::from_xml_element(
-                xml_node,
-            )?))),
-            "video" => Ok(TimeNodeGroup::Video(Box::new(TLMediaNodeVideo::from_xml_element(
-                xml_node,
-            )?))),
-            _ => Err(Box::new(NotGroupMemberError::new(
-                xml_node.name.clone(),
-                "TimeNodeGroup",
-            ))),
+            "audio" => Ok(TimeNodeGroup::Audio(Box::new(TLMediaNodeAudio::from_xml_element(xml_node)?))),
+            "video" => Ok(TimeNodeGroup::Video(Box::new(TLMediaNodeVideo::from_xml_element(xml_node)?))),
+            _ => Err(Box::new(NotGroupMemberError::new(xml_node.name.clone(), "TimeNodeGroup"))),
         }
     }
 }
@@ -2950,7 +3079,45 @@ pub struct TLTimeNodeSequence {
     pub prev_action_type: Option<TLPreviousActionType>,
     pub next_action_type: Option<TLNextActionType>,
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
+    /// This element describes a list of conditions that shall be met in order to go backwards in an animation sequence.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider trying to emphasize text within a shape by changing the size of its font.
+    /// ```xml
+    /// <p:seq concurrent="1" nextAc="seek">
+    ///   <p:cTn id="2" dur="indefinite" nodeType="mainSeq">
+    ///   </p:cTn>
+    ///   <p:prevCondLst>
+    ///     <p:cond evt="onPrev" delay="0">
+    ///       <p:tgtEl>
+    ///         <p:sldTgt/>
+    ///       </p:tgtEl>
+    ///     </p:cond>
+    ///   </p:prevCondLst>
+    ///   <p:nextCondLst>
+    ///   </p:nextCondLst>
+    /// </p:seq>
+    /// ```
     pub prev_condition_list: Vec<TLTimeCondition>,
+    /// This element describes a list of conditions that shall be met to advance to the next animation sequence.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a shape with a text emphasis changing the size of its font.
+    /// ```xml
+    /// <p:seq concurrent="1" nextAc="seek">
+    ///   <p:cTn id="2" dur="indefinite" nodeType="mainSeq"> … </p:cTn>
+    ///   <p:prevCondLst> … </p:prevCondLst>
+    ///   <p:nextCondLst>
+    ///     <p:cond evt="onNext" delay="0">
+    ///       <p:tgtEl>
+    ///         <p:sldTgt/>
+    ///       </p:tgtEl>
+    ///     </p:cond>
+    ///   </p:nextCondLst>
+    /// </p:seq>
+    /// ```
     pub next_condition_list: Vec<TLTimeCondition>,
 }
 
@@ -3087,7 +3254,48 @@ pub struct TLAnimateColorBehavior {
     /// are clockwise or counter clockwise. Default is clockwise.
     pub direction: Option<TLAnimateColorDirection>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
+    /// This element describes the relative offset value for the color animation.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animClr clrSpc="hsl">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="8" dur="500" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>stroke.color</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:by>
+    ///     <p:hsl h="0" s="0" l="0"/>
+    ///   </p:by>
+    /// </p:animClr>
+    /// ```
     pub by: Option<TLByAnimateColorTransform>,
+    /// This element is used to specify the starting color of the target element.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animClr clrSpc="rgb" dir="cw">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl> … </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>fillcolor</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:from>
+    ///     <a:schemeClr val="accent3"/>
+    ///   </p:from>
+    ///   <p:to>
+    ///     <a:schemeClr val="accent2"/>
+    ///   </p:to>
+    /// </p:animClr>
+    /// ```
     pub from: Option<msoffice_shared::drawingml::Color>,
     pub to: Option<msoffice_shared::drawingml::Color>,
 }
@@ -3294,6 +3502,21 @@ pub struct TLAnimateMotionBehavior {
     /// Thus, the total allowed set = {A,F,T,S,a,f,t,s}
     pub points_types: Option<String>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
+    /// This element describes the relative offset value for the animation.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animScale>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    ///   <p:by x="150.000%" y="150.000%"/>
+    /// </p:animScale>
+    /// ```
     pub by: Option<TLPoint>,
     pub from: Option<TLPoint>,
     pub to: Option<TLPoint>,
@@ -3401,7 +3624,38 @@ pub struct TLAnimateScaleBehavior {
     /// animation.
     pub zoom_contents: Option<bool>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
+    /// This element describes the relative offset value for the animation.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animScale>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    ///   <p:by x="150.000%" y="150.000%"/>
+    /// </p:animScale>
+    /// ```
     pub by: Option<TLPoint>,
+    /// This element specifies an x/y co-ordinate to start the animation from.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animScale>
+    ///   <p:cBhvr>
+    ///     <p:cTn> … </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    ///   <p:from x="100%" y="100%"/>
+    ///   <p:to x="80%" y="100%"/>
+    /// </p:animScale>
+    /// ```
     pub from: Option<TLPoint>,
     pub to: Option<TLPoint>,
 }
@@ -3443,7 +3697,69 @@ impl TLAnimateScaleBehavior {
 
 #[derive(Debug, Clone)]
 pub struct TLCommandBehavior {
+    /// This attribute specifies the kind of command that is issued by the rendering application to
+    /// the appropriate target application or object.
+    /// 
+    /// There are three possible values, call, evt, and verb. A call command type is used to
+    /// specify the class of commands that can then be issued.
+    /// 
+    /// * Call commands: This command type is used to call methods on the object specified (play(), pause(), etc.)
+    /// 
+    /// * Event commands: This command type is used to set an event for the object at this point in the timeline
+    ///                   (onstopaudio, etc.)
+    /// 
+    /// * Verb Commands: This command type is used to set verbs for the object to occur at this point in the timeline
+    ///                  (0, 1, etc.)
     pub command_type: Option<TLCommandType>,
+    /// This attribute defines the actual command to be issued. Depending on the command
+    /// specified, the actual command can be made to invoke a wide range of actions on the
+    /// linked or embedded object
+    /// 
+    /// Reserved Values (when command_type == TLCommandType::Call):
+    /// * play: play corresponding media
+    /// * playFrom(s): play corresponding media starting from s, where s is the number of
+    ///                seconds from the beginning of the clip
+    /// * pause: pause corresponding media
+    /// * resume: resume play of corresponding media
+    /// * stop: stop play of corresponding media
+    /// * togglePause: play corresponding media if media is already paused, pause
+    ///                corresponding media if media is already playing. If the corresponding
+    ///                media is not active, this command restarts the media and plays from
+    ///                its beginning.
+    /// 
+    /// Reserved Values (when command_type == TLCommandType::Event):
+    /// * onstopaudio: stop play of all audio
+    /// 
+    /// Reserved Values (when command_type == TLCommandType::Verb):
+    /// * 0: Open the object for editing
+    /// * 1: Open the object for viewing
+    /// 
+    /// The value of the cmd attribute shall be the string representation of an integer that
+    /// represents the embedded object verb number. This verb number determines the action
+    /// that the rendering application should take corresponding to this object when this point in
+    /// the animation is reached.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:cmd type="evt" cmd="onstopaudio">
+    ///   <p:cBhvr>
+    ///     <p:cTn display="0" masterRel="sameClick">
+    ///       <p:stCondLst>
+    ///         <p:cond evt="begin" delay="0">
+    ///           <p:tn val="5"/>
+    ///         </p:cond>
+    ///       </p:stCondLst>
+    ///     </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:sldTgt/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:cmd>
+    /// ```
+    /// 
+    /// In the above example, the event of onstopaudio stops all audio from playing once this
+    /// particular animation is reached in the timeline.
     pub command: Option<String>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
 }
@@ -3617,10 +3933,36 @@ impl FromStr for TLTimeAnimateValueTime {
 
 #[derive(Debug, Clone)]
 pub enum TLAnimVariant {
+    /// This element specifies a boolean value to be used for evaluation by a parent element. The exact meaning of the
+    /// value contained within this element is not defined here but is dependent on the usage of this element in
+    /// conjunction with one of the listed parent elements.
     Bool(bool),
+    /// This element specifies an integer value to be used for evaluation by a parent element. The exact meaning of the
+    /// value contained within this element is not defined here but is dependent on the usage of this element in
+    /// conjunction with one of the listed parent elements.
     Int(i32),
+    /// This element specifies a floating point value to be used for evaluation by a parent element. The exact meaning
+    /// of the value contained within this element is not defined here but is dependent on the usage of this element in
+    /// conjunction with one of the listed parent elements.
     Float(f32),
     String(String),
+    /// This element describes the color variant. This is used to specify a color that is to be used for animating the color
+    /// property of an object.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:set>
+    ///   <p:cBhvr override="childStyle">
+    ///     …
+    ///   </p:cBhvr>
+    ///   <p:to>
+    ///     <p:clrVal>
+    ///       <a:schemeClr val="accent2"/>
+    ///     </p:clrVal>
+    ///   </p:to>
+    /// </p:set>
+    /// ```
     Color(msoffice_shared::drawingml::Color),
 }
 
@@ -3675,6 +4017,27 @@ impl TLAnimVariant {
     }
 }
 
+/// This element describes the common behaviors of animations.
+/// 
+/// # Xml example
+/// 
+/// ```xml
+/// <p:anim to="1.5" calcmode="lin" valueType="num">
+///   <p:cBhvr override="childStyle">
+///     <p:cTn id="6" dur="2000" fill="hold"/>
+///     <p:tgtEl>
+///       <p:spTgt spid="3">
+///         <p:txEl>
+///           <p:charRg st="4294967295" end="4294967295"/>
+///         </p:txEl>
+///       </p:spTgt>
+///     </p:tgtEl>
+///     <p:attrNameLst>
+///       <p:attrName>style.fontSize</p:attrName>
+///     </p:attrNameLst>
+///   </p:cBhvr>
+/// </p:anim>
+/// ```
 #[derive(Debug, Clone)]
 pub struct TLCommonBehaviorData {
     pub additive: Option<TLBehaviorAdditiveType>,
@@ -3905,12 +4268,39 @@ impl TLCommonBehaviorData {
     }
 }
 
+/// This element is used to describe behavior of media elements, such as sound or movies, in an animation.
+/// 
+/// # Xml example
+/// 
+/// ```xml
+/// <p:audio>
+///   <p:cMediaNode mute="1">
+///     <p:cTn display="0" masterRel="sameClick">
+///       <p:stCondLst> … </p:stCondLst>
+///       <p:endCondLst> … </p:endCondLst>
+///     </p:cTn>
+///     <p:tgtEl> … </p:tgtEl>
+///   </p:cMediaNode>
+/// </p:audio>
+/// ```
 #[derive(Debug, Clone)]
 pub struct TLCommonMediaNodeData {
-    pub volume: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 50000
-    pub mute: Option<bool>,                                        // false
-    pub number_of_slides: Option<u32>,                             // 1
-    pub show_when_stopped: Option<bool>,                           // true
+    /// This attribute describes the volume of the media element.
+    /// 
+    /// Defaults to 50000
+    pub volume: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    /// This attribute describes whether the media should be mute.
+    /// 
+    /// Defaults to false
+    pub mute: Option<bool>,
+    /// This attribute describes the numbers of slides across which the media should play.
+    /// 
+    /// Defaults to 1
+    pub number_of_slides: Option<u32>,
+    /// This attribute describes whether the media should be displayed when it is stopped.
+    /// 
+    /// Defaults to true
+    pub show_when_stopped: Option<bool>,
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
     pub target_element: TLTimeTargetElement,
 }
@@ -4013,6 +4403,21 @@ pub enum TLTimeTargetElement {
     SlideTarget,
     SoundTarget(msoffice_shared::drawingml::EmbeddedWAVAudioFile),
     ShapeTarget(TLShapeTargetElement),
+    /// This element specifies an animation target element that is represented by a sub-shape in a legacy graphical
+    /// object.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animEffect transition="in" filter="blinds(horizontal)">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="7" dur="500"/>
+    ///     <p:tgtEl>
+    ///       <p:inkTgt spid="_x0000_s2057"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
     InkTarget(TLSubShapeId),
 }
 
@@ -4095,8 +4500,46 @@ pub enum TLShapeTargetElementGroup {
     /// ```
     Background,
     SubShape(TLSubShapeId),
+    /// This element specifies the subelement of an embedded chart to animate.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an embedded Chart with a entrance animation effect applied to each of the graph's
+    /// categories. The <oldChartEl> element should be used as follows:
+    /// ```xml
+    /// <p:animEffect transition="in" filter="blinds(horizontal)">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="12" dur="500"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="19460">
+    ///         <p:oleChartEl type="category" lvl="1"/>
+    ///       </p:spTgt>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
     OleChartElement(TLOleChartTargetElement),
     TextElement(Option<TLTextTargetElement>),
+    /// This element specifies a graphical element which to animate
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:set>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="1" fill="hold"> … </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4">
+    ///         <p:graphicEl>
+    ///           <a:dgm id="{87C2C707-C3F4-4E81-A967-A8B8AE13E575}"/>
+    ///         </p:graphicEl>
+    ///       </p:spTgt>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst> … </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:to> … </p:to>
+    /// </p:set>
+    /// ```
     GraphicElement(msoffice_shared::drawingml::AnimationElementChoice),
 }
 
@@ -4149,8 +4592,12 @@ impl TLShapeTargetElementGroup {
 
 #[derive(Debug, Clone)]
 pub struct TLOleChartTargetElement {
+    /// This attribute specifies how to chart should be built during its animation.
     pub element_type: TLChartSubelementType,
-    pub level: Option<u32>, // 0
+    /// This attribute describes the element levels to animate.
+    /// 
+    /// Defaults to 0
+    pub level: Option<u32>,
 }
 
 impl TLOleChartTargetElement {
@@ -4174,6 +4621,28 @@ impl TLOleChartTargetElement {
 
 #[derive(Debug, Clone)]
 pub enum TLTextTargetElement {
+    /// This element specifies animation on a character range defined by a start and end character position.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animMotion>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="6" dur="2000" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="3">
+    ///         <p:txEl>
+    ///           <p:charRg st="0" end="9"/>
+    ///         </p:txEl>
+    ///       </p:spTgt>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>ppt_x</p:attrName>
+    ///       <p:attrName>ppt_y</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    /// </p:animMotion>
+    /// ```
     CharRange(IndexRange),
     ParagraphRange(IndexRange),
 }
@@ -4203,9 +4672,34 @@ impl TLTextTargetElement {
     }
 }
 
+/// This element specifies conditions on time nodes in a timeline. It is used within a list of start condition or list of
+/// end condition elements.
+/// 
+/// # Xml example
+/// 
+/// ```xml
+/// <p:cTn>
+///   <p:stCondLst>
+///     <p:cond delay="2000"/>
+///   </p:stCondLst>
+///   <p:childTnLst>
+///     <p:set> … </p:set>
+///     <p:animEffect transition="in" filter="blinds(horizontal)">
+///       <p:cBhvr>
+///         <p:cTn id="7" dur="1000"/>
+///         <p:tgtEl>
+///           <p:spTgt spid="4"/>
+///         </p:tgtEl>
+///       </p:cBhvr>
+///     </p:animEffect>
+///   </p:childTnLst>
+/// </p:cTn>
+/// ```
 #[derive(Default, Debug, Clone)]
 pub struct TLTimeCondition {
+    /// This attribute describes the event that triggers an animation.
     pub trigger_event: Option<TLTriggerEvent>,
+    /// This attribute describes the delay after an animation is triggered.
     pub delay: Option<TLTime>,
     pub trigger: Option<TLTimeConditionTriggerGroup>,
 }
@@ -4230,35 +4724,144 @@ impl TLTimeCondition {
     }
 }
 
+/// This element describes the properties that are common for time nodes.
 #[derive(Default, Debug, Clone)]
 pub struct TLCommonTimeNodeData {
+    /// This attribute specifies the identifier for the timenode.
     pub id: Option<TLTimeNodeId>,
+    /// This attribute describes the preset identifier for the time node.
     pub preset_id: Option<i32>,
+    /// This attribute descries the class of effect in which it belongs.
     pub preset_class: Option<TLTimeNodePresetClassType>,
+    /// This attribute is a bitflag that specifies a direction or some other attribute of the effect.
+    /// For example it can be set to specify a “From Bottom” for the Fly In effect, or “Bold” for
+    /// the Change Font Style effect.
     pub preset_subtype: Option<i32>,
+    /// This attribute describes the duration of the time node, expressed as unit time.
     pub duration: Option<TLTime>,
-    pub repeat_count: Option<TLTime>, // 1000
+    /// This attribute describes the number of times the element should repeat, in units of
+    /// thousandths.
+    /// 
+    /// Defaults to 100_0
+    pub repeat_count: Option<TLTime>,
+    /// This attribute describes the amount of time over which the element should repeat. If
+    /// absent, the attribute is taken to be the same as the specified duration.
     pub repeat_duration: Option<TLTime>,
-    pub speed: Option<msoffice_shared::drawingml::Percentage>, // 100000
-    pub acceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 0
-    pub deceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>, // 0
-    pub auto_reverse: Option<bool>,                  // false
+    /// This attribute specifies the percentage by which to speed up (or slow down) the timing. If
+    /// negative, the timing is reversed.
+    /// 
+    /// Defaults to 100_000
+    /// 
+    /// # Example
+    /// 
+    /// If speed is 200% (200_000) and the specified duration is 10 seconds, the actual duration is 5 seconds.
+    pub speed: Option<msoffice_shared::drawingml::Percentage>,
+    /// This attribute describes the percentage of specified duration over which the element's
+    /// time takes to accelerate from 0 up to the "run rate."
+    /// 
+    /// Defaults to 0
+    pub acceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    /// This attribute describes the percentage of specified duration over which the element's
+    /// time takes to decelerate from the "run rate" down to 0.
+    /// 
+    /// Defaults to 0
+    pub deceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    /// This attribute describes whether to automatically play the animation in reverse after
+    /// playing it in the forward direction.
+    /// 
+    /// Defaults to false
+    pub auto_reverse: Option<bool>,
+    /// This attribute specifies if a node is to restart when it completes its action
     pub restart_type: Option<TLTimeNodeRestartType>,
+    /// This attribute describes the fill type for the time node.
     pub fill_type: Option<TLTimeNodeFillType>,
+    /// This attribute specifies how the time node synchronizes to its group.
     pub sync_behavior: Option<TLTimeNodeSyncType>,
+    /// This attribute specifies the time filter for the time node.
     pub time_filter: Option<String>,
+    /// This attribute describes the event filter for this time node.
     pub event_filter: Option<String>,
+    /// This attribute describes whether the state of the time node is visible or hidden.
     pub display: Option<bool>,
+    /// This attribute specifies how the time node plays back relative to its master time node.
     pub master_relationship: Option<TLTimeNodeMasterRelation>,
+    /// This attribute describes the build level of the animation.
     pub build_level: Option<i32>,
+    /// This attribute describes the Group ID of the time node.
     pub group_id: Option<u32>,
+    /// This attribute specifies whether there is an after effect applied to the time node.
     pub after_effect: Option<bool>,
+    /// This attribute specifies the type of time node.
     pub node_type: Option<TLTimeNodeType>,
+    /// This attribute describes whether this node is a placeholder.
     pub node_placeholder: Option<bool>,
     pub start_condition_list: Option<Vec<TLTimeCondition>>,
+    /// This element describes a list of the end conditions that shall be met in order to stop the time node.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a shape a shape with an audio attached to the animation. The <endCondList> element
+    /// should be used as follows to specifies when the sound is done:
+    /// ```xml
+    /// <p:audio>
+    ///   <p:cMediaNode>
+    ///     <p:cTn display="0" masterRel="sameClick">
+    ///       <p:stCondLst> … </p:stCondLst>
+    ///       <p:endCondLst>
+    ///         <p:cond evt="onStopAudio" delay="0">
+    ///           <p:tgtEl>
+    ///             <p:sldTgt/>
+    ///           </p:tgtEl>
+    ///         </p:cond>
+    ///       </p:endCondLst>
+    ///     </p:cTn>
+    ///     <p:tgtEl> … </p:tgtEl>
+    ///   </p:cMediaNode>
+    /// </p:audio>
+    /// ```
     pub end_condition_list: Option<Vec<TLTimeCondition>>,
+    /// This element is used to synchronizes the stopping of parallel elements in the timing tree. It is used on interactive
+    /// timeline sequences to specify that the interactive sequence’s duration ends when all of the child timenodes
+    /// have ended. It is also used to make interactive sequences restart-able (so that the entire interactive sequence
+    /// can be repeated if the trigger object is clicked on repeatedly).
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:seq concurrent="1" nextAc="seek">
+    ///   <p:cTn>
+    ///     <p:stCondLst/>
+    ///     <p:endSync evt="end" delay="0">
+    ///       <p:rtn val="all"/>
+    ///     </p:endSync>
+    ///     <p:childTnLst/>
+    ///   </p:cTn>
+    ///   <p:nextCondLst/>
+    /// </p:seq>
+    /// ```
     pub end_sync: Option<TLTimeCondition>,
+    /// This element specifies how the animation should be successively applied to sub elements of the target element
+    /// for a repeated effect. It can be applied to contained timing and animation structures over the letters, words, or
+    /// shapes within a target element.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a text animation where the words appear letter by letter. The <iterate> element should be
+    /// used as follows:
+    /// ```xml
+    /// <p:par>
+    ///   <p:cTn id="1" >
+    ///     <p:stCondLst> … </p:stCondLst>
+    ///     <p:iterate type="lt">
+    ///       <p:tmPct val="10000"/>
+    ///     </p:iterate>
+    ///     <p:childTnLst> … </p:childTnLst>
+    ///   </p:cTn>
+    /// </p:par>
+    /// ```
     pub iterate: Option<TLIterateData>,
+    /// This element describes the list of time nodes that have a fixed location in the timing tree based on their parent
+    /// time node. The children's start time is defined relative to their parent time node’s start.
     pub child_time_node_list: Option<Vec<TimeNodeGroup>>,
     pub sub_time_node_list: Option<Vec<TimeNodeGroup>>,
 }
@@ -4403,8 +5006,19 @@ impl TLIterateDataChoice {
 
 #[derive(Debug, Clone)]
 pub struct TLIterateData {
-    pub iterate_type: Option<IterateType>, // el
-    pub backwards: Option<bool>,           //false
+    /// This attribute specifies the iteration behavior and applies it to each letter, word or shape
+    /// within a container element.
+    /// 
+    /// Values are by word, by letter, or by element. If there is no text or block elements such as
+    /// shapes within the container or a single word, letter, or shape (depending on iterate type)
+    /// then no iteration happens and the behavior is applied to the element itself instead.
+    /// 
+    /// Defaults to IterateType::Element
+    pub iterate_type: Option<IterateType>,
+    /// This attribute specifies whether to go backwards in the timeline to the previous node.
+    /// 
+    /// Defaults to false
+    pub backwards: Option<bool>,
     pub interval: TLIterateDataChoice,
 }
 
@@ -4438,6 +5052,26 @@ impl TLIterateData {
 #[derive(Debug, Clone)]
 pub enum TLByAnimateColorTransform {
     Rgb(TLByRgbColorTransform),
+    /// This element specifies an incremental HSL (Hue, Saturation, Lightness) value to add to a color animation.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:animClr clrSpc="hsl">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="8" dur="500" fill="hold"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>stroke.color</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:by>
+    ///     <p:hsl h="0" s="0" l="0"/>
+    ///   </p:by>
+    /// </p:animClr>
+    /// ```
     Hsl(TLByHslColorTransform),
 }
 
@@ -4500,8 +5134,11 @@ impl TLByRgbColorTransform {
 
 #[derive(Debug, Clone)]
 pub struct TLByHslColorTransform {
+    /// Specifies hue as an angle. The values range from [0, 360] degrees
     pub h: msoffice_shared::drawingml::Angle,
+    /// Specifies a lightness as a percentage. The values are in the range [-100%, 100%].
     pub s: msoffice_shared::drawingml::FixedPercentage,
+    /// Specifies a saturation as a percentage. The values are in the range [-100%, 100%].
     pub l: msoffice_shared::drawingml::FixedPercentage,
 }
 
