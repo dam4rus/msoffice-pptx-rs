@@ -479,7 +479,9 @@ pub struct BackgroundProperties {
     /// Specifies whether the background of the slide is of a shade to title background type. This
     /// kind of gradient fill is on the slide background and changes based on the placement of
     /// the slide title placeholder.
-    pub shade_to_title: Option<bool>, // false
+    /// 
+    /// Defaults to false
+    pub shade_to_title: Option<bool>,
     pub fill: msoffice_shared::drawingml::FillProperties,
     pub effect: Option<msoffice_shared::drawingml::EffectProperties>,
 }
@@ -638,6 +640,8 @@ impl Placeholder {
     }
 }
 
+/// This element specifies non-visual properties for objects. These properties include multimedia content associated
+/// with an object and properties indicating how the object is to be used or displayed in different contexts.
 #[derive(Default, Debug, Clone)]
 pub struct ApplicationNonVisualDrawingProps {
     /// Specifies whether the picture belongs to a photo album and should thus be included
@@ -969,8 +973,6 @@ pub struct ShapeNonVisual {
     /// 
     /// This shape lock is stored within the non-visual drawing properties for this shape.
     pub shape_drawing_props: msoffice_shared::drawingml::NonVisualDrawingShapeProps,
-    /// This element specifies non-visual properties for objects. These properties include multimedia content associated
-    /// with an object and properties indicating how the object is to be used or displayed in different contexts.
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1997,7 +1999,10 @@ impl CornerDirectionTransition {
 
 #[derive(Default, Debug, Clone)]
 pub struct WheelTransition {
-    pub spokes: Option<u32>, // 4
+    /// This attributes specifies the number of spokes ("pie pieces") in the wheel
+    /// 
+    /// Defaults to 4
+    pub spokes: Option<u32>,
 }
 
 impl WheelTransition {
@@ -2239,9 +2244,57 @@ pub enum SlideTransitionGroup {
     /// </p:transition>
     /// ```
     Strips(CornerDirectionTransition),
+    /// This element describes the wedge slide transition effect, which uses two radial edges that wipe from top to
+    /// bottom in opposite directions until the new slide is fully shown.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following case in which the “wedge” slide transition is applied to a slide, along with a set
+    /// of attributes.
+    /// ```xml
+    /// <p:transition>
+    ///   <p:wedge/>
+    /// </p:transition>
+    /// ```
     Wedge,
+    /// This element describes the wheel slide transition effect, which uses a set of radial edges and wipes them in the
+    /// clockwise direction until the new slide is fully shown.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following cases in which the “wheel” slide transition is applied to a slide, along with a set
+    /// of attributes.
+    /// ```xml
+    /// <p:transition>
+    ///   <p:wheel spokes="1"/>
+    /// </p:transition>
+    /// ```
     Wheel(WheelTransition),
+    /// This element describes the wipe slide transition effect, which wipes the new slide over the previous slide from
+    /// one edge of the screen to the opposite until the new slide is fully shown.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following cases in which the “wipe” slide transition is applied to a slide, along with a set
+    /// of attributes.
+    /// ```xml
+    /// <p:transition>
+    ///   <p:wipe dir="d"/>
+    /// </p:transition>
+    /// ```
     Wipe(SideDirectionTransition),
+    /// This element describes the zoom slide transition effect, which uses a box pattern centered on the slide that
+    /// increases in size until the new slide is fully shown.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following cases in which the “zoom” slide transition is applied to a slide, along with a set
+    /// of attributes.
+    /// ```xml
+    /// <p:transition>
+    ///   <p:zoom dir="in"/>
+    /// </p:transition>
+    /// ```
     Zoom(InOutTransition),
 }
 
@@ -2477,7 +2530,18 @@ impl SlideTransition {
 
 #[derive(Default, Debug, Clone)]
 pub struct SlideTiming {
-    pub time_node_list: Vec<TimeNodeGroup>,
+    /// This element specifies a list of time node elements used in an animation sequence.
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <p:timing>
+    ///   <p:tnLst>
+    ///     <p:par> … </p:par>
+    ///   </p:tnLst>
+    /// </p:timing>
+    /// ```
+    pub time_node_list: Option<Vec<TimeNodeGroup>>,
     /// This element specifies the list of graphic elements to build. This refers to how the different sub-shapes or sub-
     /// components of a object are displayed. The different objects that can have build properties are text, diagrams,
     /// and charts.
@@ -2493,7 +2557,7 @@ pub struct SlideTiming {
     ///   </p:bldGraphic>
     /// </p:bldLst>
     /// ```
-    pub build_list: Vec<Build>,
+    pub build_list: Option<Vec<Build>>,
 }
 
 impl SlideTiming {
@@ -2503,15 +2567,31 @@ impl SlideTiming {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "tnLst" => {
+                    let mut vec = Vec::new();
                     for time_node in &child_node.child_nodes {
-                        instance
-                            .time_node_list
-                            .push(TimeNodeGroup::from_xml_element(time_node)?);
+                        vec.push(TimeNodeGroup::from_xml_element(time_node)?);
                     }
+
+                    if vec.is_empty() {
+                        return Err(Box::new(MissingChildNodeError::new(
+                            child_node.name.clone(),
+                            "tn",
+                        )));
+                    }
+
+                    instance.time_node_list = Some(vec);
                 }
                 "bldLst" => {
+                    let mut vec = Vec::new();
                     for build_node in &child_node.child_nodes {
-                        instance.build_list.push(Build::from_xml_element(build_node)?);
+                        vec.push(Build::from_xml_element(build_node)?);
+                    }
+
+                    if vec.is_empty() {
+                        return Err(Box::new(MissingChildNodeError::new(
+                            child_node.name.clone(),
+                            "bld",
+                        )))
                     }
                 }
                 _ => (),
@@ -3245,6 +3325,48 @@ pub enum TimeNodeGroup {
     /// The audio element specifies the location of the audio playback within the animation; its child sndTgt element
     /// specifies that the audio to be played is the target of the relationship with ID rId2.
     Audio(Box<TLMediaNodeAudio>),
+    /// This element specifies video information in an animation sequence. This element specifies that this node within
+    /// the animation tree triggers the playback of a video file; the actual video file used is specified by the videoFile
+    /// element
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a slide with an animated video content. The <video> element is used as follows:
+    /// ```xml
+    /// <p:cSld>
+    ///   <p:spTree>
+    ///     <p:pic>
+    ///       <p:nvPicPr>
+    ///       <p:cNvPr id="4"/>
+    ///       …
+    ///       <p:nvPr>
+    ///         <a:videoFile r:link="rId1" contentType="video/ogg"/>
+    ///       </p:nvPr>
+    ///     </p:nvPicPr>
+    ///     …
+    ///     </p:pic>
+    ///   </p:spTree>
+    /// </p:cSld>
+    /// …
+    /// <p:childTnLst>
+    ///   <p:seq concurrent="1" nextAc="seek">
+    ///     …
+    ///   </p:seq>
+    ///   <p:video>
+    ///     <p:cMediaNode>
+    ///       …
+    ///       <p:tgtEl>
+    ///         <p:spTgt spid="4"/>
+    ///       </p:tgtEl>
+    ///     </p:cMediaNode>
+    ///   </p:video>
+    /// </p:childTnLst>
+    /// ```
+    /// 
+    /// The video element specifies the location of the video playback within the animation sequence; its child spTgt
+    /// element specifies that the shape which contains the video to be played has a shape ID of 4. If we look at the
+    /// shape with that ID value, its child videoFile element references an external video file of content type video/ogg
+    /// located at the target of the relationship with ID rId1
     Video(Box<TLMediaNodeVideo>),
 }
 
@@ -3422,7 +3544,26 @@ pub struct TLAnimateBehavior {
     /// This attribute specifies the type of property value.
     pub value_type: Option<TLAnimateBehaviorValueType>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
-    pub time_animate_value_list: Vec<TLTimeAnimateValue>,
+    /// This element specifies a list of time animated value elements.
+    /// 
+    /// ```xml
+    /// <p:anim calcmode="lin" valueType="num">
+    ///   <p:cBhvr additive="base"> … </p:cBhvr>
+    ///   <p:tavLst>
+    ///     <p:tav tm="0%">
+    ///       <p:val>
+    ///         <p:strVal val="1+#ppt_h/2"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///     <p:tav tm="100000">
+    ///       <p:val>
+    ///         <p:strVal val="#ppt_y"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///   </p:tavLst>
+    /// </p:anim>
+    /// ```
+    pub time_animate_value_list: Option<Vec<TLTimeAnimateValue>>,
 }
 
 impl TLAnimateBehavior {
@@ -3445,15 +3586,18 @@ impl TLAnimateBehavior {
         }
 
         let mut common_behavior_data = None;
-        let mut time_animate_value_list = Vec::new();
+        let mut time_animate_value_list = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "tavLst" => {
+                    let mut vec = Vec::new();
                     for tav_node in &child_node.child_nodes {
-                        time_animate_value_list.push(TLTimeAnimateValue::from_xml_element(tav_node)?);
+                        vec.push(TLTimeAnimateValue::from_xml_element(tav_node)?);
                     }
+
+                    time_animate_value_list = Some(vec);
                 }
                 _ => (),
             }
@@ -3534,6 +3678,22 @@ pub struct TLAnimateColorBehavior {
     /// </p:animClr>
     /// ```
     pub from: Option<msoffice_shared::drawingml::Color>,
+    /// This element specifies the resulting color for the animation color change.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider emphasize a shape by changing its fill color from blue to red. The <to> element should be
+    /// used as follows:
+    /// ```xml
+    /// <p:childTnLst>
+    ///   <p:animClr clrSpc="rgb">
+    ///     <p:cBhvr> … </p:cBhvr>
+    ///     <p:to>
+    ///       <a:schemeClr val="accent2"/>
+    ///     </p:to>
+    ///   </p:animClr>
+    /// </p:childTnLst>
+    /// ```
     pub to: Option<msoffice_shared::drawingml::Color>,
 }
 
@@ -3767,6 +3927,27 @@ pub struct TLAnimateMotionBehavior {
     /// ```
     pub by: Option<TLPoint>,
     pub from: Option<TLPoint>,
+    /// This element specifies the target location for an animation motion or animation scale effect
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an animation with a "light speed" entrance effect.
+    /// ```xml
+    /// <p:animScale>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="9" dur="200" decel="10.5%" autoRev="1" fill="hold">
+    ///       <p:stCondLst>
+    ///         <p:cond delay="600"/>
+    ///       </p:stCondLst>
+    ///     </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    ///   <p:from x="100%" y="100%"/>
+    ///   <p:to x="80%" y="100%"/>
+    /// </p:animScale>
+    /// ```
     pub to: Option<TLPoint>,
     /// This element describes the center of the rotation used to rotate a motion path by X angle.
     /// 
@@ -3925,6 +4106,27 @@ pub struct TLAnimateScaleBehavior {
     /// </p:animScale>
     /// ```
     pub from: Option<TLPoint>,
+    /// This element specifies the target location for an animation motion or animation scale effect
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an animation with a "light speed" entrance effect.
+    /// ```xml
+    /// <p:animScale>
+    ///   <p:cBhvr>
+    ///     <p:cTn id="9" dur="200" decel="10.5%" autoRev="1" fill="hold">
+    ///       <p:stCondLst>
+    ///         <p:cond delay="600"/>
+    ///       </p:stCondLst>
+    ///     </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="4"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    ///   <p:from x="100%" y="100%"/>
+    ///   <p:to x="80%" y="100%"/>
+    /// </p:animScale>
+    /// ```
     pub to: Option<TLPoint>,
 }
 
@@ -4062,6 +4264,23 @@ impl TLCommandBehavior {
 #[derive(Debug, Clone)]
 pub struct TLSetBehavior {
     pub common_behavior_data: Box<TLCommonBehaviorData>,
+    /// The element specifies the certain attribute of a time node after an animation effect.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider an animation effect that leaves a string value visible afterwards. The <to> element should
+    /// be used as follows:
+    /// ```xml
+    /// <p:childTnLst>
+    ///   <p:set>
+    ///     <p:cBhvr> … </p:cBhvr>
+    ///     <p:to>
+    ///       <p:strVal val="visible"/>
+    ///     </p:to>
+    ///   </p:set>
+    ///   <p:anim calcmode="lin" valueType="num"> … </p:anim> …
+    /// </p:childTnLst>
+    /// ```
     pub to: Option<TLAnimVariant>,
 }
 
@@ -4125,7 +4344,10 @@ impl TLMediaNodeAudio {
 
 #[derive(Debug, Clone)]
 pub struct TLMediaNodeVideo {
-    pub fullscreen: Option<bool>, // false
+    /// This attribute specifies if the video is displayed in full-screen.
+    /// 
+    /// Defaults to false
+    pub fullscreen: Option<bool>,
     pub common_media_node_data: Box<TLCommonMediaNodeData>,
 }
 
@@ -4149,10 +4371,212 @@ impl TLMediaNodeVideo {
     }
 }
 
+/// This element defines a "keypoint" in animation interpolation.
+/// 
+/// # Xml example
+/// 
+/// Consider a shape with a "fly-in" animation. The <tav> element should be used as follows:
+/// ```xml
+/// <p:anim calcmode="lin" valueType="num">
+///   <p:cBhvr additive="base"> … </p:cBhvr>
+///   <p:tavLst>
+///     <p:tav tm="0%">
+///       <p:val>
+///         <p:strVal val="1+#ppt_h/2"/>
+///       </p:val>
+///     </p:tav>
+///     <p:tav tm="100%">
+///       <p:val>
+///         <p:strVal val="#ppt_y"/>
+///       </p:val>
+///     </p:tav>
+///   </p:tavLst>
+/// </p:anim>
+/// ```
 #[derive(Default, Debug, Clone)]
 pub struct TLTimeAnimateValue {
-    pub time: Option<TLTimeAnimateValueTime>, // indefinite
-    pub formula: Option<String>,              // ""
+    /// This attribute specifies the time at which the attribute being animated takes on the value.
+    /// 
+    /// Defaults to TLTimeAnimateValueTime::Indefinite
+    pub time: Option<TLTimeAnimateValueTime>,
+    /// This attribute allows for the specification of a formula to be used for describing a
+    /// complex motion for an animated object. The formula manipulates the motion of the
+    /// object by modifying a property of the object over a specified period of time. Each formula
+    /// has zero or more inputs specified by the ($) symbol, zero or more variables specified by
+    /// the (#) symbol pre-pended to the variable name and a target variable which is specified
+    /// by the previously specified attrName element. The formula can contain one or more of
+    /// any of the constants, operators or functions listed below. In addition to this, the formula
+    /// can also contain floating point numbers and parentheses.
+    /// 
+    /// Mathematical operations have the following order of precedence, listed from lowest to
+    /// highest. Operators listed on the same line have equal precedence.
+    /// 
+    /// * “+”, “-“
+    /// * “*”, “/”, “%”
+    /// * “^”
+    /// * Unary minus, Unary plus (e.g. -2, meaning 3*-2 is the same as 3*(-2))
+    /// * Variables, Constants (including numbers) and Functions (as listed previously)
+    /// 
+    /// # Language Description
+    /// 
+    /// Digit       = '0' | '1' | ‘2’ | ‘3’ | ‘4’ | ‘5’ | ‘6’ | ‘7’ | ‘8’ | '9' ;
+    /// 
+    /// number      = digit , { digit } ;
+    /// 
+    /// exponent    = [ '-' ] , ( 'e' | 'E' ) , number ;
+    /// 
+    /// value       = number , [ '.' number ] , [ exponent ] ;
+    /// 
+    /// variable    = '$' | 'ppt_x' | 'ppt_y' | 'ppt_w' | 'ppt_h' ;
+    /// 
+    /// constant    = value | 'pi' | 'e' ;
+    /// 
+    /// ident       = 'abs' | ‘acos’ | ‘asin’ | ‘atan’ | ‘ceil’
+    ///               | ‘cos’ | ‘cosh’ | ‘deg’ | ‘exp’ | ‘floor’ | ‘ln’
+    ///               | ‘max’ | ‘min’ | ‘rad’ | ‘rand’ | ‘sin’ | ‘sinh’
+    ///               | ‘sqrt’ | ‘tan’ | 'tanh' ;
+    /// 
+    /// function    = ident , '(' , formula [ ',' , formula ] , ')' ;
+    /// 
+    /// formula     = term , { [ '+' | '-' ] , term } ;
+    /// 
+    /// term        = power , { [ '*' | '/' | '%' ] , power } ;
+    /// 
+    /// power       = unary [ '^' , unary ] ;
+    /// 
+    /// unary       = [ '+' | '-' ] , factor ;
+    /// 
+    /// factor      = variable | constant | function | parens ;
+    /// 
+    /// parens      = '(' , formula , ')' ;
+    /// 
+    /// ## Note
+    /// 
+    /// Formulas can only support a calcMode (Calculation Mode) of linear or discrete. If
+    /// another calcMode is specified or no calcMode is specified then a calcMode of linear is
+    /// assumed.
+    /// 
+    /// Any additional characters in the formula string that are not contained within the
+    /// set described are considered invalid.
+    /// 
+    /// # Variables
+    /// 
+    /// |Name       |Description                                        |
+    /// |-----------|---------------------------------------------------|
+    /// |$          |Formula input                                      |
+    /// |ppt_x      |Pre-animation x position of the object on the slide|
+    /// |ppt_y      |Pre-animation y position of the object on the slide|
+    /// |ppt_w      |Pre-animation width of the object                  |
+    /// |ppt_h      |Pre-animation height of the object                 |
+    /// 
+    /// # Constants
+    /// 
+    /// |Name       |Description                                        |
+    /// |-----------|---------------------------------------------------|
+    /// |pi         |Mathematical constant pi                           |
+    /// |e          |Mathematical constant e                            |
+    /// 
+    /// # Operators
+    /// 
+    /// |Name       |Description        |Usage                                  |
+    /// |-----------|-------------------|---------------------------------------|
+    /// |+          |Addition           |“x+y”, adds x to the value y           |
+    /// |-          |Subtraction        |“x-y”, subtracts y from the value x    |
+    /// |*          |Multiplication     |“x*y”, multiplies x by the value y     |
+    /// |/          |Division           |“x/y”, divides x by the value y        |
+    /// |%          |Modulus            |“x%y”, the remainder of x/y            |
+    /// |^          |Power              |“x^y”, x raised to the power y         |
+    /// 
+    /// # Functions
+    /// 
+    /// |Name       |Description                |Usage                                                              |
+    /// |-----------|---------------------------|-------------------------------------------------------------------|
+    /// |abs        |Absolute value             |“abs(x)”, absolute value of x                                      |
+    /// |acos       |Arc Cosine                 |“acos(x)”, arc cosine of the value x                               |
+    /// |asin       |Arc Sine                   |“asin(x)”, arc sine of the value x                                 |
+    /// |atan       |Arc Tangent                |“atan(x)”, arc tangent of the value x                              |
+    /// |ceil       |Ceil value                 |“ceil(x)”, value of x rounded up                                   |
+    /// |cos        |Cosine                     |“cos(x)”, cosine of the value of x                                 |
+    /// |cosh       |Hyperbolic Cosine          |“cosh(x)", hyperbolic cosine of the value x                        |
+    /// |deg        |Radiant to Degree convert  |“deg(x)”, the degree value of radiant value x                      |
+    /// |exp        |Exponent                   |“exp(x)”, value of constant e raised to the power of x             |
+    /// |floor      |Floor value                |“floor(x)”, value of x rounded down                                |
+    /// |ln         |Natural logarithm          |“ln(x)”, natural logarithm of x                                    |
+    /// |max        |Maximum of two values      |“max(x,y)”, returns x if (x > y) or returns y if (y > x)           |
+    /// |min        |Minimum of two values      |“min(x,y)", returns x if (x < y) or returns y if (y < x)           |
+    /// |rad        |Degree to Radiant convert  |“rad(x)”, the radiant value of degree value x                      |
+    /// |rand       |Random value               |“rand(x)”, returns a random floating point value between 0 and x   |
+    /// |sin        |Sine                       |“sin(x)”, sine of the value x                                      |
+    /// |sinh       |Hyperbolic Sine            |"sinh(x)”, hyperbolic sine of the value x                          |
+    /// |sqrt       |Square root                |“sqrt(x)”, square root of the value x                              |
+    /// |tan        |Tangent                    |“tan(x)”, tangent of the value x                                   |
+    /// |tanh       |Hyperbolic Tangent         |“tanh(x)", hyperbolic tangent of the value x                       |
+    /// 
+    /// # Xml example
+    /// 
+    /// <p:animcalcmode="lin" valueType="num">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="9" dur="664" tmFilter="0.0,0.0; 0.25,0.07;0.50,0.2; 0.75,0.467; 1.0,1.0">
+    ///       <p:stCondLst>
+    ///         <p:cond delay="0"/>
+    ///       </p:stCondLst>
+    ///     </p:cTn>
+    ///     <p:tgtEl>
+    ///       <p:spTgtspid="4"/>
+    ///     </p:tgtEl>
+    ///     <p:attrNameLst>
+    ///       <p:attrName>ppt_y</p:attrName>
+    ///     </p:attrNameLst>
+    ///   </p:cBhvr>
+    ///   <p:tavLst>
+    ///     <p:tav tm="0%" fmla="#ppt_y-sin(pi*$)/3">
+    ///       <p:val>
+    ///         <p:fltValval="0.5"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///     <p:tav tm="100%">
+    ///       <p:val>
+    ///         <p:fltValval="1"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///   </p:tavLst>
+    /// </p:anim>
+    /// 
+    /// The animation example above modifies the ppt_y variable of the object by subtracting
+    /// sin(pi*$)/3 from the non-animated value of ppt_y. The start value is 0.5 and the end
+    /// value is 1 specified in each of the val elements. The total time for this animation is
+    /// specified within the dur attribute and the filtered time graph is specified by the tmFilter
+    /// attribute. The end result is that the object moves from a point above its non-animated
+    /// position back to its non-animated position. With the specification of the tmFilter it has a
+    /// modified time graph such that it also appears to accelerate as it reaches its final position.
+    /// 
+    /// ## Note
+    /// 
+    /// For this example, the non-animated value of ppt_y is the value of this variable if
+    /// the object were to be statically rendered on the slide without animation properties.
+    pub formula: Option<String>,
+    /// The element specifies a value for a time animate.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a shape with a fade in animation effect. The <val> element should be used as follows:
+    /// ```xml
+    /// <p:anim calcmode="lin" valueType="num">
+    ///   <p:cBhvr additive="base"> … </p:cBhvr>
+    ///   <p:tavLst>
+    ///     <p:tav tm="0%">
+    ///       <p:val>
+    ///         <p:strVal val="0-#ppt_w/2"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///     <p:tav tm="100%">
+    ///       <p:val>
+    ///         <p:strVal val="#ppt_x"/>
+    ///       </p:val>
+    ///     </p:tav>
+    ///   </p:tavLst>
+    /// </p:anim>
+    /// ```
     pub value: Option<TLAnimVariant>,
 }
 
@@ -4320,6 +4744,22 @@ pub struct TLCommonBehaviorData {
     pub runtime_context: Option<String>,
     pub override_type: Option<TLBehaviorOverrideType>,
     pub common_time_node_data: Box<TLCommonTimeNodeData>,
+    /// This element specifies the target children elements which have the animation effects applied to.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a shape with ID 3 with a fade effect animation applied to it. The <tgtEl> element should be
+    /// used as follows:
+    /// ```xml
+    /// <p:animEffect transition="in" filter="fade">
+    ///   <p:cBhvr>
+    ///     <p:cTn id="7" dur="2000"/>
+    ///     <p:tgtEl>
+    ///       <p:spTgt spid="3"/>
+    ///     </p:tgtEl>
+    ///   </p:cBhvr>
+    /// </p:animEffect>
+    /// ```
     pub target_element: TLTimeTargetElement,
     /// This element is used to describe a list of attributes in which to apply an animation to.
     /// 
@@ -4623,6 +5063,26 @@ impl TLCommonMediaNodeData {
 #[derive(Debug, Clone)]
 pub enum TLTimeConditionTriggerGroup {
     TargetElement(TLTimeTargetElement),
+    /// This element describes the time node trigger choice.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a time node with an event condition. The <tn> element should be used as follows:
+    /// ```xml
+    /// <p:par>
+    ///   <p:cTn id="5">
+    ///     <p:stCondLst>
+    ///       <p:cond delay="0"/>
+    ///     </p:stCondLst>
+    ///     <p:endCondLst>
+    ///       <p:cond evt="begin" delay="0">
+    ///         <p:tn val="5"/>
+    ///       </p:cond>
+    ///     </p:endCondLst>
+    ///     <p:childTnLst> … </p:childTnLst>
+    ///   </p:cTn>
+    /// </p:par>
+    /// ```
     TimeNode(TLTimeNodeId),
     /// This element specifies the child time node that triggers a time condition. References a child time node or all
     /// child nodes. Order is based on the child's end time.
@@ -4877,6 +5337,20 @@ pub enum TLShapeTargetElementGroup {
     /// </p:animEffect>
     /// ```
     OleChartElement(TLOleChartTargetElement),
+    /// This element specifies a text element to animate.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a shape containing text to be animated. The <txEl> should be used as follows:
+    /// ```xml
+    /// <p:tgtEl>
+    ///   <p:spTgt spid="5">
+    ///     <p:txEl>
+    ///       <p:pRg st="1" end="1"/>
+    ///     </p:txEl>
+    ///   </p:spTgt>
+    /// </p:tgtEl>
+    /// ```
     TextElement(Option<TLTextTargetElement>),
     /// This element specifies a graphical element which to animate
     /// 
@@ -5390,7 +5864,41 @@ impl TLCommonTimeNodeData {
 
 #[derive(Debug, Clone)]
 pub enum TLIterateDataChoice {
+    /// This element describes the duration of the iteration interval in absolute time.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a text animation where the words appear letter by letter every 10 seconds. The <tmAbs>
+    /// element should be used as follows:
+    /// ```xml
+    /// <p:par>
+    ///   <p:cTn id="5" >
+    ///     <p:stCondLst> … </p:stCondLst>
+    ///     <p:iterate type="lt">
+    ///       <p:tmAbs val="10000"/>
+    ///     </p:iterate>
+    ///     <p:childTnLst> … </p:childTnLst>
+    ///   </p:cTn>
+    /// </p:par>
+    /// ```
     Absolute(TLTime),
+    /// This element describes the duration of the iteration interval in a percentage of time.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider a text animation where the words appear letter by letter every 10th of the animation
+    /// duration. The <tmPct> element should be used as follows:
+    /// ```xml
+    /// <p:par>
+    ///   <p:cTn id="5">
+    ///     <p:stCondLst> … </p:stCondLst>
+    ///     <p:iterate type="lt">
+    ///       <p:tmPct val="10%"/>
+    ///     </p:iterate>
+    ///     <p:childTnLst> … </p:childTnLst>
+    ///   </p:cTn>
+    /// </p:par>
+    /// ```
     Percent(msoffice_shared::drawingml::PositivePercentage),
 }
 
