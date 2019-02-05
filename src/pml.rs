@@ -6,13 +6,20 @@ use std::io::{Read, Seek};
 use std::str::FromStr;
 use zip::read::ZipFile;
 
+use enum_from_str::ParseEnumVariantError;
+use enum_from_str_derive::FromStr;
+
 pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
 pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
 pub type SlideMasterId = u32; // TODO: 2147483648 <= n
+/// This simple type defines the position of an object in an ordered list.
 pub type Index = u32;
 pub type TLTimeNodeId = u32;
-pub type BookmarkIdSeed = u32; // TODO: 1 <= n <= 2147483648
+/// This simple type specifies constraints for value of the Bookmark ID seed.
+/// Values represented by this type are restricted to: 1 <= n <= 2147483648
+pub type BookmarkIdSeed = u32;
 pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
+/// This simple type specifies a name, such as for a comment author or custom show.
 pub type Name = String;
 pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
 
@@ -87,19 +94,32 @@ decl_simple_type_enum! {
     }
 }
 
-decl_simple_type_enum! {
-    pub enum Direction {
-        Horz = "horz",
-        Vert = "vert",
-    }
+/// This simple type defines a direction of either horizontal or vertical.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum Direction {
+    /// Defines a horizontal direction.
+    #[from_str="horz"]
+    Horizontal, 
+    /// Defines a vertical direction.
+    #[from_str="vert"]
+    Vertical,
 }
 
-decl_simple_type_enum! {
-    pub enum PlaceholderSize {
-        Full = "full",
-        Half = "half",
-        Quarter = "quarter",
-    }
+/// This simple type facilitates the storing of the size of the placeholder. This size is described relative to the body
+/// placeholder on the master.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum PlaceholderSize {
+    /// Specifies that the placeholder should take the full size of the body placeholder on the master.
+    #[from_str="full"]
+    Full,
+    /// Specifies that the placeholder should take the half size of the body placeholder on the master. Half size
+    /// vertically or horizontally? Needs a picture.
+    #[from_str="half"]
+    Half,
+    /// Specifies that the placeholder should take a quarter of the size of the body placeholder on the master. Picture
+    /// would be helpful
+    #[from_str="quarter"]
+    Quarter,
 }
 
 decl_simple_type_enum! {
@@ -123,36 +143,75 @@ decl_simple_type_enum! {
     }
 }
 
-decl_simple_type_enum! {
-    pub enum PhotoAlbumLayout {
-        FitToSlide = "fitToSlide",
-        Pic1 = "pic1",
-        Pic2 = "pic2",
-        Pic4 = "pic4",
-        PicTitle1 = "picTitle1",
-        PicTitle2 = "picTitle2",
-        PicTitle4 = "picTitle4",
-    }
+/// This simple type specifies the values for photo layouts within a photo album presentation.
+/// See Fundamentals And Markup Language Reference for examples
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum PhotoAlbumLayout {
+    /// Fit Photos to Slide
+    #[from_str="fitToSlide"]
+    FitToSlide,
+    /// 1 Photo per Slide
+    #[from_str="pic1"]
+    Pic1,
+    /// 2 Photo per Slide
+    #[from_str="pic2"]
+    Pic2,
+    /// 4 Photo per Slide
+    #[from_str="pic4"]
+    Pic4,
+    /// 1 Photo per Slide with Titles
+    #[from_str="picTitle1"]
+    PicTitle1,
+    /// 2 Photo per Slide with Titles
+    #[from_str="picTitle2"]
+    PicTitle2,
+    /// 4 Photo per Slide with Titles
+    #[from_str = "picTitle4"]
+    PicTitle4,
 }
 
-decl_simple_type_enum! {
-    pub enum PhotoAlbumFrameShape {
-        FrameStyle1 = "frameStyle1",
-        FrameStyle2 = "frameStyle2",
-        FrameStyle3 = "frameStyle3",
-        FrameStyle4 = "frameStyle4",
-        FrameStyle5 = "frameStyle5",
-        FrameStyle6 = "frameStyle6",
-        FrameStyle7 = "frameStyle7",
-    }
+/// This simple type specifies the values for photo frame types within a photo album presentation.
+/// See Fundamentals And Markup Language Reference for examples
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum PhotoAlbumFrameShape {
+    /// Rectangle Photo Frame
+    #[from_str="frameStyle1"]
+    FrameStyle1,
+    /// Rounded Rectangle Photo Frame
+    #[from_str="frameStyle2"]
+    FrameStyle2,
+    /// Simple White Photo Frame
+    #[from_str="frameStyle3"]
+    FrameStyle3,
+    /// Simple Black Photo Frame
+    #[from_str="frameStyle4"]
+    FrameStyle4,
+    /// Compound Black Photo Frame
+    #[from_str="frameStyle5"]
+    FrameStyle5,
+    /// Center Shadow Photo Frame
+    #[from_str="frameStyle6"]
+    FrameStyle6,
+    /// Soft Edge Photo Frame
+    #[from_str="frameStyle7"]
+    FrameStyle7,
 }
 
-decl_simple_type_enum! {
-    pub enum OleObjectFollowColorScheme {
-        None = "none",
-        Full = "full",
-        TextAndBackground = "textAndBackground",
-    }
+/// This simple type determines if the Embedded object is re-colored to reflect changes to the color schemes.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum OleObjectFollowColorScheme {
+    /// Setting this enumeration causes the Embedded object to not respond to changes in the color scheme in the
+    /// presentation.
+    #[from_str="none"]
+    None,
+    /// Setting this enumeration causes the Embedded object to respond to all changes in the color scheme in the
+    /// presentation.
+    #[from_str="full"]
+    Full,
+    /// Setting this enumeration causes the Embedded object to respond only to changes in the text and background
+    /// colors of the color scheme in the presentation.
+    #[from_str="textAndBackground"]
+    TextAndBackground,
 }
 
 decl_simple_type_enum! {
@@ -276,12 +335,18 @@ decl_simple_type_enum! {
     }
 }
 
-decl_simple_type_enum! {
-    pub enum IterateType {
-        Element = "el",
-        Word = "wd",
-        Letter = "lt",
-    }
+/// This simple type specifies how the animation is applied over subelements of the target element.
+#[derive(Debug, Copy, Clone, PartialEq, FromStr)]
+pub enum IterateType {
+    /// Iterate by element.
+    #[from_str="el"]
+    Element,
+    /// Iterate by Letter.
+    #[from_str="wd"]
+    Word,
+    /// Iterate by Word.
+    #[from_str="lt"]
+    Letter,
 }
 
 decl_simple_type_enum! {
