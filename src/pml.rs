@@ -1,7 +1,6 @@
-use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError, ParseEnumError};
+use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
-use msoffice_shared::decl_simple_type_enum;
 use std::io::{Read, Seek};
 use std::str::FromStr;
 use zip::read::ZipFile;
@@ -9,89 +8,217 @@ use zip::read::ZipFile;
 use enum_from_str::ParseEnumVariantError;
 use enum_from_str_derive::FromStr;
 
-pub type SlideId = u32; // TODO: 256 <= n <= 2147483648
-pub type SlideLayoutId = u32; // TODO: 2147483648 <= n
-pub type SlideMasterId = u32; // TODO: 2147483648 <= n
+/// This simple type specifies the allowed numbering for the slide identifier.
+/// Values represented by this type are restricted to: 256 <= n <= 2147483648
+pub type SlideId = u32;
+/// This simple type sets the bounds for the slide layout id value. This layout id is used to identify the different slide
+/// layout designs.
+/// Values represented by this type are restricted to: 2147483648 <= n
+pub type SlideLayoutId = u32;
+/// This simple type specifies the allowed numbering for the slide master identifier.
+/// Values represented by this type are restricted to: 2147483648 <= n
+pub type SlideMasterId = u32;
 /// This simple type defines the position of an object in an ordered list.
 pub type Index = u32;
+/// This simple type represents a node or event on the timeline by its identifier.
 pub type TLTimeNodeId = u32;
 /// This simple type specifies constraints for value of the Bookmark ID seed.
 /// Values represented by this type are restricted to: 1 <= n <= 2147483648
 pub type BookmarkIdSeed = u32;
-pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32; // TODO: 914400 <= n <= 51206400
+/// This simple type specifies the slide size coordinate in EMUs (English Metric Units).AsRef
+/// Values represented by this type are restricted to: 914400 <= n <= 51206400
+pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32;
 /// This simple type specifies a name, such as for a comment author or custom show.
 pub type Name = String;
 pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
-decl_simple_type_enum! {
-    pub enum ConformanceClass {
-        Strict = "strict",
-        Transitional = "transitional",
-    }
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum ConformanceClass {
+    #[from_str="strict"]
+    Strict,
+    #[from_str="transitional"]
+    Transitional,
 }
 
-decl_simple_type_enum! {
-    pub enum SlideLayoutType {
-        Title = "title",
-        Tx = "tx",
-        TwoColTx = "twoColTx",
-        Tbl = "tbl",
-        TxAndChart = "txAndChart",
-        ChartAndTx = "chartAndTx",
-        Dgm = "dgm",
-        Chart = "chart",
-        TxAndClipArt = "txAndClipArt",
-        ClipArtAndTx = "clipArtAndTx",
-        TitleOnly = "titleOnly",
-        Blank = "blank",
-        TxAndObj = "txAndObj",
-        ObjAndTx = "objAndTx",
-        ObjOnly = "objOnly",
-        Obj = "obj",
-        TxAndMedia = "txAndMedia",
-        MediaAndTx = "mediaAndTx",
-        ObjOverTx = "objOverTx",
-        TxOverObj = "txOverObj",
-        TxAndTwoObj = "txAndTwoObj",
-        TwoObjAndTx = "twoObjAndTx",
-        TwoObjOverTx = "twoObjOverTx",
-        FourObj = "fourObj",
-        VertTx = "vertTx",
-        ClipArtAndVertTx = "clipArtAndVertTx",
-        VertTitleAndTx = "vertTitleAndTx",
-        VertTitleAndTxOverChart = "vertTitleAndTxOverChart",
-        TwoObj = "twoObj",
-        ObjAndTwoObj = "objAndTwoObj",
-        TwoObjAndObj = "twoObjAndObj",
-        Cust = "cust",
-        SecHead = "secHead",
-        TwoTxTwoObj = "twoTxTwoObj",
-        ObjTx = "objTx",
-        PicTx = "picTx",
-    }
+/// This simple type defines an arrangement of content on a slide. Each layout type is not tied to an exact
+/// positioning of placeholders, but rather provides a higher-level description of the content type and positioning of
+/// placeholders. This information can be used by the application to aid in mapping between different layouts. The
+/// application can choose which, if any, of these layouts to make available through its user interface.
+/// 
+/// Each layout contains zero or more placeholders, each with a specific content type. An "object" placeholder can
+/// contain any kind of data. Media placeholders are intended to hold video or audio clips. The enumeration value
+/// descriptions include illustrations of sample layouts for each value of the simple type.
+/// 
+/// 
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum SlideLayoutType {
+    /// Blank
+    #[from_str="blank"]
+    Blank,
+    /// Title and chart
+    #[from_str="chart"]
+    Chart,
+    /// Title, chart on left and text on right
+    #[from_str="chartAndTx"]
+    ChartAndText,
+    /// Title, clipart on left, text on right
+    #[from_str="clipArtAndTx"]
+    ClipArtAndText,
+    /// Title, clip art on left, vertical text on right
+    #[from_str="clipArtAndVertTx"]
+    ClipArtAndVerticalText,
+    /// Custom layout defined by user
+    #[from_str="cust"]
+    Custom,
+    /// Title and diagram
+    #[from_str="dgm"]
+    Diagram,
+    /// Title and four objects
+    #[from_str="fourObj"]
+    FourObjects,
+    /// Title, media on left, text on right
+    #[from_str="mediaAndTx"]
+    MediaAndText,
+    /// Title and object
+    #[from_str="obj"]
+    Object,
+    /// Title, one object on left, two objects on right
+    #[from_str="objAndTwoObj"]
+    ObjectAndTwoObject,
+    /// Title, object on left, text on right
+    #[from_str="objAndTx"]
+    ObjectAndText,
+    /// Object only
+    #[from_str="objOnly"]
+    ObjectOnly,
+    /// Title, object on top, text on bottom
+    #[from_str="objOverTx"]
+    ObjectOverText,
+    /// Title, object and caption text
+    #[from_str="objTx"]
+    ObjectText,
+    /// Title, picture, and caption text
+    #[from_str="picTx"]
+    PictureText,
+    /// Section header title and subtitle text
+    #[from_str="secHead"]
+    SectionHeader,
+    /// Title and table
+    #[from_str="tbl"]
+    Table,
+    /// Title layout with centered title and subtitle placeholders
+    #[from_str="title"]
+    Title,
+    /// Title only
+    #[from_str="titleOnly"]
+    TitleOnly,
+    /// Title, text on left, text on right
+    #[from_str="twoColTx"]
+    TwoColumnText,
+    /// Title, object on left, object on right
+    #[from_str="twoObj"]
+    TwoObject,
+    /// Title, two objects on left, one object on right
+    #[from_str="twoObjAndObj"]
+    TwoObjectsAndObject,
+    /// Title, two objects on left, text on right
+    #[from_str="twoObjAndTx"]
+    TwoObjectsAndText,
+    /// Title, two objects on top, text on bottom
+    #[from_str="twoObjOverTx"]
+    TwoObjectsOverText,
+    /// Title, two objects each with text
+    #[from_str="twoTxTwoObj"]
+    TwoTextTwoObjects,
+    /// Title and text
+    #[from_str="tx"]
+    Text,
+    /// Title, text on left and chart on right
+    #[from_str="txAndChart"]
+    TextAndChart,
+    /// Title, text on left, clip art on right
+    #[from_str="txAndClipArt"]
+    TextAndClipArt,
+    /// Title, text on left, media on right
+    #[from_str="txAndMedia"]
+    TextAndMedia,
+    /// Title, text on left, object on right
+    #[from_str="txAndObj"]
+    TextAndObject,
+    /// Title, text on left, two objects on right
+    #[from_str="txAndTwoObj"]
+    TextAndTwoObjects,
+    /// Title, text on top, object on bottom
+    #[from_str="txOverObj"]
+    TextOverObject,
+    /// Vertical title on right, vertical text on left
+    #[from_str="vertTitleAndTx"]
+    VerticalTitleAndText,
+    /// Vertical title on right, vertical text on top, chart on bottom
+    #[from_str="vertTitleAndTxOverChart"]
+    VerticalTitleAndTextOverChart,
+    /// Title and vertical text body
+    #[from_str="vertTx"]
+    VerticalText,
 }
 
-decl_simple_type_enum! {
-    pub enum PlaceholderType {
-        Title = "title",
-        Body = "body",
-        CtrTitle = "ctrTitle",
-        SubTitle = "subTitle",
-        Dt = "dt",
-        SldNum = "sldNum",
-        Ftr = "ftr",
-        Hdr = "hdr",
-        Obj = "obj",
-        Chart = "chart",
-        Tbl = "tbl",
-        ClipArt = "clipArt",
-        Dgm = "dgm",
-        Media = "media",
-        SldImg = "sldImg",
-        Pic = "pic",
-    }
+/// This simple type facilitates the storing of the content type a placeholder should contain.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum PlaceholderType {
+    /// Contains a slide title. Allowed for Slide, Slide Layout and Slide Master. Can be horizontal or vertical on Slide
+    /// and Slide Layout.
+    #[from_str="title"]
+    Title,
+    /// Contains body text. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master. Can be horizontal
+    /// or vertical on Slide and Slide Layout.
+    #[from_str="body"]
+    Body,
+    /// Contains a title intended to be centered on the slide. Allowed for Slide and Slide Layout.
+    #[from_str="ctrTitle"]
+    CenteredTitle,
+    /// Contains a subtitle. Allowed for Slide and Slide Layout.
+    #[from_str="subTitle"]
+    SubTitle,
+    /// Contains the date and time. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout Master
+    #[from_str="dt"]
+    DateTime,
+    /// Contains the number of a slide. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout
+    /// Master
+    #[from_str="sldNum"]
+    SlideNumber,
+    /// Contains text to be used as a footer in the document. Allowed for Slide, Slide Layout, Slide Master, Notes,
+    /// Notes Master, Handout Master
+    #[from_str="ftr"]
+    Footer,
+    /// Contains text to be used as a header for the document. Allowed for Notes, Notes Master, Handout Master.
+    #[from_str="hdr"]
+    Header,
+    /// Contains any content type. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="obj"]
+    Object,
+    /// Contains a chart or graph. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="chart"]
+    Chart,
+    /// Contains a table. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="tbl"]
+    Table,
+    /// Contains a single clip art image. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="clipArt"]
+    ClipArt,
+    /// Contains a diagram. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="dgm"]
+    Diagram,
+    /// Contains multimedia content such as audio or a movie clip. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="media"]
+    Media,
+    /// Contains an image of the slide. Allowed for Notes and Notes Master.
+    #[from_str="sldImg"]
+    SlideImage,
+    /// Contains a picture. Special type. Allowed for Slide and Slide Layout.
+    #[from_str="pic"]
+    Picture,
 }
 
 /// This simple type defines a direction of either horizontal or vertical.
@@ -122,25 +249,57 @@ pub enum PlaceholderSize {
     Quarter,
 }
 
-decl_simple_type_enum! {
-    pub enum SlideSizeType {
-        Screen4x3 = "screen4x3",
-        Letter = "letter",
-        A4 = "a4",
-        Mm35 = "mm35",
-        Overhead = "overhead",
-        Banner = "banner",
-        Custom = "custom",
-        Ledger = "ledger",
-        A3 = "a3",
-        B4ISO = "b4ISO",
-        B5ISO = "b5ISO",
-        B4JIS = "b4JIS",
-        B5JIS = "b5JIS",
-        HagakiCard = "hagakiCard",
-        Screen16x9 = "screen16x9",
-        Screen16x10 = "screen16x10",
-    }
+/// This simple type specifies the kind of slide size that the slide should be optimized for.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum SlideSizeType {
+    /// Slide size should be optimized for 35mm film output
+    #[from_str="mm35"]
+    Mm35,
+    /// Slide size should be optimized for A3 output
+    #[from_str="a3"]
+    A3,
+    /// Slide size should be optimized for A4 output
+    #[from_str="a4"]
+    A4,
+    /// Slide size should be optimized for B4ISO output
+    #[from_str="b4ISO"]
+    B4ISO,
+    /// Slide size should be optimized for B4JIS output
+    #[from_str="b4JIS"]
+    B4JIS,
+    /// Slide size should be optimized for B5ISO output
+    #[from_str="b5ISO"]
+    B5ISO,
+    /// Slide size should be optimized for B5JIS output
+    #[from_str="b5JIS"]
+    B5JIS,
+    /// Slide size should be optimized for banner output
+    #[from_str="banner"]
+    Banner,
+    /// Slide size should be optimized for custom output
+    #[from_str="custom"]
+    Custom,
+    /// Slide size should be optimized for hagaki card output
+    #[from_str="hagakiCard"]
+    HagakiCard,
+    /// Slide size should be optimized for ledger output
+    #[from_str="ledger"]
+    Ledger,
+    /// Slide size should be optimized for letter output
+    #[from_str="letter"]
+    Letter,
+    /// Slide size should be optimized for overhead output
+    #[from_str="overhead"]
+    Overhead,
+    /// Slide size should be optimized for 16x10 screen output
+    #[from_str="screen16x10"]
+    Screen16x10,
+    /// Slide size should be optimized for 16x9 screen output
+    #[from_str="screen16x9"]
+    Screen16x9,
+    /// Slide size should be optimized for 4x3 screen output
+    #[from_str="screen4x3"]
+    Screen4x3,
 }
 
 /// This simple type specifies the values for photo layouts within a photo album presentation.
@@ -214,125 +373,228 @@ pub enum OleObjectFollowColorScheme {
     TextAndBackground,
 }
 
-decl_simple_type_enum! {
-    pub enum TransitionSideDirectionType {
-        Left = "l",
-        Up = "u",
-        Right = "r",
-        Down = "d",
-    }
+/// This simple type defines a set of slide transition directions.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TransitionSideDirectionType {
+    /// Specifies that the transition direction is left
+    #[from_str="l"]
+    Left,
+    /// Specifies that the transition direction is up
+    #[from_str="u"]
+    Up,
+    /// Specifies that the transition direction is right
+    #[from_str="r"]
+    Right,
+    /// Specifies that the transition direction is down
+    #[from_str="d"]
+    Down,
 }
 
-decl_simple_type_enum! {
-    pub enum TransitionCornerDirectionType {
-        LeftUp = "lu",
-        RightUp = "ru",
-        LeftDown = "ld",
-        RightDown = "rd",
-    }
+/// This simple type specifies diagonal directions for slide transitions.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TransitionCornerDirectionType {
+    /// Specifies the slide transition direction of left-up
+    #[from_str="lu"]
+    LeftUp,
+    /// Specifies the slide transition direction of right-up
+    #[from_str="ru"]
+    RightUp,
+    /// Specifies the slide transition direction of left-down
+    #[from_str="ld"]
+    LeftDown,
+    /// Specifies the slide transition direction of right-down
+    #[from_str="rd"]
+    RightDown,
 }
 
-decl_simple_type_enum! {
-    pub enum TransitionEightDirectionType {
-        Left = "l",
-        Up = "u",
-        Right = "r",
-        Down = "d",
-        LeftUp = "lu",
-        RightUp = "ru",
-        LeftDown = "ld",
-        RightDown = "rd",
-    }
+/// This simple type specifies the direction of an animation.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TransitionEightDirectionType {
+    /// Specifies that the transition direction is left
+    #[from_str="l"]
+    Left,
+    /// Specifies that the transition direction is up
+    #[from_str="u"]
+    Up,
+    /// Specifies that the transition direction is right
+    #[from_str="r"]
+    Right,
+    /// Specifies that the transition direction is down
+    #[from_str="d"]
+    Down,
+    /// Specifies the slide transition direction of left-up
+    #[from_str="lu"]
+    LeftUp,
+    /// Specifies the slide transition direction of right-up
+    #[from_str="ru"]
+    RightUp,
+    /// Specifies the slide transition direction of left-down
+    #[from_str="ld"]
+    LeftDown,
+    /// Specifies the slide transition direction of right-down
+    #[from_str="rd"]
+    RightDown,
 }
 
-decl_simple_type_enum! {
-    pub enum TransitionInOutDirectionType {
-        In = "in",
-        Out = "out",
-    }
+/// This simple type specifies if a slide transition should go in or out.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TransitionInOutDirectionType {
+    /// Specifies the slide transition should go in
+    #[from_str="in"]
+    In,
+    /// Specifies the slide transition should go out
+    #[from_str="out"]
+    Out,
 }
 
-decl_simple_type_enum! {
-    pub enum TransitionSpeed {
-        Slow = "slow",
-        Medium = "med",
-        Fast = "fast",
-    }
+/// This simple type defines the allowed transition speeds for transitioning from the current slide to the next.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TransitionSpeed {
+    /// Slow slide transition.
+    #[from_str="slow"]
+    Slow,
+    /// Medium slide transition.
+    #[from_str="med"]
+    Medium,
+    /// Fast slide transition.
+    #[from_str="fast"]
+    Fast,
 }
 
-decl_simple_type_enum! {
-    pub enum TLChartSubelementType {
-        GridLegend = "gridLegend",
-        Series = "series",
-        Category = "category",
-        PointInSeries = "ptInSeries",
-        PointInCategory = "ptInCategory",
-    }
+/// This simple type defines an animation target element that is represented by a subelement of a chart.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLChartSubelementType {
+    #[from_str="gridLegend"]
+    GridLegend,
+    #[from_str="series"]
+    Series,
+    #[from_str="category"]
+    Category,
+    #[from_str="ptInSeries"]
+    PointInSeries,
+    #[from_str="ptInCategory"]
+    PointInCategory,
 }
 
-decl_simple_type_enum! {
-    pub enum TLParaBuildType {
-        AllAtOnce = "allAtOnce",
-        Paragraph = "p",
-        Custom = "cust",
-        Whole = "whole",
-    }
+/// This simple type describes how to build a paragraph.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLParaBuildType {
+    /// Specifies to animate all paragraphs at once.
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    /// Specifies to animate paragraphs grouped by bullet level.
+    #[from_str="p"]
+    Paragraph,
+    /// Specifies the build has custom user settings.
+    #[from_str="cust"]
+    Custom,
+    /// Specifies to animate the entire body of text as one block.
+    #[from_str="whole"]
+    Whole,
 }
 
-decl_simple_type_enum! {
-    pub enum TLDiagramBuildType {
-        Whole = "whole",
-        DepthByNode = "depthByNode",
-        DepthByBranch = "depthByBranch",
-        BreadthByNode = "breadthByNode",
-        BreadthByLevel = "breadthByLvl",
-        Clockwise = "cw",
-        ClockwiseIn = "cwIn",
-        ClockwiseOut = "cwOut",
-        CounterClockwise = "ccw",
-        CounterClockwiseIn = "ccwIn",
-        CounterClockwiseOut = "ccwOut",
-        InByRing = "inByRing",
-        OutByRing = "outByRing",
-        Up = "up",
-        Down = "down",
-        AllAtOnce = "allAtOnce",
-        Custom = "cust",
-    }
+/// This simple type specifies the different diagram build types.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLDiagramBuildType {
+    #[from_str="whole"]
+    Whole,
+    #[from_str="depthByNode"]
+    DepthByNode,
+    #[from_str="depthByBranch"]
+    DepthByBranch,
+    #[from_str="breadthByNode"]
+    BreadthByNode,
+    #[from_str="breadthByLvl"]
+    BreadthByLevel,
+    #[from_str="cw"]
+    Clockwise,
+    #[from_str="cwIn"]
+    ClockwiseIn,
+    #[from_str="cwOut"]
+    ClockwiseOut,
+    #[from_str="ccw"]
+    CounterClockwise,
+    #[from_str="ccwIn"]
+    CounterClockwiseIn,
+    #[from_str="ccwOut"]
+    CounterClockwiseOut,
+    #[from_str="inByRing"]
+    InByRing,
+    #[from_str="outByRing"]
+    OutByRing,
+    #[from_str="up"]
+    Up,
+    #[from_str="down"]
+    Down,
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    #[from_str="cust"]
+    Custom,
 }
 
-decl_simple_type_enum! {
-    pub enum TLOleChartBuildType {
-        AllAtOnce = "allAtOnce",
-        Series = "series",
-        Category = "category",
-        SeriesElement = "seriesEl",
-        CategoryElement = "categoryEl",
-    }
+/// This simple type describes how to build an embedded Chart.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLOleChartBuildType {
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    #[from_str="series"]
+    Series,
+    #[from_str="category"]
+    Category,
+    #[from_str="seriesEl"]
+    SeriesElement,
+    #[from_str="categoryEl"]
+    CategoryElement,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTriggerRuntimeNode {
-        First = "first",
-        Last = "last",
-        All = "all",
-    }
+/// This simple type specifies the child time node that triggers a time condition. References a child TimeNode or all
+/// child nodes. Order is based on the child's end time.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTriggerRuntimeNode {
+    #[from_str="first"]
+    First,
+    #[from_str="last"]
+    Last,
+    #[from_str="all"]
+    All,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTriggerEvent {
-        OnBegin = "onBegin",
-        OnEnd = "onEnd",
-        Begin = "begin",
-        End = "end",
-        OnClick = "onClick",
-        OnDoubleClick = "onDblClick",
-        OnMouseOver = "onMouseOver",
-        OnMouseOut = "onMouseOut",
-        OnNext = "onNext",
-        OnPrev  = "onPrev",
-        OnStopAudio = "onStopAudio",
-    }
+/// This simple type specifies a particular event that causes the time condition to be true.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTriggerEvent {
+    /// Fire trigger at the beginning
+    #[from_str="onBegin"]
+    OnBegin,
+    /// Fire trigger at the end
+    #[from_str="onEnd"]
+    OnEnd,
+    /// Fire trigger at the beginning
+    #[from_str="begin"]
+    Begin,
+    /// Fire trigger at the end
+    #[from_str="end"]
+    End,
+    /// Fire trigger on a mouse click
+    #[from_str="onClick"]
+    OnClick,
+    /// Fire trigger on double-mouse click
+    #[from_str="onDblClick"]
+    OnDoubleClick,
+    /// Fire trigger on mouse over
+    #[from_str="onMouseOver"]
+    OnMouseOver,
+    /// Fire trigger on mouse out
+    #[from_str="onMouseOut"]
+    OnMouseOut,
+    /// Fire trigger on next node
+    #[from_str="onNext"]
+    OnNext,
+    /// Fire trigger on previous node
+    #[from_str="onPrev"]
+    OnPrev,
+    /// Fire trigger on stop audio
+    #[from_str="onStopAudio"]
+    OnStopAudio,
 }
 
 /// This simple type specifies how the animation is applied over subelements of the target element.
@@ -349,166 +611,236 @@ pub enum IterateType {
     Letter,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodePresetClassType {
-        Entrance = "entr",
-        Exit = "exit",
-        Emphasis = "emph",
-        Path = "path",
-        Verb = "verb",
-        Mediacall = "mediacall",
-    }
+/// This simple type specifies the class of effect in which this effect belongs.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodePresetClassType {
+    #[from_str="entr"]
+    Entrance,
+    #[from_str="exit"]
+    Exit,
+    #[from_str="emph"]
+    Emphasis,
+    #[from_str="path"]
+    Path,
+    #[from_str="verb"]
+    Verb,
+    #[from_str="mediacall"]
+    Mediacall,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodeRestartType {
-        Always = "always",
-        WhenNotActive = "whenNotActive",
-        Never = "never",
-    }
+/// This simple type determines whether an effect can play more than once.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeRestartType {
+    /// Always restart node
+    #[from_str="always"]
+    Always,
+    /// Restart when node is not active
+    #[from_str="whenNotActive"]
+    WhenNotActive,
+    /// Never restart node
+    #[from_str="never"]
+    Never,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodeFillType {
-        Remove = "remove",
-        Freeze = "freeze",
-        Hold = "hold",
-        Transition = "transition",
-    }
+/// This simple type specifies what modifications the effect leaves on the target element's properties when the
+/// effect ends.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeFillType {
+    #[from_str="remove"]
+    Remove,
+    #[from_str="freeze"]
+    Freeze,
+    #[from_str="hold"]
+    Hold,
+    #[from_str="transition"]
+    Transition,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodeSyncType {
-        CanSlip = "canSlip",
-        Locked = "locked",
-    }
+/// This simple type specifies how the time node synchronizes to its group.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeSyncType {
+    #[from_str="canSlip"]
+    CanSlip,
+    #[from_str="locked"]
+    Locked,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodeMasterRelation {
-        SameClick = "sameClick",
-        LastClick = "lastClick",
-        NextClick = "nextClick",
-    }
+/// This simple type specifies how the time node plays back relative to its master time node.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeMasterRelation {
+    #[from_str="sameClick"]
+    SameClick,
+    #[from_str="lastClick"]
+    LastClick,
+    #[from_str="nextClick"]
+    NextClick,
 }
 
-decl_simple_type_enum! {
-    pub enum TLTimeNodeType {
-        ClickEffect = "clickEffect",
-        WithEffect = "withEffect",
-        AfterEffect = "afterEffect",
-        MainSequence = "mainSequence",
-        InteractiveSequence = "interactiveSeq",
-        ClickParagraph = "clickPar",
-        WithGroup = "withGroup",
-        AfterGroup = "afterGroup",
-        TimingRoot = "tmRoot",
-    }
+/// This simple type specifies time node types.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeType {
+    #[from_str="clickEffect"]
+    ClickEffect,
+    #[from_str="withEffect"]
+    WithEffect,
+    #[from_str="afterEffect"]
+    AfterEffect,
+    #[from_str="mainSequence"]
+    MainSequence,
+    #[from_str="interactiveSeq"]
+    InteractiveSequence,
+    #[from_str="clickPar"]
+    ClickParagraph,
+    #[from_str="withGroup"]
+    WithGroup,
+    #[from_str="afterGroup"]
+    AfterGroup,
+    #[from_str="tmRoot"]
+    TimingRoot,
 }
 
-decl_simple_type_enum! {
-    pub enum TLNextActionType {
-        None = "none",
-        Seek = "seek",
-    }
+/// This simple type specifies what to do when going forward in a sequence. When the value is Seek, it seeks the
+/// current child element to its natural end time before advancing to the next element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLNextActionType {
+    #[from_str="none"]
+    None,
+    #[from_str="seek"]
+    Seek,
 }
 
-decl_simple_type_enum! {
-    pub enum TLPreviousActionType {
-        None = "none",
-        SkipTimed = "skipTimed",
-    }
+/// This simple type specifies what to do when going backwards in a sequence. When the value is SkipTimed, the
+/// sequence continues to go backwards until it reaches a sequence element that was defined to being only on a
+/// "next" event.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLPreviousActionType {
+    #[from_str="none"]
+    None,
+    #[from_str="skipTimed"]
+    SkipTimed,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateBehaviorCalcMode {
-        Discrete = "discrete",
-        Linear = "lin",
-        Formula = "fmla",
-    }
+/// This simple type specifies how the animation flows from point to point.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateBehaviorCalcMode {
+    #[from_str="discrete"]
+    Discrete,
+    #[from_str="fmla"]
+    Formula,
+    #[from_str="lin"]
+    Linear,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateBehaviorValueType {
-        String = "str",
-        Number = "num",
-        Color = "clr",
-    }
+/// This simple type specifies the type of property value.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateBehaviorValueType {
+    #[from_str="clr"]
+    Color,
+    #[from_str="num"]
+    Number,
+    #[from_str="str"]
+    String,
 }
 
-decl_simple_type_enum! {
-    pub enum TLBehaviorAdditiveType {
-        Base = "base",
-        Sum = "sum",
-        Replace = "repl",
-        Multiply = "mult",
-        None = "none",
-    }
+/// This simple type specifies how to apply the animation values to the original value for the property.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorAdditiveType {
+    #[from_str="base"]
+    Base,
+    #[from_str="sum"]
+    Sum,
+    #[from_str="repl"]
+    Replace,
+    #[from_str="mult"]
+    Multiply,
+    #[from_str="none"]
+    None,
 }
 
-decl_simple_type_enum! {
-    pub enum TLBehaviorAccumulateType {
-        None = "none",
-        Always = "always",
-    }
+/// This simple type makes a repeating animation build with each iteration when set to "always."
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorAccumulateType {
+    #[from_str="none"]
+    None,
+    #[from_str="always"]
+    Always,
 }
 
-decl_simple_type_enum! {
-    pub enum TLBehaviorTransformType {
-        Point = "pt",
-        Image = "img",
-    }
+/// This simple type specifies how the behavior animates the target element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorTransformType {
+    #[from_str="pt"]
+    Point,
+    #[from_str="img"]
+    Image,
 }
 
-decl_simple_type_enum! {
-    pub enum TLBehaviorOverrideType {
-        Normal = "normal",
-        ChildStyle = "childStyle",
-    }
+/// This simple type specifies how a behavior should override values of the attribute being animated on the target
+/// element. The ChildStyle clears the attributes on the children contained inside the target element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorOverrideType {
+    #[from_str="normal"]
+    Normal,
+    #[from_str="childStyle"]
+    ChildStyle,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateColorSpace {
-        Rgb = "rgb",
-        Hsl = "hsl",
-    }
+/// This simple type specifies the color space of the animation.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateColorSpace {
+    #[from_str="rgb"]
+    Rgb,
+    #[from_str="hsl"]
+    Hsl,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateColorDirection {
-        Clockwise = "cw",
-        CounterClockwise = "ccw",
-    }
+/// This simple type specifies the direction in which to interpolate the animation (clockwise or counterclockwise).
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateColorDirection {
+    #[from_str="cw"]
+    Clockwise,
+    #[from_str="ccw"]
+    CounterClockwise,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateEffectTransition {
-        In = "in",
-        Out = "out",
-        None = "none",
-    }
+/// This simple type specifies whether the effect is a transition in, transition out, or neither.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateEffectTransition {
+    #[from_str="in"]
+    In,
+    #[from_str="out"]
+    Out,
+    #[from_str="none"]
+    None,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateMotionBehaviorOrigin {
-        Parent = "parent",
-        Layout = "layout",
-    }
+/// This simple type specifies what the origin of the motion path is relative to.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateMotionBehaviorOrigin {
+    #[from_str="parent"]
+    Parent,
+    #[from_str="layout"]
+    Layout,
 }
 
-decl_simple_type_enum! {
-    pub enum TLAnimateMotionPathEditMode {
-        Relative = "relative",
-        Fixed = "fixed",
-    }
+/// This simple type specifies how the motion path moves when the target element is moved.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateMotionPathEditMode {
+    #[from_str="relative"]
+    Relative,
+    #[from_str="fixed"]
+    Fixed,
 }
 
-decl_simple_type_enum! {
-    pub enum TLCommandType {
-        Event = "evt",
-        Call = "call",
-        Verb = "verb",
-    }
+/// This simple type specifies a command type.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLCommandType {
+    #[from_str="evt"]
+    Event,
+    #[from_str="call"]
+    Call,
+    #[from_str="verb"]
+    Verb,
 }
 
 #[derive(Debug, Clone)]
@@ -1645,7 +1977,6 @@ impl CommonSlideData {
     }
 }
 
-/// CustomerDataList
 #[derive(Default, Debug, Clone)]
 pub struct CustomerDataList {
     pub customer_data_list: Vec<RelationshipId>,
@@ -1714,10 +2045,18 @@ impl Control {
 #[derive(Default, Debug, Clone)]
 pub struct OleAttributes {
     pub shape_id: Option<msoffice_shared::drawingml::ShapeId>,
-    pub name: Option<String>,       // ""
-    pub show_as_icon: Option<bool>, // false
+    /// Specifies the identifying name class used by scripting languages. This name is also used to
+    /// construct the clipboard name.
+    pub name: Option<String>,
+    /// Specifies whether the Embedded object shows as an icon or using its native representation.
+    /// 
+    /// Defaults to false
+    pub show_as_icon: Option<bool>,
+    /// Specifies the relationship id that is used to identify this Embedded object from within a slide.
     pub id: Option<RelationshipId>,
+    /// Specifies the width of the embedded control.
     pub image_width: Option<msoffice_shared::drawingml::PositiveCoordinate32>,
+    /// Specifies the height of the embedded control.
     pub image_height: Option<msoffice_shared::drawingml::PositiveCoordinate32>,
 }
 
@@ -1742,8 +2081,26 @@ impl OleAttributes {
 
 #[derive(Debug, Clone)]
 pub struct SlideSize {
+    /// Specifies the length of the extents rectangle in EMUs. This rectangle shall dictate the size
+    /// of the object as displayed (the result of any scaling to the original object).
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// <... cx="1828800" cy="200000"/>
+    /// ```xml
     pub width: SlideSizeCoordinate,
+    /// Specifies the width of the extents rectangle in EMUs. This rectangle shall dictate the size
+    /// of the object as displayed (the result of any scaling to the original object).
+    /// 
+    /// # Xml example
+    /// 
+    /// ```xml
+    /// < ... cx="1828800" cy="200000"/>
+    /// ```
     pub height: SlideSizeCoordinate,
+    /// Specifies the kind of slide size that should be used. This identifies in particular the
+    /// expected delivery platform for this presentation.
     pub size_type: Option<SlideSizeType>,
 }
 
@@ -1775,7 +2132,11 @@ impl SlideSize {
 
 #[derive(Debug, Clone)]
 pub struct SlideIdListEntry {
+    /// Specifies the slide identifier that is to contain a value that is unique throughout the presentation.
     pub id: SlideId,
+    /// Specifies the relationship identifier that is used in conjunction with a corresponding
+    /// relationship file to resolve the location within a presentation of the sld element defining
+    /// this slide.
     pub relationship_id: RelationshipId,
 }
 
@@ -1802,7 +2163,13 @@ impl SlideIdListEntry {
 
 #[derive(Debug, Clone)]
 pub struct SlideLayoutIdListEntry {
+    /// Specifies the identification number that uniquely identifies this slide layout within the
+    /// presentation file.
     pub id: Option<SlideLayoutId>,
+    /// Specifies the relationship id value that the generating application can use to resolve
+    /// which slide layout is used in the creation of the slide. This relationship id is used within
+    /// the relationship file for the master slide to expose the location of the corresponding
+    /// layout file within the presentation.
     pub relationship_id: RelationshipId,
 }
 
@@ -1827,7 +2194,12 @@ impl SlideLayoutIdListEntry {
 
 #[derive(Debug, Clone)]
 pub struct SlideMasterIdListEntry {
+    /// Specifies the slide master identifier that is to contain a value that is unique throughout
+    /// the presentation.
     pub id: Option<SlideMasterId>,
+    /// Specifies the relationship identifier that is used in conjunction with a corresponding
+    /// relationship file to resolve the location within a presentation of the sldMaster element
+    /// defining this slide master.
     pub relationship_id: RelationshipId,
 }
 
@@ -1853,6 +2225,9 @@ impl SlideMasterIdListEntry {
 
 #[derive(Debug, Clone)]
 pub struct NotesMasterIdListEntry {
+    /// Specifies the relationship identifier that is used in conjunction with a corresponding
+    /// relationship file to resolve the location within a presentation of the notesMaster element
+    /// defining this notes master.
     pub relationship_id: RelationshipId,
 }
 
@@ -1870,6 +2245,9 @@ impl NotesMasterIdListEntry {
 
 #[derive(Debug, Clone)]
 pub struct HandoutMasterIdListEntry {
+    /// Specifies the relationship identifier that is used in conjunction with a corresponding
+    /// relationship file to resolve the location within a presentation of the handoutMaster
+    /// element defining this handout master.
     pub relationship_id: RelationshipId,
 }
 
@@ -2083,7 +2461,10 @@ impl WheelTransition {
 
 #[derive(Default, Debug, Clone)]
 pub struct InOutTransition {
-    pub direction: Option<TransitionInOutDirectionType>, // out
+    /// This attribute specifies the direction of an "in/out" slide transition.
+    /// 
+    /// Defaults to TransitionInOutDirectionType::Out
+    pub direction: Option<TransitionInOutDirectionType>,
 }
 
 impl InOutTransition {
@@ -2789,13 +3170,13 @@ pub struct TLBuildParagraph {
     /// paragraphs themselves such that the last paragraph animates first.
     /// 
     /// Defaults to false
-    pub reverse: Option<bool>,               // false
+    pub reverse: Option<bool>,
     /// This attribute specifies time after which to automatically advance the build to the next
     /// step.
     /// 
     /// Defaults to TLTime::Indefinite
     pub auto_advance_time: Option<TLTime>,
-    pub template_list: Option<Vec<TLTemplate>>,      // size: 0-9
+    pub template_list: Option<Vec<TLTemplate>>,      // TODO size: 0-9
 }
 
 impl TLBuildParagraph {
@@ -2884,6 +3265,8 @@ impl TLPoint {
     }
 }
 
+/// This simple type specifies time after which to automatically advance the build to the next step. An amount of
+/// time, in milliseconds.
 #[derive(Debug, Clone)]
 pub enum TLTime {
     TimePoint(u32),
@@ -2903,7 +3286,10 @@ impl FromStr for TLTime {
 
 #[derive(Debug, Clone)]
 pub struct TLTemplate {
-    pub level: Option<u32>, // 0
+    /// This attribute describes the paragraph indent level to which this template effect applies.
+    /// 
+    /// Defaults to 0
+    pub level: Option<u32>,
     pub time_node_list: Vec<TimeNodeGroup>,
 }
 
@@ -4579,6 +4965,7 @@ pub struct TLTimeAnimateValue {
     /// 
     /// # Xml example
     /// 
+    /// ```xml
     /// <p:animcalcmode="lin" valueType="num">
     ///   <p:cBhvr>
     ///     <p:cTn id="9" dur="664" tmFilter="0.0,0.0; 0.25,0.07;0.50,0.2; 0.75,0.467; 1.0,1.0">
@@ -4606,6 +4993,7 @@ pub struct TLTimeAnimateValue {
     ///     </p:tav>
     ///   </p:tavLst>
     /// </p:anim>
+    /// ```
     /// 
     /// The animation example above modifies the ppt_y variable of the object by subtracting
     /// sin(pi*$)/3 from the non-animated value of ppt_y. The start value is 0.5 and the end
@@ -4669,6 +5057,8 @@ impl TLTimeAnimateValue {
     }
 }
 
+/// This simple type specifies a percentage within the time span of the element. A value of Indefinite means the
+/// attribute should be ignored.
 #[derive(Debug, Clone)]
 pub enum TLTimeAnimateValueTime {
     Percentage(msoffice_shared::drawingml::PositiveFixedPercentage),
@@ -6309,8 +6699,6 @@ impl SlideMaster {
 /// This element specifies an instance of a slide layout. The slide layout contains in essence a template slide design
 /// that can be applied to any existing slide. When applied to an existing slide all corresponding content should be
 /// mapped to the new slide layout.
-/// 
-/// 
 #[derive(Debug, Clone)]
 pub struct SlideLayout {
     /// Specifies a name to be used in place of the name attribute within the cSld element. This
@@ -6692,7 +7080,6 @@ impl EmbeddedFontListEntry {
     }
 }
 
-/// CustomShow
 #[derive(Debug, Clone)]
 pub struct CustomShow {
     /// Specifies a name for the custom show.
@@ -6995,20 +7382,47 @@ impl ModifyVerifier {
 /// ```
 #[derive(Default, Debug, Clone)]
 pub struct Presentation {
-    pub server_zoom: Option<msoffice_shared::drawingml::Percentage>, // 50%
-    pub first_slide_num: Option<i32>,                      // 1
-    pub show_special_pls_on_title_slide: Option<bool>,     // true
-    pub rtl: Option<bool>,                                 // false
-    pub remove_personal_info_on_save: Option<bool>,        // false
+    /// Specifies the scaling to be used when the presentation is embedded in another
+    /// document. The embedded slides are to be scaled by this percentage.
+    /// 
+    /// Defaults to 50_000
+    pub server_zoom: Option<msoffice_shared::drawingml::Percentage>,
+    /// Specifies the first slide number in the presentation.
+    /// 
+    /// Defaults to 1
+    pub first_slide_num: Option<i32>,
+    /// Specifies whether to show the header and footer placeholders on the title slides.
+    /// 
+    /// Defaults to true
+    pub show_special_placeholders_on_title_slide: Option<bool>,
+    /// Specifies if the current view of the user interface is oriented right-to-left or left-to-right.
+    /// The view is right-to-left is this value is set to true, and left-to-right otherwise.
+    /// 
+    /// Defaults to false
+    pub rtl: Option<bool>,
+    /// Specifies whether to automatically remove personal information when the presentation
+    /// document is saved.
+    /// 
+    /// Defaults to false
+    pub remove_personal_info_on_save: Option<bool>,
     /// Specifies whether the generating application is to be in a compatibility mode which
     /// serves to inform the user of any loss of content or functionality when working with older
     /// formats.
     /// 
     /// Defaults to false
     pub compatibility_mode: Option<bool>,
-    pub strict_first_and_last_chars: Option<bool>,         // true
-    pub embed_true_type_fonts: Option<bool>,               // false
-    pub save_subset_fonts: Option<bool>,                   // false
+    /// Specifies whether to use strict characters for starting and ending lines of Japanese text.
+    /// 
+    /// Defaults to true
+    pub strict_first_and_last_chars: Option<bool>,
+    /// Specifies whether the generating application should automatically embed true type fonts or not.
+    /// 
+    /// Defaults to false
+    pub embed_true_type_fonts: Option<bool>,
+    /// Specifies to save only the subset of characters used in the presentation when a font is embedded.
+    /// 
+    /// Defaults to false
+    pub save_subset_fonts: Option<bool>,
     /// Specifies whether the generating application should automatically compress all pictures
     /// for this presentation.
     /// 
@@ -7282,7 +7696,9 @@ impl Presentation {
             match attr.as_str() {
                 "serverZoom" => instance.server_zoom = Some(value.parse()?),
                 "firstSlideNum" => instance.first_slide_num = Some(value.parse()?),
-                "showSpecialPlsOnTitleSld" => instance.show_special_pls_on_title_slide = Some(parse_xml_bool(value)?),
+                "showSpecialPlsOnTitleSld" => { 
+                    instance.show_special_placeholders_on_title_slide = Some(parse_xml_bool(value)?);
+                }
                 "rtl" => instance.rtl = Some(parse_xml_bool(value)?),
                 "removePersonalInfoOnSave" => instance.remove_personal_info_on_save = Some(parse_xml_bool(value)?),
                 "compatMode" => instance.compatibility_mode = Some(parse_xml_bool(value)?),
