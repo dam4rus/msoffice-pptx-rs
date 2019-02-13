@@ -1,9 +1,9 @@
+use enum_from_str::ParseEnumVariantError;
+use enum_from_str_derive::FromStr;
 use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
 use std::io::{Read, Seek};
-use enum_from_str::ParseEnumVariantError;
-use enum_from_str_derive::FromStr;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
@@ -28,9 +28,9 @@ pub type Name = String;
 
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum ConformanceClass {
-    #[from_str="strict"]
+    #[from_str = "strict"]
     Strict,
-    #[from_str="transitional"]
+    #[from_str = "transitional"]
     Transitional,
 }
 
@@ -38,52 +38,52 @@ pub enum ConformanceClass {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum SlideSizeType {
     /// Slide size should be optimized for 35mm film output
-    #[from_str="mm35"]
+    #[from_str = "mm35"]
     Mm35,
     /// Slide size should be optimized for A3 output
-    #[from_str="a3"]
+    #[from_str = "a3"]
     A3,
     /// Slide size should be optimized for A4 output
-    #[from_str="a4"]
+    #[from_str = "a4"]
     A4,
     /// Slide size should be optimized for B4ISO output
-    #[from_str="b4ISO"]
+    #[from_str = "b4ISO"]
     B4ISO,
     /// Slide size should be optimized for B4JIS output
-    #[from_str="b4JIS"]
+    #[from_str = "b4JIS"]
     B4JIS,
     /// Slide size should be optimized for B5ISO output
-    #[from_str="b5ISO"]
+    #[from_str = "b5ISO"]
     B5ISO,
     /// Slide size should be optimized for B5JIS output
-    #[from_str="b5JIS"]
+    #[from_str = "b5JIS"]
     B5JIS,
     /// Slide size should be optimized for banner output
-    #[from_str="banner"]
+    #[from_str = "banner"]
     Banner,
     /// Slide size should be optimized for custom output
-    #[from_str="custom"]
+    #[from_str = "custom"]
     Custom,
     /// Slide size should be optimized for hagaki card output
-    #[from_str="hagakiCard"]
+    #[from_str = "hagakiCard"]
     HagakiCard,
     /// Slide size should be optimized for ledger output
-    #[from_str="ledger"]
+    #[from_str = "ledger"]
     Ledger,
     /// Slide size should be optimized for letter output
-    #[from_str="letter"]
+    #[from_str = "letter"]
     Letter,
     /// Slide size should be optimized for overhead output
-    #[from_str="overhead"]
+    #[from_str = "overhead"]
     Overhead,
     /// Slide size should be optimized for 16x10 screen output
-    #[from_str="screen16x10"]
+    #[from_str = "screen16x10"]
     Screen16x10,
     /// Slide size should be optimized for 16x9 screen output
-    #[from_str="screen16x9"]
+    #[from_str = "screen16x9"]
     Screen16x9,
     /// Slide size should be optimized for 4x3 screen output
-    #[from_str="screen4x3"]
+    #[from_str = "screen4x3"]
     Screen4x3,
 }
 
@@ -92,22 +92,22 @@ pub enum SlideSizeType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum PhotoAlbumLayout {
     /// Fit Photos to Slide
-    #[from_str="fitToSlide"]
+    #[from_str = "fitToSlide"]
     FitToSlide,
     /// 1 Photo per Slide
-    #[from_str="pic1"]
+    #[from_str = "pic1"]
     Pic1,
     /// 2 Photo per Slide
-    #[from_str="pic2"]
+    #[from_str = "pic2"]
     Pic2,
     /// 4 Photo per Slide
-    #[from_str="pic4"]
+    #[from_str = "pic4"]
     Pic4,
     /// 1 Photo per Slide with Titles
-    #[from_str="picTitle1"]
+    #[from_str = "picTitle1"]
     PicTitle1,
     /// 2 Photo per Slide with Titles
-    #[from_str="picTitle2"]
+    #[from_str = "picTitle2"]
     PicTitle2,
     /// 4 Photo per Slide with Titles
     #[from_str = "picTitle4"]
@@ -119,25 +119,25 @@ pub enum PhotoAlbumLayout {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum PhotoAlbumFrameShape {
     /// Rectangle Photo Frame
-    #[from_str="frameStyle1"]
+    #[from_str = "frameStyle1"]
     FrameStyle1,
     /// Rounded Rectangle Photo Frame
-    #[from_str="frameStyle2"]
+    #[from_str = "frameStyle2"]
     FrameStyle2,
     /// Simple White Photo Frame
-    #[from_str="frameStyle3"]
+    #[from_str = "frameStyle3"]
     FrameStyle3,
     /// Simple Black Photo Frame
-    #[from_str="frameStyle4"]
+    #[from_str = "frameStyle4"]
     FrameStyle4,
     /// Compound Black Photo Frame
-    #[from_str="frameStyle5"]
+    #[from_str = "frameStyle5"]
     FrameStyle5,
     /// Center Shadow Photo Frame
-    #[from_str="frameStyle6"]
+    #[from_str = "frameStyle6"]
     FrameStyle6,
     /// Soft Edge Photo Frame
-    #[from_str="frameStyle7"]
+    #[from_str = "frameStyle7"]
     FrameStyle7,
 }
 
@@ -146,15 +146,15 @@ pub enum PhotoAlbumFrameShape {
 pub enum OleObjectFollowColorScheme {
     /// Setting this enumeration causes the Embedded object to not respond to changes in the color scheme in the
     /// presentation.
-    #[from_str="none"]
+    #[from_str = "none"]
     None,
     /// Setting this enumeration causes the Embedded object to respond to all changes in the color scheme in the
     /// presentation.
-    #[from_str="full"]
+    #[from_str = "full"]
     Full,
     /// Setting this enumeration causes the Embedded object to respond only to changes in the text and background
     /// colors of the color scheme in the presentation.
-    #[from_str="textAndBackground"]
+    #[from_str = "textAndBackground"]
     TextAndBackground,
 }
 
@@ -202,18 +202,18 @@ impl CustomerDataList {
 pub struct SlideSize {
     /// Specifies the length of the extents rectangle in EMUs. This rectangle shall dictate the size
     /// of the object as displayed (the result of any scaling to the original object).
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <... cx="1828800" cy="200000"/>
     /// ```xml
     pub width: SlideSizeCoordinate,
     /// Specifies the width of the extents rectangle in EMUs. This rectangle shall dictate the size
     /// of the object as displayed (the result of any scaling to the original object).
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// < ... cx="1828800" cy="200000"/>
     /// ```
@@ -389,25 +389,25 @@ pub struct EmbeddedFontListEntry {
     /// Within a font specification there can be regular, bold, italic and boldItalic versions of the font specified.
     /// The actual font data for each of these is referenced using a relationships file that contains links to all
     /// available fonts.
-    /// This font data contains font information for each of the characters to be made available in each version of 
+    /// This font data contains font information for each of the characters to be made available in each version of
     /// the font.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:regular r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Font Substitution Logic
-    /// 
+    ///
     /// If the specified font is not available on a system being used for rendering, then the attributes of this
     /// element are to be utilized in selecting an alternate font.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
     /// characters are to be stored in the corresponding font data files.
     pub font: msoffice_shared::drawingml::TextFont,
@@ -415,37 +415,37 @@ pub struct EmbeddedFontListEntry {
     /// version of the given typeface name is available for use within the presentation. The actual font data is
     /// referenced using a relationships file that contains links to all fonts available. This font data contains font
     /// information for each of the characters to be made available.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:regular r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
     /// characters are to be stored in the corresponding font data files.
     pub regular: Option<RelationshipId>,
-    /// This element specifies a bold embedded font that is linked to a parent typeface. Once specified, this bold 
-    /// version of the given typeface name is available for use within the presentation. The actual font data is 
-    /// referenced using a relationships file that contains links to all fonts available. This font data contains font 
+    /// This element specifies a bold embedded font that is linked to a parent typeface. Once specified, this bold
+    /// version of the given typeface name is available for use within the presentation. The actual font data is
+    /// referenced using a relationships file that contains links to all fonts available. This font data contains font
     /// information for each of the characters to be made available.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:bold r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine
     /// which characters are to be stored in the corresponding font data files.
     pub bold: Option<RelationshipId>,
@@ -453,37 +453,37 @@ pub struct EmbeddedFontListEntry {
     /// version of the given typeface name is available for use within the presentation. The actual font data is
     /// referenced using a relationships file that contains links to all fonts available. This font data contains font
     /// information for each of the characters to be made available.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:italic r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
     /// characters are to be stored in the corresponding font data files.
     pub italic: Option<RelationshipId>,
     /// This element specifies a bold italic embedded font that is linked to a parent typeface. Once specified, this
     /// bold italic version of the given typeface name is available for use within the presentation. The actual font
-    /// data is referenced using a relationships file that contains links to all fonts available. This font data 
+    /// data is referenced using a relationships file that contains links to all fonts available. This font data
     /// contains font information for each of the characters to be made available.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:boldItalic r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine
     /// which characters are to be stored in the corresponding font data files.
     pub bold_italic: Option<RelationshipId>,
@@ -586,21 +586,21 @@ impl CustomShow {
 #[derive(Default, Debug, Clone)]
 pub struct PhotoAlbum {
     /// Specifies whether all pictures in the photo album are to be displayed as black and white.
-    /// 
+    ///
     /// Defaults to false
     pub black_and_white: Option<bool>,
     /// Specifies whether to show captions for pictures in the photo album. Captions are text
     /// boxes grouped with each image, with the group set to not allow ungrouping.
-    /// 
+    ///
     /// Defaults to false
     pub show_captions: Option<bool>,
     /// Specifies the layout that is to be used to arrange the pictures in the photo album on
     /// individual slides.
-    /// 
+    ///
     /// Defaults to PhotoAlbumLayout::FitToSlide
     pub layout: Option<PhotoAlbumLayout>,
     /// Specifies the frame type that is to be used on all the pictures in the photo album.
-    /// 
+    ///
     /// Defaults to PhotoAlbumFrameShape::FrameStyle1
     pub frame: Option<PhotoAlbumFrameShape>,
 }
@@ -665,33 +665,33 @@ impl Kinsoku {
 pub struct ModifyVerifier {
     /// Specifies the specific cryptographic hashing algorithm which shall be used along with the
     /// salt attribute and input password in order to compute the hash value.
-    /// 
+    ///
     /// The following values are reserved:
     /// * MD2: Specifies that the MD2 algorithm, as defined by RFC 1319, shall be used.
     /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
     /// publically known breaks.__
-    /// 
+    ///
     /// * MD4: Specifies that the MD4 algorithm, as defined by RFC 1320, shall be used.
     /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
     /// publically known breaks.__
-    /// 
+    ///
     /// * MD5: Specifies that the MD5 algorithm, as defined by RFC 1321, shall be used.
     /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
     /// publically known breaks.__
-    /// 
+    ///
     /// * RIPEMD-128: Specifies that the RIPEMD-128 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// __It is recommended that applications should avoid using this algorithm to store new hash values, due to
     /// publically known breaks.__
-    /// 
+    ///
     /// * RIPEMD-160: Specifies that the RIPEMD-160 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// * SHA-1: Specifies that the SHA-1 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// * SHA-256: Specifies that the SHA-256 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// * SHA-384: Specifies that the SHA-384 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// * SHA-512: Specifies that the SHA-512 algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
     /// * WHIRLPOOL: Specifies that the WHIRLPOOL algorithm, as defined by ISO/IEC 10118-3:2004 shall be used.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider an Office Open XML document with the following information stored in one of its protection elements:
     /// ```xml
     /// < ... algorithmName="SHA-1" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
@@ -703,12 +703,12 @@ pub struct ModifyVerifier {
     /// be compared with the resulting hash value after hashing the user-supplied password
     /// using the algorithm specified by the preceding attributes and parent XML element, and if
     /// the two values match, the protection shall no longer be enforced.
-    /// 
+    ///
     /// If this value is omitted, then the reservationPassword attribute shall contain the
     /// password hash for the workbook.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider an Office Open XML document with the following information stored in one of its protection elements:
     /// ```xml
     /// <... algorithmName="SHA-1" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
@@ -726,17 +726,17 @@ pub struct ModifyVerifier {
     /// string which is added to a user-supplied password before it is hashed in order to prevent
     /// a malicious party from pre-calculating all possible password/hash combinations and
     /// simply using those pre-calculated values (often referred to as a "dictionary attack").
-    /// 
+    ///
     /// If this attribute is omitted, then no salt shall be prepended to the user-supplied password
     /// before it is hashed for comparison with the stored hash value.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider an Office Open XML document with the following information stored in one of its protection elements:
     /// ```xml
     /// <... saltValue="ZUdHa+D8F/OAKP3I7ssUnQ==" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
     /// ```
-    /// 
+    ///
     /// The saltValue attribute value of ZUdHa+D8F/OAKP3I7ssUnQ== specifies that the user-
     /// supplied password must have this value prepended before it is run through the specified
     /// hashing algorithm to generate a resulting hash value for comparison.
@@ -745,16 +745,16 @@ pub struct ModifyVerifier {
     /// each iteration's result plus a 4 byte value (0-based, little endian) containing the number
     /// of the iteration as the input for the next iteration) when attempting to compare a user-
     /// supplied password with the value stored in the hashValue attribute.
-    /// 
+    ///
     /// # Rationale
-    /// 
+    ///
     /// Running the algorithm many times increases the cost of exhaustive search
     /// attacks correspondingly. Storing this value allows for the number of iterations to be
     /// increased over time to accommodate faster hardware (and hence the ability to run more
     /// iterations in less time).
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider an Office Open XML document with the following information stored in one of its protection elements:
     /// ```xml
     /// <... spinCount="100000" hashValue="9oN7nWkCAyEZib1RomSJTjmPpCY=" />
@@ -784,9 +784,9 @@ impl ModifyVerifier {
 }
 
 /// This element specifies within it fundamental presentation-wide properties.
-/// 
+///
 /// # Xml example
-/// 
+///
 /// Consider the following presentation with a single slide master and two slides. In addition to these
 /// commonly used elements there can also be the specification of other properties such as slide size, notes size and
 /// default text styles.
@@ -810,69 +810,69 @@ impl ModifyVerifier {
 pub struct Presentation {
     /// Specifies the scaling to be used when the presentation is embedded in another
     /// document. The embedded slides are to be scaled by this percentage.
-    /// 
+    ///
     /// Defaults to 50_000
     pub server_zoom: Option<msoffice_shared::drawingml::Percentage>,
     /// Specifies the first slide number in the presentation.
-    /// 
+    ///
     /// Defaults to 1
     pub first_slide_num: Option<i32>,
     /// Specifies whether to show the header and footer placeholders on the title slides.
-    /// 
+    ///
     /// Defaults to true
     pub show_special_placeholders_on_title_slide: Option<bool>,
     /// Specifies if the current view of the user interface is oriented right-to-left or left-to-right.
     /// The view is right-to-left is this value is set to true, and left-to-right otherwise.
-    /// 
+    ///
     /// Defaults to false
     pub rtl: Option<bool>,
     /// Specifies whether to automatically remove personal information when the presentation
     /// document is saved.
-    /// 
+    ///
     /// Defaults to false
     pub remove_personal_info_on_save: Option<bool>,
     /// Specifies whether the generating application is to be in a compatibility mode which
     /// serves to inform the user of any loss of content or functionality when working with older
     /// formats.
-    /// 
+    ///
     /// Defaults to false
     pub compatibility_mode: Option<bool>,
     /// Specifies whether to use strict characters for starting and ending lines of Japanese text.
-    /// 
+    ///
     /// Defaults to true
     pub strict_first_and_last_chars: Option<bool>,
     /// Specifies whether the generating application should automatically embed true type fonts or not.
-    /// 
+    ///
     /// Defaults to false
     pub embed_true_type_fonts: Option<bool>,
     /// Specifies to save only the subset of characters used in the presentation when a font is embedded.
-    /// 
+    ///
     /// Defaults to false
     pub save_subset_fonts: Option<bool>,
     /// Specifies whether the generating application should automatically compress all pictures
     /// for this presentation.
-    /// 
+    ///
     /// Defaults to true
     pub auto_compress_pictures: Option<bool>,
     /// Specifies a seed for generating bookmark IDs to ensure IDs remain unique across the
     /// document. This value specifies the number to be used as the ID for the next new
     /// bookmark created.
-    /// 
+    ///
     /// Defaults to 1
     pub bookmark_id_seed: Option<BookmarkIdSeed>,
     /// Specifies the conformance class (§2.1) to which the PresentationML document conforms.
-    /// 
+    ///
     /// Defaults to ConformanceClass::Transitional
     pub conformance: Option<ConformanceClass>,
-    /// This element specifies a list of identification information for the slide master slides that are available 
+    /// This element specifies a list of identification information for the slide master slides that are available
     /// within the corresponding presentation.
     /// A slide master is a slide that is specifically designed to be a template for all related child layout slides.
-    /// 
+    ///
     /// The SlideMasterIdListEntry specifies a slide master that is available within the corresponding presentation.
     /// A slide master is a slide that is specifically designed to be a template for all related child layout slides.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
     ///   ...
@@ -885,13 +885,13 @@ pub struct Presentation {
     /// The specifies a list of identification information for the notes master slides that are available within the
     /// corresponding presentation. A notes master is a slide that is specifically designed for the printing of the slide
     /// along with any attached notes.
-    /// 
+    ///
     /// The NotesMasterIdListEntry specifies a notes master that is available within the corresponding presentation.
-    /// A notes master is a slide that is specifically designed for the printing of the slide along with any 
+    /// A notes master is a slide that is specifically designed for the printing of the slide along with any
     /// attached notes.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following specification of a notes master within a presentation
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
@@ -902,21 +902,21 @@ pub struct Presentation {
     ///   ...
     /// </p:presentation>
     /// ```xml
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Even though the reference documentation states that this element is a list, the Xml schema states that it has
     /// only a single element.
     pub notes_master_id: Option<NotesMasterIdListEntry>,
     /// This element specifies a list of identification information for the handout master slides that are available
     /// within the corresponding presentation.
     /// A handout master is a slide that is specifically designed for printing as a handout.
-    /// 
+    ///
     /// The HandoutMasterIdListEntry specifies a handout master that is available within the corresponding presentation. A handout
     /// master is a slide that is specifically designed for printing as a handout.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
     ///   ...
@@ -926,25 +926,25 @@ pub struct Presentation {
     ///   ...
     /// </p:presentation>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Even though the reference documentation states that this element is a list, the Xml schema states that it has
     /// only a single element.
     pub handout_master_id: Option<HandoutMasterIdListEntry>,
     /// This element specifies a list of identification information for the slides that are available within the
     /// corresponding presentation. A slide contains the information that is specific to a single slide such as slide-
     /// specific shape and text information.
-    /// 
+    ///
     /// The SlideIdListEntry specifies a list of presentation slides. A presentation slide contains the information
     /// that is specific to a single slide such as slide-specific shape and text information.
     pub slide_id_list: Vec<SlideIdListEntry>,
     /// This element specifies the size of the presentation slide surface. Objects within a presentation slide can be
     /// specified outside these extents, but this is the size of background surface that is shown when the slide is
     /// presented or printed.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
     ///   ...
@@ -953,13 +953,13 @@ pub struct Presentation {
     /// </p:presentation>
     pub slide_size: Option<SlideSize>,
     /// This element specifies the size of slide surface used for notes slides and handout slides. Objects within a
-    /// notes slide can be specified outside these extents, but the notes slide has a background surface of the 
+    /// notes slide can be specified outside these extents, but the notes slide has a background surface of the
     /// specified size when presented or printed.
-    /// This element is intended to specify the region to which content is fitted in any special format of printout 
+    /// This element is intended to specify the region to which content is fitted in any special format of printout
     /// the application might choose to generate, such as an outline handout.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following specifying of the size of a notes slide.
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
@@ -970,23 +970,23 @@ pub struct Presentation {
     /// ```
     pub notes_size: Option<msoffice_shared::drawingml::PositiveSize2D>,
     /// This element specifies that references to smart tags exist within this document.
-    /// To denote the location of smart tags on individual runs of text, there smart tag identifier attributes are 
+    /// To denote the location of smart tags on individual runs of text, there smart tag identifier attributes are
     /// specified for each run to which a smart tag applies.
     /// These are further specified in the run property attributes within DrawingML.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:presentation>
     ///   ...
     ///   <p:smartTags r:id="rId1"/>
     /// </p:presentation>
     /// ```
-    /// 
+    ///
     /// The presence of the smartTags element specifies that there is smart tag information within the PresentationML
     /// package. Individual runs are then inspected for the value of the smtId attribute to determine where smart tags
     /// might apply, for example:
-    /// 
+    ///
     /// ```xml
     /// <p:txBody>
     ///  <a:bodyPr/>
@@ -1000,38 +1000,38 @@ pub struct Presentation {
     ///  </a:p>
     /// </p:txBody>
     /// ```
-    /// 
+    ///
     /// In the sample above there is a smart tag identifier of 1 specified for this run of text to denote that the text
     /// should be inspected for smart tag information.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// For a complete definition of smart tags, which are semantically identical throughout Office Open XML,
     /// see §17.5.1.
     pub smart_tags: Option<RelationshipId>,
     /// This element specifies a list of fonts that are embedded within the corresponding presentation. The font data
-    /// for these fonts is stored alongside the other document parts within the document container. The actual font 
+    /// for these fonts is stored alongside the other document parts within the document container. The actual font
     /// data is referenced within the EmbeddedFontListEntry element.
-    /// 
-    /// The EmbeddedFontListEntry element specifies an embedded font. Once specified, this font is available for use within the 
+    ///
+    /// The EmbeddedFontListEntry element specifies an embedded font. Once specified, this font is available for use within the
     /// presentation.
     /// Within a font specification there can be regular, bold, italic and boldItalic versions of the font specified.
-    /// The actual font data for each of these is referenced using a relationships file that contains links to all 
+    /// The actual font data for each of these is referenced using a relationships file that contains links to all
     /// available fonts.
     /// This font data contains font information for each of the characters to be made available in each version of the
     /// font.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:embeddedFont>
     ///   <p:font typeface="MyFont" pitchFamily="34" charset="0"/>
     ///   <p:regular r:id="rId2"/>
     /// </p:embeddedFont>
     /// ```
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine
     /// which characters are to be stored in the corresponding font data files.
     pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
@@ -1043,14 +1043,14 @@ pub struct Presentation {
     /// list of images within the presentation that spread across one or more slides, all of which share a consistent
     /// layout. Each image in the album is formatted with a consistent style. This functionality enables the application
     /// to manage all of the images together and modify their ordering, layout, and formatting as a set.
-    /// 
+    ///
     /// This element does not enforce the specified properties on individual photo album images; rather, it specifies
     /// common settings that should be applied by default to all photo album images and their containing slides.
     /// Images that are part of the photo album are identified by the presence of the isPhoto element in the definition
     /// of the picture.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:presentation xmlns:a="..." xmlns:r="..." xmlns:p="..." embedTrueTypeFonts="1">
     ///   ...
@@ -1060,7 +1060,7 @@ pub struct Presentation {
     pub photo_album: Option<PhotoAlbum>,
     /// This element allows for the specifying of customer defined data within the PresentationML framework.
     /// References to custom data or tags can be defined within this list.
-    /// 
+    ///
     /// The elements of this list specifies customer data which allows for the specifying and persistence of customer
     /// specific data within the presentation.
     pub customer_data_list: Option<CustomerDataList>,
@@ -1075,19 +1075,19 @@ pub struct Presentation {
     /// This element specifies the write protection settings which have been applied to a PresentationML document.
     /// Write protection refers to a mode in which the document's contents should not be modified, and the document
     /// should not be resaved using the same file name.
-    /// 
+    ///
     /// When present, the application shall require a password to enable modifications to the document. If the
     /// supplied password does not match the hash value in this attribute, then write protection shall be enabled.
     /// If this element is omitted, then no write protection shall be applied to the current document.
     /// Since this protection does not encrypt the document, malicious applications might circumvent its use.
-    /// 
+    ///
     /// The password supplied to the algorithm is to be a UTF-16LE encoded string; strings longer than 510 octets are
     /// truncated to 510 octets. If there is a leading BOM character (U+FEFF) in the encoded password it is removed
     /// before hash calculation. The attributes of this element specify the algorithm to be used to verify the password
     /// provided by the user.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider a PresentationML document that can only be opened in a write protected state unless a
     /// password is provided, in which case the file would be opened in an editable state. This requirement would be
     /// specified using the following PresentationML:
@@ -1122,7 +1122,7 @@ impl Presentation {
             match attr.as_str() {
                 "serverZoom" => instance.server_zoom = Some(value.parse()?),
                 "firstSlideNum" => instance.first_slide_num = Some(value.parse()?),
-                "showSpecialPlsOnTitleSld" => { 
+                "showSpecialPlsOnTitleSld" => {
                     instance.show_special_placeholders_on_title_slide = Some(parse_xml_bool(value)?);
                 }
                 "rtl" => instance.rtl = Some(parse_xml_bool(value)?),
@@ -1168,7 +1168,9 @@ impl Presentation {
                 }
                 "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
                 "notesSz" => {
-                    instance.notes_size = Some(msoffice_shared::drawingml::PositiveSize2D::from_xml_element(child_node)?)
+                    instance.notes_size = Some(msoffice_shared::drawingml::PositiveSize2D::from_xml_element(
+                        child_node,
+                    )?)
                 }
                 "smartTags" => {
                     let r_id_attr = child_node
@@ -1194,8 +1196,9 @@ impl Presentation {
                 "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
                 "defaultTextStyle" => {
-                    instance.default_text_style =
-                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.default_text_style = Some(Box::new(
+                        msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?,
+                    ))
                 }
                 "modifyVerifier" => {
                     instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))

@@ -1,13 +1,13 @@
+use enum_from_str::ParseEnumVariantError;
+use enum_from_str_derive::FromStr;
 use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use std::io::Read;
 use zip::read::ZipFile;
-use enum_from_str::ParseEnumVariantError;
-use enum_from_str_derive::FromStr;
-use std::io::{Read};
 
+use super::animation::{Build, TimeNodeGroup};
 use super::presentation::{CustomerDataList, SlideLayoutIdListEntry};
-use super::animation::{TimeNodeGroup, Build};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
@@ -16,55 +16,55 @@ pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 pub enum PlaceholderType {
     /// Contains a slide title. Allowed for Slide, Slide Layout and Slide Master. Can be horizontal or vertical on Slide
     /// and Slide Layout.
-    #[from_str="title"]
+    #[from_str = "title"]
     Title,
     /// Contains body text. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master. Can be horizontal
     /// or vertical on Slide and Slide Layout.
-    #[from_str="body"]
+    #[from_str = "body"]
     Body,
     /// Contains a title intended to be centered on the slide. Allowed for Slide and Slide Layout.
-    #[from_str="ctrTitle"]
+    #[from_str = "ctrTitle"]
     CenteredTitle,
     /// Contains a subtitle. Allowed for Slide and Slide Layout.
-    #[from_str="subTitle"]
+    #[from_str = "subTitle"]
     SubTitle,
     /// Contains the date and time. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout Master
-    #[from_str="dt"]
+    #[from_str = "dt"]
     DateTime,
     /// Contains the number of a slide. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout
     /// Master
-    #[from_str="sldNum"]
+    #[from_str = "sldNum"]
     SlideNumber,
     /// Contains text to be used as a footer in the document. Allowed for Slide, Slide Layout, Slide Master, Notes,
     /// Notes Master, Handout Master
-    #[from_str="ftr"]
+    #[from_str = "ftr"]
     Footer,
     /// Contains text to be used as a header for the document. Allowed for Notes, Notes Master, Handout Master.
-    #[from_str="hdr"]
+    #[from_str = "hdr"]
     Header,
     /// Contains any content type. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="obj"]
+    #[from_str = "obj"]
     Object,
     /// Contains a chart or graph. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="chart"]
+    #[from_str = "chart"]
     Chart,
     /// Contains a table. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="tbl"]
+    #[from_str = "tbl"]
     Table,
     /// Contains a single clip art image. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="clipArt"]
+    #[from_str = "clipArt"]
     ClipArt,
     /// Contains a diagram. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="dgm"]
+    #[from_str = "dgm"]
     Diagram,
     /// Contains multimedia content such as audio or a movie clip. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="media"]
+    #[from_str = "media"]
     Media,
     /// Contains an image of the slide. Allowed for Notes and Notes Master.
-    #[from_str="sldImg"]
+    #[from_str = "sldImg"]
     SlideImage,
     /// Contains a picture. Special type. Allowed for Slide and Slide Layout.
-    #[from_str="pic"]
+    #[from_str = "pic"]
     Picture,
 }
 
@@ -72,10 +72,10 @@ pub enum PlaceholderType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum Direction {
     /// Defines a horizontal direction.
-    #[from_str="horz"]
-    Horizontal, 
+    #[from_str = "horz"]
+    Horizontal,
     /// Defines a vertical direction.
-    #[from_str="vert"]
+    #[from_str = "vert"]
     Vertical,
 }
 
@@ -84,15 +84,15 @@ pub enum Direction {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum PlaceholderSize {
     /// Specifies that the placeholder should take the full size of the body placeholder on the master.
-    #[from_str="full"]
+    #[from_str = "full"]
     Full,
     /// Specifies that the placeholder should take the half size of the body placeholder on the master. Half size
     /// vertically or horizontally? Needs a picture.
-    #[from_str="half"]
+    #[from_str = "half"]
     Half,
     /// Specifies that the placeholder should take a quarter of the size of the body placeholder on the master. Picture
     /// would be helpful
-    #[from_str="quarter"]
+    #[from_str = "quarter"]
     Quarter,
 }
 
@@ -100,16 +100,16 @@ pub enum PlaceholderSize {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum TransitionSideDirectionType {
     /// Specifies that the transition direction is left
-    #[from_str="l"]
+    #[from_str = "l"]
     Left,
     /// Specifies that the transition direction is up
-    #[from_str="u"]
+    #[from_str = "u"]
     Up,
     /// Specifies that the transition direction is right
-    #[from_str="r"]
+    #[from_str = "r"]
     Right,
     /// Specifies that the transition direction is down
-    #[from_str="d"]
+    #[from_str = "d"]
     Down,
 }
 
@@ -117,16 +117,16 @@ pub enum TransitionSideDirectionType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum TransitionCornerDirectionType {
     /// Specifies the slide transition direction of left-up
-    #[from_str="lu"]
+    #[from_str = "lu"]
     LeftUp,
     /// Specifies the slide transition direction of right-up
-    #[from_str="ru"]
+    #[from_str = "ru"]
     RightUp,
     /// Specifies the slide transition direction of left-down
-    #[from_str="ld"]
+    #[from_str = "ld"]
     LeftDown,
     /// Specifies the slide transition direction of right-down
-    #[from_str="rd"]
+    #[from_str = "rd"]
     RightDown,
 }
 
@@ -134,28 +134,28 @@ pub enum TransitionCornerDirectionType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum TransitionEightDirectionType {
     /// Specifies that the transition direction is left
-    #[from_str="l"]
+    #[from_str = "l"]
     Left,
     /// Specifies that the transition direction is up
-    #[from_str="u"]
+    #[from_str = "u"]
     Up,
     /// Specifies that the transition direction is right
-    #[from_str="r"]
+    #[from_str = "r"]
     Right,
     /// Specifies that the transition direction is down
-    #[from_str="d"]
+    #[from_str = "d"]
     Down,
     /// Specifies the slide transition direction of left-up
-    #[from_str="lu"]
+    #[from_str = "lu"]
     LeftUp,
     /// Specifies the slide transition direction of right-up
-    #[from_str="ru"]
+    #[from_str = "ru"]
     RightUp,
     /// Specifies the slide transition direction of left-down
-    #[from_str="ld"]
+    #[from_str = "ld"]
     LeftDown,
     /// Specifies the slide transition direction of right-down
-    #[from_str="rd"]
+    #[from_str = "rd"]
     RightDown,
 }
 
@@ -163,10 +163,10 @@ pub enum TransitionEightDirectionType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum TransitionInOutDirectionType {
     /// Specifies the slide transition should go in
-    #[from_str="in"]
+    #[from_str = "in"]
     In,
     /// Specifies the slide transition should go out
-    #[from_str="out"]
+    #[from_str = "out"]
     Out,
 }
 
@@ -174,13 +174,13 @@ pub enum TransitionInOutDirectionType {
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum TransitionSpeed {
     /// Slow slide transition.
-    #[from_str="slow"]
+    #[from_str = "slow"]
     Slow,
     /// Medium slide transition.
-    #[from_str="med"]
+    #[from_str = "med"]
     Medium,
     /// Fast slide transition.
-    #[from_str="fast"]
+    #[from_str = "fast"]
     Fast,
 }
 
@@ -188,119 +188,119 @@ pub enum TransitionSpeed {
 /// positioning of placeholders, but rather provides a higher-level description of the content type and positioning of
 /// placeholders. This information can be used by the application to aid in mapping between different layouts. The
 /// application can choose which, if any, of these layouts to make available through its user interface.
-/// 
+///
 /// Each layout contains zero or more placeholders, each with a specific content type. An "object" placeholder can
 /// contain any kind of data. Media placeholders are intended to hold video or audio clips. The enumeration value
 /// descriptions include illustrations of sample layouts for each value of the simple type.
 #[derive(Debug, Clone, Copy, PartialEq, FromStr)]
 pub enum SlideLayoutType {
     /// Blank
-    #[from_str="blank"]
+    #[from_str = "blank"]
     Blank,
     /// Title and chart
-    #[from_str="chart"]
+    #[from_str = "chart"]
     Chart,
     /// Title, chart on left and text on right
-    #[from_str="chartAndTx"]
+    #[from_str = "chartAndTx"]
     ChartAndText,
     /// Title, clipart on left, text on right
-    #[from_str="clipArtAndTx"]
+    #[from_str = "clipArtAndTx"]
     ClipArtAndText,
     /// Title, clip art on left, vertical text on right
-    #[from_str="clipArtAndVertTx"]
+    #[from_str = "clipArtAndVertTx"]
     ClipArtAndVerticalText,
     /// Custom layout defined by user
-    #[from_str="cust"]
+    #[from_str = "cust"]
     Custom,
     /// Title and diagram
-    #[from_str="dgm"]
+    #[from_str = "dgm"]
     Diagram,
     /// Title and four objects
-    #[from_str="fourObj"]
+    #[from_str = "fourObj"]
     FourObjects,
     /// Title, media on left, text on right
-    #[from_str="mediaAndTx"]
+    #[from_str = "mediaAndTx"]
     MediaAndText,
     /// Title and object
-    #[from_str="obj"]
+    #[from_str = "obj"]
     Object,
     /// Title, one object on left, two objects on right
-    #[from_str="objAndTwoObj"]
+    #[from_str = "objAndTwoObj"]
     ObjectAndTwoObject,
     /// Title, object on left, text on right
-    #[from_str="objAndTx"]
+    #[from_str = "objAndTx"]
     ObjectAndText,
     /// Object only
-    #[from_str="objOnly"]
+    #[from_str = "objOnly"]
     ObjectOnly,
     /// Title, object on top, text on bottom
-    #[from_str="objOverTx"]
+    #[from_str = "objOverTx"]
     ObjectOverText,
     /// Title, object and caption text
-    #[from_str="objTx"]
+    #[from_str = "objTx"]
     ObjectText,
     /// Title, picture, and caption text
-    #[from_str="picTx"]
+    #[from_str = "picTx"]
     PictureText,
     /// Section header title and subtitle text
-    #[from_str="secHead"]
+    #[from_str = "secHead"]
     SectionHeader,
     /// Title and table
-    #[from_str="tbl"]
+    #[from_str = "tbl"]
     Table,
     /// Title layout with centered title and subtitle placeholders
-    #[from_str="title"]
+    #[from_str = "title"]
     Title,
     /// Title only
-    #[from_str="titleOnly"]
+    #[from_str = "titleOnly"]
     TitleOnly,
     /// Title, text on left, text on right
-    #[from_str="twoColTx"]
+    #[from_str = "twoColTx"]
     TwoColumnText,
     /// Title, object on left, object on right
-    #[from_str="twoObj"]
+    #[from_str = "twoObj"]
     TwoObject,
     /// Title, two objects on left, one object on right
-    #[from_str="twoObjAndObj"]
+    #[from_str = "twoObjAndObj"]
     TwoObjectsAndObject,
     /// Title, two objects on left, text on right
-    #[from_str="twoObjAndTx"]
+    #[from_str = "twoObjAndTx"]
     TwoObjectsAndText,
     /// Title, two objects on top, text on bottom
-    #[from_str="twoObjOverTx"]
+    #[from_str = "twoObjOverTx"]
     TwoObjectsOverText,
     /// Title, two objects each with text
-    #[from_str="twoTxTwoObj"]
+    #[from_str = "twoTxTwoObj"]
     TwoTextTwoObjects,
     /// Title and text
-    #[from_str="tx"]
+    #[from_str = "tx"]
     Text,
     /// Title, text on left and chart on right
-    #[from_str="txAndChart"]
+    #[from_str = "txAndChart"]
     TextAndChart,
     /// Title, text on left, clip art on right
-    #[from_str="txAndClipArt"]
+    #[from_str = "txAndClipArt"]
     TextAndClipArt,
     /// Title, text on left, media on right
-    #[from_str="txAndMedia"]
+    #[from_str = "txAndMedia"]
     TextAndMedia,
     /// Title, text on left, object on right
-    #[from_str="txAndObj"]
+    #[from_str = "txAndObj"]
     TextAndObject,
     /// Title, text on left, two objects on right
-    #[from_str="txAndTwoObj"]
+    #[from_str = "txAndTwoObj"]
     TextAndTwoObjects,
     /// Title, text on top, object on bottom
-    #[from_str="txOverObj"]
+    #[from_str = "txOverObj"]
     TextOverObject,
     /// Vertical title on right, vertical text on left
-    #[from_str="vertTitleAndTx"]
+    #[from_str = "vertTitleAndTx"]
     VerticalTitleAndText,
     /// Vertical title on right, vertical text on top, chart on bottom
-    #[from_str="vertTitleAndTxOverChart"]
+    #[from_str = "vertTitleAndTxOverChart"]
     VerticalTitleAndTextOverChart,
     /// Title and vertical text body
-    #[from_str="vertTx"]
+    #[from_str = "vertTx"]
     VerticalText,
 }
 
@@ -317,16 +317,16 @@ pub struct SlideMaster {
     /// that layout are deleted. If this attribute is not specified then a value of false should be
     /// assumed by the generating application. This would mean that the slide would in fact be
     /// deleted if no slides within the presentation were related to it.
-    /// 
+    ///
     /// Defaults to false
     pub preserve: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
     /// This element specifies the mapping layer that transforms one color scheme definition to another. Each attribute
     /// represents a color name that can be referenced in this master, and the value is the corresponding color in the
     /// theme.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:clrMap bg1="dk1" tx1="lt1" bg2="dk2" tx2="lt2" accent1="accent1"
     /// accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5"
@@ -337,7 +337,7 @@ pub struct SlideMaster {
     /// master and is used to determine which layouts are being used within the slide master file. Each layout within the
     /// list of slide layouts has its own identification number and relationship identifier that uniquely identifies it within
     /// both the presentation document and the particular master slide within which it is used.
-    /// 
+    ///
     /// The SlideLayoutIdListEntry specifies the relationship information for each slide layout that is used within the slide master.
     /// The slide master has relationship identifiers that it uses internally for determining the slide layouts that should be
     /// used. Then, to resolve what these slide layouts should be the sldLayoutId elements in the sldLayoutIdLst are
@@ -389,9 +389,9 @@ impl SlideMaster {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMap" => {
-                    color_mapping = Some(
-                        Box::new(msoffice_shared::drawingml::ColorMapping::from_xml_element(child_node)?)
-                    )
+                    color_mapping = Some(Box::new(msoffice_shared::drawingml::ColorMapping::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "sldLayoutIdLst" => {
                     let mut vec = Vec::new();
@@ -433,29 +433,29 @@ impl SlideMaster {
 pub struct SlideLayout {
     /// Specifies a name to be used in place of the name attribute within the cSld element. This
     /// is used for layout matching in response to layout changes and template applications.
-    /// 
+    ///
     /// Defaults to ""
     pub matching_name: Option<String>,
     /// Specifies the slide layout type that is used by this slide.
-    /// 
+    ///
     /// Defaults to SlideLayoutType::Custom
     pub slide_layout_type: Option<SlideLayoutType>,
     /// Specifies whether the corresponding slide layout is deleted when all the slides that follow
     /// that layout are deleted. If this attribute is not specified then a value of false should be
     /// assumed by the generating application. This would mean that the slide would in fact be
     /// deleted if no slides within the presentation were related to it.
-    /// 
+    ///
     /// Defaults to false
     pub preserve: Option<bool>,
     /// Specifies if the corresponding object has been drawn by the user and should thus not be
     /// deleted. This allows for the flagging of slides that contain user drawn data.
     pub is_user_drawn: Option<bool>,
     /// Specifies if shapes on the master slide should be shown on slides or not.
-    /// 
+    ///
     /// Defaults to true
     pub show_master_shapes: Option<bool>,
     /// Specifies whether or not to display animations on placeholders from the master slide.
-    /// 
+    ///
     /// Defaults to true
     pub show_master_placeholder_animations: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
@@ -514,8 +514,9 @@ impl SlideLayout {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override =
-                        Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(
+                        clr_map_node,
+                    )?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -544,9 +545,9 @@ impl SlideLayout {
 }
 
 /// This element specifies a slide within a slide list. The slide list is used to specify an ordering of slides.
-/// 
+///
 /// # Xml example
-/// 
+///
 /// ```xml
 /// <p:custShowLst>
 ///   <p:custShow name="Custom Show 1" id="0">
@@ -564,15 +565,15 @@ impl SlideLayout {
 pub struct Slide {
     /// Specifies that the current slide should be shown in slide show. If this attribute is omitted
     /// then a value of true is assumed.
-    /// 
+    ///
     /// Defaults to true
     pub show: Option<bool>,
     /// Specifies if shapes on the master slide should be shown on slides or not.
-    /// 
+    ///
     /// Defaults to true
     pub show_master_shapes: Option<bool>,
     /// Specifies whether or not to display animations on placeholders from the master slide.
-    /// 
+    ///
     /// Defaults to true
     pub show_master_placeholder_animations: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
@@ -628,8 +629,9 @@ impl Slide {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override =
-                        Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(msoffice_shared::drawingml::ColorMappingOverride::from_xml_element(
+                        clr_map_node,
+                    )?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -657,7 +659,7 @@ pub struct BackgroundProperties {
     /// Specifies whether the background of the slide is of a shade to title background type. This
     /// kind of gradient fill is on the slide background and changes based on the placement of
     /// the slide title placeholder.
-    /// 
+    ///
     /// Defaults to false
     pub shade_to_title: Option<bool>,
     pub fill: msoffice_shared::drawingml::FillProperties,
@@ -706,24 +708,24 @@ pub enum BackgroundGroup {
     /// within the fillStyleLst element, and values 1001 and above refer to the index of a background fill style within
     /// the bgFillStyleLst element. The value 1001 corresponds to the first background fill style, 1002 to the second
     /// background fill style, and so on.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:bgRef idx="2">
     ///   <a:schemeClr val="bg2"/>
     /// </p:bgRef>
     /// ```
-    /// 
+    ///
     /// The above code indicates a slide background with the style's second fill style using the second background color
     /// of the color scheme.
-    /// 
+    ///
     /// ```xml
     /// <p:bgRef idx="1001">
     ///   <a:schemeClr val="bg2"/>
     /// </p:bgRef>
     /// ```
-    /// 
+    ///
     /// The above code indicates a slide background with the style's first background fill style using the second
     /// background color of the color scheme.
     Reference(msoffice_shared::drawingml::StyleMatrixReference),
@@ -755,9 +757,9 @@ pub struct Background {
     /// Specifies that the background should be rendered using only black and white coloring.
     /// That is, the coloring information for the background should be converted to either black
     /// or white when rendering the picture.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// No gray is to be used in rendering this background, only stark black and stark
     /// white.
     pub black_and_white_mode: Option<msoffice_shared::drawingml::BlackWhiteMode>, // white
@@ -882,9 +884,9 @@ pub enum ShapeGroup {
     /// shape geometries encompassed within it. Within a group shape each of the shapes that make up the group are
     /// specified just as they normally would. The idea behind grouping elements however is that a single transform can
     /// apply to many shapes at the same time.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:grpSp>
     ///   <p:nvGrpSpPr>
@@ -911,7 +913,7 @@ pub enum ShapeGroup {
     ///   </p:sp>
     /// </p:grpSp>
     /// ```
-    /// 
+    ///
     /// In the above example we see three shapes specified within a single group. These three shapes have their
     /// position and sizes specified just as they normally would within the shape tree.
     /// The generating application should apply the transformation after the bounding box for the group shape has been
@@ -925,9 +927,9 @@ pub enum ShapeGroup {
     /// exact path the connector takes.
     /// That is the connector routing algorithm is left up to the generating application as the desired path might be
     /// different depending on the specific needs of the application.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:spTree>
     ///   ...
@@ -962,12 +964,12 @@ pub enum ShapeGroup {
     /// ```
     Connector(Box<Connector>),
     /// This element specifies the existence of a picture object within the document.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following PresentationML that specifies the existence of a picture within a document.
     /// This picture can have non-visual properties, a picture fill as well as shape properties attached to it.
-    /// 
+    ///
     /// ```xml
     /// <p:pic>
     ///   <p:nvPicPr>
@@ -987,20 +989,20 @@ pub enum ShapeGroup {
     /// ```
     Picture(Box<Picture>),
     /// This element specifies a reference to XML content in a format not defined by ECMA-376.
-    /// 
+    ///
     /// The relationship type of the explicit relationship specified by this element shall be
     /// http://purl.oclc.org/ooxml/officeDocument/relationships/customXml and have a TargetMode attribute value of
     /// Internal. If an application cannot process content of the content type specified by the targeted part, then it
     /// should continue to process the file.
     /// If possible, it should also provide some indication that unknown content was not imported.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This part allows the native use of other commonly used interchange formats, such as:
     /// * [MathML](http://www.w3.org/TR/MathML2/)
     /// * [SMIL](http://www.w3.org/TR/REC-smil/)
     /// * [SVG](http://www.w3.org/TR/SVG11/)
-    /// 
+    ///
     /// For better interoperability, only standard XML formats should be used.
     ContentPart(RelationshipId),
 }
@@ -1044,9 +1046,9 @@ impl ShapeGroup {
 #[derive(Debug, Clone)]
 pub struct Shape {
     /// Specifies that the shape fill should be set to that of the slide background surface.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This attribute does not set the fill of the shape to be transparent but instead sets it
     /// to be filled with the portion of the slide background that is directly behind it.
     pub use_bg_fill: Option<bool>,
@@ -1059,9 +1061,9 @@ pub struct Shape {
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:style>
     ///   <a:lnRef idx="3">
@@ -1078,7 +1080,7 @@ pub struct Shape {
     ///   </a:fontRef>
     /// </p:style>
     /// ```
-    /// 
+    ///
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
@@ -1109,7 +1111,11 @@ impl Shape {
                         child_node,
                     )?))
                 }
-                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => {
+                    shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(
+                        child_node,
+                    )?))
+                }
                 "txBody" => text_body = Some(msoffice_shared::drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
@@ -1134,9 +1140,9 @@ pub struct ShapeNonVisual {
     pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a shape. These properties are to be used by the
     /// generating application to determine how the shape should be dealt with.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:sp>
     ///   <p:nvSpPr>
@@ -1148,7 +1154,7 @@ pub struct ShapeNonVisual {
     ///   ...
     /// </p:sp>
     /// ```
-    /// 
+    ///
     /// This shape lock is stored within the non-visual drawing properties for this shape.
     pub shape_drawing_props: msoffice_shared::drawingml::NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
@@ -1163,14 +1169,13 @@ impl ShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
-                        child_node,
-                    )?))
+                    drawing_props = Some(Box::new(
+                        msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
+                    ))
                 }
                 "cNvSpPr" => {
-                    shape_drawing_props = Some(msoffice_shared::drawingml::NonVisualDrawingShapeProps::from_xml_element(
-                        child_node,
-                    )?)
+                    shape_drawing_props =
+                        Some(msoffice_shared::drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1220,7 +1225,9 @@ impl GroupShape {
                         non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
                     }
                     "grpSpPr" => {
-                        group_shape_props = Some(msoffice_shared::drawingml::GroupShapeProperties::from_xml_element(child_node)?)
+                        group_shape_props = Some(msoffice_shared::drawingml::GroupShapeProperties::from_xml_element(
+                            child_node,
+                        )?)
                     }
                     _ => (),
                 }
@@ -1258,14 +1265,13 @@ impl GroupShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
-                        child_node,
-                    )?))
+                    drawing_props = Some(Box::new(
+                        msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
+                    ))
                 }
                 "cNvGrpSpPr" => {
-                    group_drawing_props = Some(msoffice_shared::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
-                        child_node,
-                    )?)
+                    group_drawing_props =
+                        Some(msoffice_shared::drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1288,9 +1294,9 @@ impl GroupShapeNonVisual {
 pub struct GraphicalObjectFrame {
     /// Specifies how the graphical object should be rendered, using color, black or white,
     /// or grayscale.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This does not mean that the graphical object itself is stored with only black
     /// and white or grayscale information. This attribute instead sets the rendering mode
     /// that the graphical object uses.
@@ -1322,8 +1328,16 @@ impl GraphicalObjectFrame {
                 "nvGraphicFramePr" => {
                     non_visual_props = Some(Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?))
                 }
-                "xfrm" => transform = Some(Box::new(msoffice_shared::drawingml::Transform2D::from_xml_element(child_node)?)),
-                "graphic" => graphic = Some(msoffice_shared::drawingml::GraphicalObject::from_xml_element(child_node)?),
+                "xfrm" => {
+                    transform = Some(Box::new(msoffice_shared::drawingml::Transform2D::from_xml_element(
+                        child_node,
+                    )?))
+                }
+                "graphic" => {
+                    graphic = Some(msoffice_shared::drawingml::GraphicalObject::from_xml_element(
+                        child_node,
+                    )?)
+                }
                 _ => (),
             }
         }
@@ -1360,14 +1374,13 @@ impl GraphicalObjectFrameNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
-                        child_node,
-                    )?))
+                    drawing_props = Some(Box::new(
+                        msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
+                    ))
                 }
                 "cNvGraphicFramePr" => {
-                    graphic_frame_props = Some(msoffice_shared::drawingml::NonVisualGraphicFrameProperties::from_xml_element(
-                        child_node,
-                    )?)
+                    graphic_frame_props =
+                        Some(msoffice_shared::drawingml::NonVisualGraphicFrameProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1399,9 +1412,9 @@ pub struct Connector {
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:style>
     ///   <a:lnRef idx="3">
@@ -1418,7 +1431,7 @@ pub struct Connector {
     ///   </a:fontRef>
     /// </p:style>
     /// ```
-    /// 
+    ///
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
@@ -1439,7 +1452,11 @@ impl Connector {
                         child_node,
                     )?))
                 }
-                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => {
+                    shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(
+                        child_node,
+                    )?))
+                }
                 _ => (),
             }
         }
@@ -1474,14 +1491,13 @@ impl ConnectorNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
-                        child_node,
-                    )?))
+                    drawing_props = Some(Box::new(
+                        msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
+                    ))
                 }
                 "cNvCxnSpPr" => {
-                    connector_props = Some(msoffice_shared::drawingml::NonVisualConnectorProperties::from_xml_element(
-                        child_node,
-                    )?)
+                    connector_props =
+                        Some(msoffice_shared::drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1506,9 +1522,9 @@ pub struct Picture {
     /// This element specifies all non-visual properties for a picture. This element is a container for the non-visual
     /// identification properties, shape properties and application properties that are to be associated with a picture.
     /// This allows for additional information that does not affect the appearance of the picture to be stored.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:pic>
     ///   ...
@@ -1523,9 +1539,9 @@ pub struct Picture {
     pub shape_props: Box<msoffice_shared::drawingml::ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:style>
     ///   <a:lnRef idx="3">
@@ -1542,7 +1558,7 @@ pub struct Picture {
     ///   </a:fontRef>
     /// </p:style>
     /// ```
-    /// 
+    ///
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
@@ -1560,16 +1576,20 @@ impl Picture {
             match child_node.local_name() {
                 "nvPicPr" => non_visual_props = Some(Box::new(PictureNonVisual::from_xml_element(child_node)?)),
                 "blipFill" => {
-                    blip_fill = Some(Box::new(msoffice_shared::drawingml::BlipFillProperties::from_xml_element(
-                        child_node,
-                    )?))
+                    blip_fill = Some(Box::new(
+                        msoffice_shared::drawingml::BlipFillProperties::from_xml_element(child_node)?,
+                    ))
                 }
                 "spPr" => {
                     shape_props = Some(Box::new(msoffice_shared::drawingml::ShapeProperties::from_xml_element(
                         child_node,
                     )?))
                 }
-                "style" => shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "style" => {
+                    shape_style = Some(Box::new(msoffice_shared::drawingml::ShapeStyle::from_xml_element(
+                        child_node,
+                    )?))
+                }
                 _ => (),
             }
         }
@@ -1593,9 +1613,9 @@ pub struct PictureNonVisual {
     pub drawing_props: Box<msoffice_shared::drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual properties for the picture canvas. These properties are to be used by the
     /// generating application to determine how certain properties are to be changed for the picture object in question.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:pic>
     ///   ...
@@ -1622,14 +1642,13 @@ impl PictureNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(
-                        child_node,
-                    )?))
+                    drawing_props = Some(Box::new(
+                        msoffice_shared::drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
+                    ))
                 }
                 "cNvPicPr" => {
-                    picture_props = Some(msoffice_shared::drawingml::NonVisualPictureProperties::from_xml_element(
-                        child_node,
-                    )?)
+                    picture_props =
+                        Some(msoffice_shared::drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1653,14 +1672,14 @@ impl PictureNonVisual {
 /// All slides share a common set of properties that is independent of the slide type; the description of these
 /// properties for any particular slide is stored within the slide's common_slide_data container.
 /// Slide data specific to the slide type indicated by the parent element is stored elsewhere.
-/// 
+///
 /// # Note
-/// 
+///
 /// The actual data in CommonSlideData describe only the particular parent slide; it is only the kind of information
 /// stored that is common across all slides.
-/// 
+///
 /// # Xml example
-/// 
+///
 /// ```xml
 /// <p:sld>
 ///   <p:cSld>
@@ -1683,18 +1702,18 @@ pub struct CommonSlideData {
     /// This element specifies all shape-based objects, either grouped or not, that can be referenced on a given slide. As
     /// most objects within a slide are shapes, this represents the majority of content within a slide. Text and effects are
     /// attached to shapes that are contained within the shape_tree element.
-    /// 
+    ///
     /// Each shape-based object within the shape tree, whether grouped or not, shall represent one unique level of z-
     /// ordering on the slide. The z-order for each shape-based object shall be determined by the lexical ordering of
     /// each shape-based object within the shape tree: the first shape-based object shall have the lowest z-order, while
     /// the last shape-based object shall have the highest z-order.
-    /// 
+    ///
     /// The z-ordering of shape-based objects within the shape tree shall also determine the navigation (tab) order of
     /// the shape-based objects: the shape-based object with the lowest z-order (the first shape in lexical order) shall be
     /// first in navigation order, with objects being navigated in ascending z-order.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:sld>
     ///   <p:cSld>
@@ -1745,8 +1764,8 @@ impl CommonSlideData {
             }
         }
 
-        let shape_tree = shape_tree
-            .ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
+        let shape_tree =
+            shape_tree.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
 
         Ok(Self {
             name,
@@ -1777,9 +1796,9 @@ pub struct SlideMasterTextStyles {
     /// formatting is specified by utilizing the DrawingML framework just as within a regular presentation slide. Within
     /// the otherStyle element there can be many different style types defined as there are different kinds of text
     /// stored within a slide.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The other_styles element is to be used for specifying the text formatting of text within a slide shape but
     /// not within a text box. Text box styling is handled from within the body_styles element.
     pub other_styles: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
@@ -1792,16 +1811,19 @@ impl SlideMasterTextStyles {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "titleStyle" => {
-                    instance.title_styles =
-                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.title_styles = Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "bodyStyle" => {
-                    instance.body_styles =
-                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.body_styles = Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "otherStyle" => {
-                    instance.other_styles =
-                        Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.other_styles = Some(Box::new(msoffice_shared::drawingml::TextListStyle::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 _ => (),
             }
@@ -1814,7 +1836,7 @@ impl SlideMasterTextStyles {
 #[derive(Default, Debug, Clone)]
 pub struct OrientationTransition {
     /// This attribute specifies a horizontal or vertical transition.
-    /// 
+    ///
     /// Defaults to Direction::Horizontal
     pub direction: Option<Direction>,
 }
@@ -1833,7 +1855,7 @@ impl OrientationTransition {
 #[derive(Default, Debug, Clone)]
 pub struct EightDirectionTransition {
     /// This attribute specifies if the direction of the transition.
-    /// 
+    ///
     /// Defaults to TransitionEightDirectionType::Left
     pub direction: Option<TransitionEightDirectionType>,
 }
@@ -1853,7 +1875,7 @@ impl EightDirectionTransition {
 pub struct OptionalBlackTransition {
     /// This attribute specifies if the transition starts from a black screen (and then transition the
     /// new slide over black).
-    /// 
+    ///
     /// Defaults to false
     pub through_black: Option<bool>,
 }
@@ -1872,7 +1894,7 @@ impl OptionalBlackTransition {
 #[derive(Default, Debug, Clone)]
 pub struct SideDirectionTransition {
     /// This attribute specifies the direction of the slide transition.
-    /// 
+    ///
     /// Defaults to TransitionSideDirectionType::Left
     pub direction: Option<TransitionSideDirectionType>,
 }
@@ -1891,11 +1913,11 @@ impl SideDirectionTransition {
 #[derive(Default, Debug, Clone)]
 pub struct SplitTransition {
     /// This attribute specifies the orientation of a "split" slide transition.
-    /// 
+    ///
     /// Defaults to Direction::Horizontal
     pub orientation: Option<Direction>,
     /// This attribute specifies the direction of a "split" slide transition.
-    /// 
+    ///
     /// Defaults to TransitionInOutDirectionType::Out
     pub direction: Option<TransitionInOutDirectionType>,
 }
@@ -1919,7 +1941,7 @@ impl SplitTransition {
 #[derive(Default, Debug, Clone)]
 pub struct CornerDirectionTransition {
     /// This attribute specifies if the direction of the transition.
-    /// 
+    ///
     /// Defaults to TransitionCornerDirectionType::LeftUp
     pub direction: Option<TransitionCornerDirectionType>,
 }
@@ -1938,7 +1960,7 @@ impl CornerDirectionTransition {
 #[derive(Default, Debug, Clone)]
 pub struct WheelTransition {
     /// This attributes specifies the number of spokes ("pie pieces") in the wheel
-    /// 
+    ///
     /// Defaults to 4
     pub spokes: Option<u32>,
 }
@@ -1957,7 +1979,7 @@ impl WheelTransition {
 #[derive(Default, Debug, Clone)]
 pub struct InOutTransition {
     /// This attribute specifies the direction of an "in/out" slide transition.
-    /// 
+    ///
     /// Defaults to TransitionInOutDirectionType::Out
     pub direction: Option<TransitionInOutDirectionType>,
 }
@@ -1978,9 +2000,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the blinds slide transition effect, which uses a set of horizontal or vertical bars and wipes
     /// them either left-to-right or top-to-bottom, respectively, until the new slide is fully shown. The rendering of this
     /// transition depends upon the attributes specified.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:blinds dir="horz"/>
@@ -1990,9 +2012,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the checker slide transition effect, which uses a set of horizontal or vertical
     /// checkerboard squares and wipes them either left-to-right or top-to-bottom, respectively, until the new slide is
     /// fully shown. The rendering of this transition depends upon the attributes specified.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:checker dir="horz"/>
@@ -2001,9 +2023,9 @@ pub enum SlideTransitionGroup {
     Checker(OrientationTransition),
     /// This element describes the circle slide transition effect, which uses a circle pattern centered on the slide that
     /// increases in size until the new slide is fully shown. The rendering of this transition has been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:circle/>
@@ -2013,9 +2035,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the dissolve slide transition effect, which uses a set of randomly placed squares on the
     /// slide that continue to be added to until the new slide is fully shown. The rendering of this transition has been
     /// shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:dissolve/>
@@ -2025,9 +2047,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the comb slide transition effect, which uses a set of horizontal or vertical bars and wipes
     /// them from one end of the slide to the other until the new slide is fully shown. The rendering of this transition
     /// depends upon the attributes specified which have been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:comb dir="horz"/>
@@ -2037,9 +2059,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the cover slide transition effect, which moves the new slide in from an off-screen
     /// location, continually covering more of the previous slide until the new slide is fully shown. The rendering of this
     /// transition depends upon the attributes specified which have been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:cover dir="d"/>
@@ -2049,9 +2071,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the cut slide transition effect, which simply replaces the previous slide with the new slide
     /// instantaneously. No animation is used, but an option exists to cut to a black screen before showing the new
     /// slide. The rendering of this transition depends upon the attributes specified which have been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:cut thruBlk="0"/>
@@ -2060,9 +2082,9 @@ pub enum SlideTransitionGroup {
     Cut(OptionalBlackTransition),
     /// This element describes the diamond slide transition effect, which uses a diamond pattern centered on the slide
     /// that increases in size until the new slide is fully shown. The rendering of this transition has been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:diamond/>
@@ -2072,9 +2094,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the fade slide transition effect, which smoothly fades the previous slide either directly to
     /// the new slide or first to a black screen and then to the new slide. The rendering of this transition depends upon
     /// the attributes specified which have been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:fade thruBlk="0"/>
@@ -2083,9 +2105,9 @@ pub enum SlideTransitionGroup {
     Fade(OptionalBlackTransition),
     /// This element describes the newsflash slide transition effect, which grows and spins the new slide counterclockwise
     /// into place over the previous slide. The rendering of this transition has been shown below.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following case in which the “newsflash” slide transition is applied to a slide, along with a
     /// set of attributes.
     /// ```xml
@@ -2096,9 +2118,9 @@ pub enum SlideTransitionGroup {
     Newsflash,
     /// This element describes the plus slide transition effect, which uses a plus pattern centered on the slide that
     /// increases in size until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following case in which the “plus” slide transition is applied to a slide, along with a set of
     /// attributes
     /// ```xml
@@ -2109,9 +2131,9 @@ pub enum SlideTransitionGroup {
     Plus,
     /// This element describes the pull slide transition effect, which moves the previous slide to an off-screen location,
     /// continually revealing more of the new slide until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “pull” slide transition is applied to a slide, along with a set of
     /// attributes.
     /// ```xml
@@ -2123,9 +2145,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the push slide transition effect, which moves the new slide in from an off-screen
     /// location, continually pushing the previous slide to an opposite off-screen location until the new slide is fully
     /// shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “push” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2136,9 +2158,9 @@ pub enum SlideTransitionGroup {
     Push(SideDirectionTransition),
     /// This element describes the random slide transition effect, which chooses a random transition from the set
     /// available in the rendering application. This transition thus can be different each time it is used.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:random/>
@@ -2147,9 +2169,9 @@ pub enum SlideTransitionGroup {
     Random,
     /// This element describes the randomBar slide transition effect, which uses a set of randomly placed horizontal or
     /// vertical bars on the slide that continue to be added to until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “randomBar” slide transition is applied to a slide, along with
     /// a set of attributes.
     /// ```xml
@@ -2161,9 +2183,9 @@ pub enum SlideTransitionGroup {
     /// This element describes the split slide transition effect, which reveals the new slide directly on top of the
     /// previous one by wiping either horizontal or vertical from the outside in, or from the inside out, until the new
     /// slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “split” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2174,9 +2196,9 @@ pub enum SlideTransitionGroup {
     Split(SplitTransition),
     /// This element describes the strips slide transition effect, which uses a set of bars that are arranged in a staggered
     /// fashion and wipes them across the screen until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “strips” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2187,9 +2209,9 @@ pub enum SlideTransitionGroup {
     Strips(CornerDirectionTransition),
     /// This element describes the wedge slide transition effect, which uses two radial edges that wipe from top to
     /// bottom in opposite directions until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following case in which the “wedge” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2200,9 +2222,9 @@ pub enum SlideTransitionGroup {
     Wedge,
     /// This element describes the wheel slide transition effect, which uses a set of radial edges and wipes them in the
     /// clockwise direction until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “wheel” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2213,9 +2235,9 @@ pub enum SlideTransitionGroup {
     Wheel(WheelTransition),
     /// This element describes the wipe slide transition effect, which wipes the new slide over the previous slide from
     /// one edge of the screen to the opposite until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “wipe” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2226,9 +2248,9 @@ pub enum SlideTransitionGroup {
     Wipe(SideDirectionTransition),
     /// This element describes the zoom slide transition effect, which uses a box pattern centered on the slide that
     /// increases in size until the new slide is fully shown.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider the following cases in which the “zoom” slide transition is applied to a slide, along with a set
     /// of attributes.
     /// ```xml
@@ -2312,13 +2334,13 @@ impl SlideTransitionGroup {
 #[derive(Debug, Clone)]
 pub struct TransitionStartSoundAction {
     /// This attribute specifies if the sound loops until the next sound event occurs in slideshow.
-    /// 
+    ///
     /// Defaults to false
     pub is_looping: Option<bool>,
     /// This element specifies the audio information to play during a slide transition.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider a slide transition with an audio effect. The <snd> element should be used as follows:
     /// ```xml
     /// <p:transition>
@@ -2352,9 +2374,9 @@ impl TransitionStartSoundAction {
 #[derive(Debug, Clone)]
 pub enum TransitionSoundAction {
     /// This element describes the sound that starts playing during a slide transition.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:sndAc>
@@ -2366,9 +2388,9 @@ pub enum TransitionSoundAction {
     /// ```
     StartSound(TransitionStartSoundAction),
     /// This element stops all previous sounds during a slide transition.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:transition>
     ///   <p:sndAc>
@@ -2408,12 +2430,12 @@ impl TransitionSoundAction {
 pub struct SlideTransition {
     /// Specifies the transition speed that is to be used when transitioning from the current slide
     /// to the next.
-    /// 
+    ///
     /// Defaults to TransitionSpeed::Fast
     pub speed: Option<TransitionSpeed>,
     /// Specifies whether a mouse click advances the slide or not. If this attribute is not specified
     /// then a value of true is assumed.
-    /// 
+    ///
     /// Defaults to true
     pub advance_on_click: Option<bool>,
     /// Specifies the time, in milliseconds, after which the transition should start. This setting can
@@ -2424,9 +2446,9 @@ pub struct SlideTransition {
     /// This element describes a sound action for slide transition. This element specifies that the start of the slide
     /// transition is accompanied by the playback of an audio file; the actual audio file used is specified by the snd
     /// element
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// Consider a slide transition with a sound effect. The <sndAc> element should be used as follows:
     /// ```xml
     /// <p:transition>
@@ -2472,9 +2494,9 @@ impl SlideTransition {
 #[derive(Default, Debug, Clone)]
 pub struct SlideTiming {
     /// This element specifies a list of time node elements used in an animation sequence.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:timing>
     ///   <p:tnLst>
@@ -2486,9 +2508,9 @@ pub struct SlideTiming {
     /// This element specifies the list of graphic elements to build. This refers to how the different sub-shapes or sub-
     /// components of a object are displayed. The different objects that can have build properties are text, diagrams,
     /// and charts.
-    /// 
+    ///
     /// # Xml example
-    /// 
+    ///
     /// ```xml
     /// <p:bldLst>
     ///   <p:bldGraphic spid="1" grpId="0">
@@ -2514,10 +2536,7 @@ impl SlideTiming {
                     }
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(
-                            child_node.name.clone(),
-                            "tn",
-                        )));
+                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "tn")));
                     }
 
                     instance.time_node_list = Some(vec);
@@ -2529,10 +2548,7 @@ impl SlideTiming {
                     }
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(
-                            child_node.name.clone(),
-                            "bld",
-                        )))
+                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "bld")));
                     }
                 }
                 _ => (),
@@ -2602,7 +2618,6 @@ impl Control {
     }
 }
 
-
 #[derive(Default, Debug, Clone)]
 pub struct OleAttributes {
     pub shape_id: Option<msoffice_shared::drawingml::ShapeId>,
@@ -2610,7 +2625,7 @@ pub struct OleAttributes {
     /// construct the clipboard name.
     pub name: Option<String>,
     /// Specifies whether the Embedded object shows as an icon or using its native representation.
-    /// 
+    ///
     /// Defaults to false
     pub show_as_icon: Option<bool>,
     /// Specifies the relationship id that is used to identify this Embedded object from within a slide.

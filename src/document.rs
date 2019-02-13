@@ -1,9 +1,9 @@
 use crate::docprops::{AppInfo, Core};
+use log::info;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
-use log::{info};
 
 pub struct PPTXDocument {
     pub file_path: PathBuf,
@@ -50,7 +50,9 @@ impl PPTXDocument {
                 info!("parsing theme file: {}", zip_file.name());
                 theme_map.insert(
                     file_path,
-                    Box::new(msoffice_shared::drawingml::OfficeStyleSheet::from_zip_file(&mut zip_file)?),
+                    Box::new(msoffice_shared::drawingml::OfficeStyleSheet::from_zip_file(
+                        &mut zip_file,
+                    )?),
                 );
             } else if file_path.starts_with("ppt/slideMasters/_rels") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
