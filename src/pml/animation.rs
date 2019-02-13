@@ -1,6 +1,427 @@
-pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
+use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError};
+use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use std::str::FromStr;
+
+use enum_from_str::ParseEnumVariantError;
+use enum_from_str_derive::FromStr;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
+
+/// This simple type defines the position of an object in an ordered list.
+pub type Index = u32;
+/// This simple type represents a node or event on the timeline by its identifier.
+pub type TLTimeNodeId = u32;
+pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
+
+/// This simple type defines an animation target element that is represented by a subelement of a chart.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLChartSubelementType {
+    #[from_str="gridLegend"]
+    GridLegend,
+    #[from_str="series"]
+    Series,
+    #[from_str="category"]
+    Category,
+    #[from_str="ptInSeries"]
+    PointInSeries,
+    #[from_str="ptInCategory"]
+    PointInCategory,
+}
+
+/// This simple type describes how to build a paragraph.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLParaBuildType {
+    /// Specifies to animate all paragraphs at once.
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    /// Specifies to animate paragraphs grouped by bullet level.
+    #[from_str="p"]
+    Paragraph,
+    /// Specifies the build has custom user settings.
+    #[from_str="cust"]
+    Custom,
+    /// Specifies to animate the entire body of text as one block.
+    #[from_str="whole"]
+    Whole,
+}
+
+/// This simple type specifies the different diagram build types.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLDiagramBuildType {
+    #[from_str="whole"]
+    Whole,
+    #[from_str="depthByNode"]
+    DepthByNode,
+    #[from_str="depthByBranch"]
+    DepthByBranch,
+    #[from_str="breadthByNode"]
+    BreadthByNode,
+    #[from_str="breadthByLvl"]
+    BreadthByLevel,
+    #[from_str="cw"]
+    Clockwise,
+    #[from_str="cwIn"]
+    ClockwiseIn,
+    #[from_str="cwOut"]
+    ClockwiseOut,
+    #[from_str="ccw"]
+    CounterClockwise,
+    #[from_str="ccwIn"]
+    CounterClockwiseIn,
+    #[from_str="ccwOut"]
+    CounterClockwiseOut,
+    #[from_str="inByRing"]
+    InByRing,
+    #[from_str="outByRing"]
+    OutByRing,
+    #[from_str="up"]
+    Up,
+    #[from_str="down"]
+    Down,
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    #[from_str="cust"]
+    Custom,
+}
+
+/// This simple type describes how to build an embedded Chart.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLOleChartBuildType {
+    #[from_str="allAtOnce"]
+    AllAtOnce,
+    #[from_str="series"]
+    Series,
+    #[from_str="category"]
+    Category,
+    #[from_str="seriesEl"]
+    SeriesElement,
+    #[from_str="categoryEl"]
+    CategoryElement,
+}
+
+/// This simple type specifies the child time node that triggers a time condition. References a child TimeNode or all
+/// child nodes. Order is based on the child's end time.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTriggerRuntimeNode {
+    #[from_str="first"]
+    First,
+    #[from_str="last"]
+    Last,
+    #[from_str="all"]
+    All,
+}
+
+/// This simple type specifies a particular event that causes the time condition to be true.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTriggerEvent {
+    /// Fire trigger at the beginning
+    #[from_str="onBegin"]
+    OnBegin,
+    /// Fire trigger at the end
+    #[from_str="onEnd"]
+    OnEnd,
+    /// Fire trigger at the beginning
+    #[from_str="begin"]
+    Begin,
+    /// Fire trigger at the end
+    #[from_str="end"]
+    End,
+    /// Fire trigger on a mouse click
+    #[from_str="onClick"]
+    OnClick,
+    /// Fire trigger on double-mouse click
+    #[from_str="onDblClick"]
+    OnDoubleClick,
+    /// Fire trigger on mouse over
+    #[from_str="onMouseOver"]
+    OnMouseOver,
+    /// Fire trigger on mouse out
+    #[from_str="onMouseOut"]
+    OnMouseOut,
+    /// Fire trigger on next node
+    #[from_str="onNext"]
+    OnNext,
+    /// Fire trigger on previous node
+    #[from_str="onPrev"]
+    OnPrev,
+    /// Fire trigger on stop audio
+    #[from_str="onStopAudio"]
+    OnStopAudio,
+}
+
+/// This simple type specifies how the animation is applied over subelements of the target element.
+#[derive(Debug, Copy, Clone, PartialEq, FromStr)]
+pub enum IterateType {
+    /// Iterate by element.
+    #[from_str="el"]
+    Element,
+    /// Iterate by Letter.
+    #[from_str="wd"]
+    Word,
+    /// Iterate by Word.
+    #[from_str="lt"]
+    Letter,
+}
+
+/// This simple type specifies the class of effect in which this effect belongs.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodePresetClassType {
+    #[from_str="entr"]
+    Entrance,
+    #[from_str="exit"]
+    Exit,
+    #[from_str="emph"]
+    Emphasis,
+    #[from_str="path"]
+    Path,
+    #[from_str="verb"]
+    Verb,
+    #[from_str="mediacall"]
+    Mediacall,
+}
+
+/// This simple type determines whether an effect can play more than once.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeRestartType {
+    /// Always restart node
+    #[from_str="always"]
+    Always,
+    /// Restart when node is not active
+    #[from_str="whenNotActive"]
+    WhenNotActive,
+    /// Never restart node
+    #[from_str="never"]
+    Never,
+}
+
+/// This simple type specifies what modifications the effect leaves on the target element's properties when the
+/// effect ends.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeFillType {
+    #[from_str="remove"]
+    Remove,
+    #[from_str="freeze"]
+    Freeze,
+    #[from_str="hold"]
+    Hold,
+    #[from_str="transition"]
+    Transition,
+}
+
+/// This simple type specifies how the time node synchronizes to its group.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeSyncType {
+    #[from_str="canSlip"]
+    CanSlip,
+    #[from_str="locked"]
+    Locked,
+}
+
+/// This simple type specifies how the time node plays back relative to its master time node.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeMasterRelation {
+    #[from_str="sameClick"]
+    SameClick,
+    #[from_str="lastClick"]
+    LastClick,
+    #[from_str="nextClick"]
+    NextClick,
+}
+
+/// This simple type specifies time node types.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLTimeNodeType {
+    #[from_str="clickEffect"]
+    ClickEffect,
+    #[from_str="withEffect"]
+    WithEffect,
+    #[from_str="afterEffect"]
+    AfterEffect,
+    #[from_str="mainSequence"]
+    MainSequence,
+    #[from_str="interactiveSeq"]
+    InteractiveSequence,
+    #[from_str="clickPar"]
+    ClickParagraph,
+    #[from_str="withGroup"]
+    WithGroup,
+    #[from_str="afterGroup"]
+    AfterGroup,
+    #[from_str="tmRoot"]
+    TimingRoot,
+}
+
+/// This simple type specifies what to do when going forward in a sequence. When the value is Seek, it seeks the
+/// current child element to its natural end time before advancing to the next element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLNextActionType {
+    #[from_str="none"]
+    None,
+    #[from_str="seek"]
+    Seek,
+}
+
+/// This simple type specifies what to do when going backwards in a sequence. When the value is SkipTimed, the
+/// sequence continues to go backwards until it reaches a sequence element that was defined to being only on a
+/// "next" event.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLPreviousActionType {
+    #[from_str="none"]
+    None,
+    #[from_str="skipTimed"]
+    SkipTimed,
+}
+
+/// This simple type specifies how the animation flows from point to point.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateBehaviorCalcMode {
+    #[from_str="discrete"]
+    Discrete,
+    #[from_str="fmla"]
+    Formula,
+    #[from_str="lin"]
+    Linear,
+}
+
+/// This simple type specifies the type of property value.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateBehaviorValueType {
+    #[from_str="clr"]
+    Color,
+    #[from_str="num"]
+    Number,
+    #[from_str="str"]
+    String,
+}
+
+/// This simple type specifies how to apply the animation values to the original value for the property.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorAdditiveType {
+    #[from_str="base"]
+    Base,
+    #[from_str="sum"]
+    Sum,
+    #[from_str="repl"]
+    Replace,
+    #[from_str="mult"]
+    Multiply,
+    #[from_str="none"]
+    None,
+}
+
+/// This simple type makes a repeating animation build with each iteration when set to "always."
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorAccumulateType {
+    #[from_str="none"]
+    None,
+    #[from_str="always"]
+    Always,
+}
+
+/// This simple type specifies how the behavior animates the target element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorTransformType {
+    #[from_str="pt"]
+    Point,
+    #[from_str="img"]
+    Image,
+}
+
+/// This simple type specifies how a behavior should override values of the attribute being animated on the target
+/// element. The ChildStyle clears the attributes on the children contained inside the target element.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLBehaviorOverrideType {
+    #[from_str="normal"]
+    Normal,
+    #[from_str="childStyle"]
+    ChildStyle,
+}
+
+/// This simple type specifies the color space of the animation.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateColorSpace {
+    #[from_str="rgb"]
+    Rgb,
+    #[from_str="hsl"]
+    Hsl,
+}
+
+/// This simple type specifies the direction in which to interpolate the animation (clockwise or counterclockwise).
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateColorDirection {
+    #[from_str="cw"]
+    Clockwise,
+    #[from_str="ccw"]
+    CounterClockwise,
+}
+
+/// This simple type specifies whether the effect is a transition in, transition out, or neither.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateEffectTransition {
+    #[from_str="in"]
+    In,
+    #[from_str="out"]
+    Out,
+    #[from_str="none"]
+    None,
+}
+
+/// This simple type specifies what the origin of the motion path is relative to.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateMotionBehaviorOrigin {
+    #[from_str="parent"]
+    Parent,
+    #[from_str="layout"]
+    Layout,
+}
+
+/// This simple type specifies how the motion path moves when the target element is moved.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLAnimateMotionPathEditMode {
+    #[from_str="relative"]
+    Relative,
+    #[from_str="fixed"]
+    Fixed,
+}
+
+/// This simple type specifies a command type.
+#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+pub enum TLCommandType {
+    #[from_str="evt"]
+    Event,
+    #[from_str="call"]
+    Call,
+    #[from_str="verb"]
+    Verb,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndexRange {
+    /// This attribute defines the start of the index range.
+    pub start: Index,
+    /// This attribute defines the end of the index range.
+    pub end: Index,
+}
+
+impl IndexRange {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let mut start = None;
+        let mut end = None;
+
+        for (attr, value) in &xml_node.attributes {
+            match attr.as_str() {
+                "st" => start = Some(value.parse()?),
+                "end" => end = Some(value.parse()?),
+                _ => (),
+            }
+        }
+
+        let start = start.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "st"))?;
+        let end = end.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "end"))?;
+
+        Ok(Self { start, end })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum TimeNodeGroup {
@@ -3426,5 +3847,98 @@ impl TLByHslColorTransform {
         let l = l.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "l"))?;
 
         Ok(Self { h, s, l })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Build {
+    /// This element specifies how to build paragraph level properties.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider having animation applied only to 1st level paragraphs. The <bldP> element should be used
+    /// as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldP spid="3" grpId="0" build="p"/>
+    /// </p:bldLst>
+    /// ```
+    Paragraph(Box<TLBuildParagraph>),
+    /// This element specifies how to build the animation for a diagram.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider the following example where a chart is specified to be animated by category rather than as
+    /// one entity. Thus, the bldChart element should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:bdldLst>
+    ///   <p:bldGraphic spid="4" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldChart bld="category"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
+    Diagram(Box<TLBuildDiagram>),
+    /// This element describes animation an a embedded Chart.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider displaying animation on a embedded graphical chart. The <bldOleChart>element should be
+    /// use as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLst>
+    ///   <p:bldOleChart spid="1025" grpId="0"/>
+    /// </p:bldLst>
+    /// ```
+    OleChart(Box<TLOleBuildChart>),
+    /// This element specifies how to build a graphical element.
+    /// 
+    /// # Xml example
+    /// 
+    /// Consider having a chart graphical element appear as a whole as opposed to by a category. The
+    /// <bldGraphic> element should be used as follows:
+    /// 
+    /// ```xml
+    /// <p:bldLdst>
+    ///   <p:bldGraphic spid="3" grpId="0">
+    ///     <p:bldSub>
+    ///       <a:bldChart bld="category"/>
+    ///     </p:bldSub>
+    ///   </p:bldGraphic>
+    /// </p:bldLst>
+    /// ```
+    Graphic(Box<TLGraphicalObjectBuild>),
+}
+
+impl Build {
+    pub fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "bldP" | "bldDgm" | "bldOleChart" | "bldGraphic" => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "bldP" => Ok(Build::Paragraph(Box::new(TLBuildParagraph::from_xml_element(
+                xml_node,
+            )?))),
+            "bldDgm" => Ok(Build::Diagram(Box::new(TLBuildDiagram::from_xml_element(xml_node)?))),
+            "bldOleChart" => Ok(Build::OleChart(Box::new(TLOleBuildChart::from_xml_element(xml_node)?))),
+            "bldGraphic" => Ok(Build::Graphic(Box::new(TLGraphicalObjectBuild::from_xml_element(
+                xml_node,
+            )?))),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "CT_BuildList",
+            ))),
+        }
     }
 }

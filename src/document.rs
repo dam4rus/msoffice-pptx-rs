@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 use log::{info};
 
-/// Document
 pub struct PPTXDocument {
     pub file_path: PathBuf,
     pub app: Option<Box<AppInfo>>,
