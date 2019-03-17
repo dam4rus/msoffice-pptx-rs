@@ -1,8 +1,6 @@
 use msoffice_shared::xml::XmlNode;
 use std::io::{Read, Seek};
 
-/// AppInfo
-///
 pub struct AppInfo {
     pub app_name: Option<String>,
     pub app_version: Option<String>,
@@ -33,8 +31,6 @@ impl AppInfo {
     }
 }
 
-/// Core
-///
 pub struct Core {
     pub title: Option<String>,
     pub creator: Option<String>,
