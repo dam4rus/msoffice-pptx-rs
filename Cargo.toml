@@ -10,7 +10,6 @@ repository = "https://github.com/dam4rus/msoffice-pptx-rs.git"
 homepage = "https://github.com/dam4rus/msoffice-pptx-rs"
 readme = "README.md"
 exclude = [
-    "tests/presentation.xml",
     "tests/samplepptx.pptx",
 ]
 
