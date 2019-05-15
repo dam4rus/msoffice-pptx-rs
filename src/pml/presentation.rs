@@ -8,19 +8,24 @@ use std::io::{Read, Seek};
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 /// This simple type specifies the allowed numbering for the slide identifier.
+/// 
 /// Values represented by this type are restricted to: 256 <= n <= 2147483648
 pub type SlideId = u32;
 /// This simple type sets the bounds for the slide layout id value. This layout id is used to identify the different slide
 /// layout designs.
+/// 
 /// Values represented by this type are restricted to: 2147483648 <= n
 pub type SlideLayoutId = u32;
 /// This simple type specifies the allowed numbering for the slide master identifier.
+/// 
 /// Values represented by this type are restricted to: 2147483648 <= n
 pub type SlideMasterId = u32;
 /// This simple type specifies constraints for value of the Bookmark ID seed.
+/// 
 /// Values represented by this type are restricted to: 1 <= n <= 2147483648
 pub type BookmarkIdSeed = u32;
 /// This simple type specifies the slide size coordinate in EMUs (English Metric Units).AsRef
+/// 
 /// Values represented by this type are restricted to: 914400 <= n <= 51206400
 pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32;
 /// This simple type specifies a name, such as for a comment author or custom show.
