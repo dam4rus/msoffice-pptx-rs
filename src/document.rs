@@ -1,5 +1,10 @@
 use crate::docprops::{AppInfo, Core};
-use log::info;
+use crate::pml::{Presentation, SlideMaster, SlideLayout, Slide};
+use msoffice_shared::{
+    relationship::Relationship,
+    drawingml::OfficeStyleSheet,
+};
+use log::{info, error};
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -9,14 +14,14 @@ pub struct PPTXDocument {
     pub file_path: PathBuf,
     pub app: Option<Box<AppInfo>>,
     pub core: Option<Box<Core>>,
-    pub presentation: Option<Box<crate::pml::Presentation>>,
-    pub theme_map: HashMap<PathBuf, Box<msoffice_shared::drawingml::OfficeStyleSheet>>,
-    pub slide_master_map: HashMap<PathBuf, Box<crate::pml::SlideMaster>>,
-    pub slide_layout_map: HashMap<PathBuf, Box<crate::pml::SlideLayout>>,
-    pub slide_map: HashMap<PathBuf, Box<crate::pml::Slide>>,
-    pub slide_master_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
-    pub slide_layout_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
-    pub slide_rels_map: HashMap<PathBuf, Vec<msoffice_shared::relationship::Relationship>>,
+    pub presentation: Option<Box<Presentation>>,
+    pub theme_map: HashMap<PathBuf, Box<OfficeStyleSheet>>,
+    pub slide_master_map: HashMap<PathBuf, Box<SlideMaster>>,
+    pub slide_layout_map: HashMap<PathBuf, Box<SlideLayout>>,
+    pub slide_map: HashMap<PathBuf, Box<Slide>>,
+    pub slide_master_rels_map: HashMap<PathBuf, Vec<Relationship>>,
+    pub slide_layout_rels_map: HashMap<PathBuf, Vec<Relationship>>,
+    pub slide_rels_map: HashMap<PathBuf, Vec<Relationship>>,
     pub medias: Vec<PathBuf>,
 }
 
@@ -30,7 +35,7 @@ impl PPTXDocument {
         info!("parsing docProps/core.xml");
         let core = Core::from_zip(&mut zipper).map(|val| val.into()).ok();
         info!("parsing ppt/presentation.xml");
-        let presentation = crate::pml::Presentation::from_zip(&mut zipper)
+        let presentation = Presentation::from_zip(&mut zipper)
             .map(|val| val.into())
             .ok();
         let mut theme_map = HashMap::new();
@@ -50,7 +55,7 @@ impl PPTXDocument {
                 info!("parsing theme file: {}", zip_file.name());
                 theme_map.insert(
                     file_path,
-                    Box::new(msoffice_shared::drawingml::OfficeStyleSheet::from_zip_file(
+                    Box::new(OfficeStyleSheet::from_zip_file(
                         &mut zip_file,
                     )?),
                 );
@@ -72,7 +77,7 @@ impl PPTXDocument {
                 info!("parsing slide master file: {}", zip_file.name());
                 slide_master_map.insert(
                     file_path,
-                    Box::new(crate::pml::SlideMaster::from_zip_file(&mut zip_file)?),
+                    Box::new(SlideMaster::from_zip_file(&mut zip_file)?),
                 );
             } else if file_path.starts_with("ppt/slideLayouts/_rels") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
@@ -92,7 +97,7 @@ impl PPTXDocument {
                 info!("parsing slide layout file: {}", zip_file.name());
                 slide_layout_map.insert(
                     file_path,
-                    Box::new(crate::pml::SlideLayout::from_zip_file(&mut zip_file)?),
+                    Box::new(SlideLayout::from_zip_file(&mut zip_file)?),
                 );
             } else if file_path.starts_with("ppt/slides/_rels") {
                 if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
@@ -110,7 +115,7 @@ impl PPTXDocument {
                 }
 
                 info!("parsing slide file: {}", zip_file.name());
-                slide_map.insert(file_path, Box::new(crate::pml::Slide::from_zip_file(&mut zip_file)?));
+                slide_map.insert(file_path, Box::new(Slide::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/media") {
                 medias.push(file_path);
             }
@@ -130,6 +135,18 @@ impl PPTXDocument {
             slide_rels_map,
             medias,
         })
+    }
+
+    pub fn slides(&self) -> Vec<&Box<Slide>> {
+        let mut slides = Vec::new();
+        for i in 1..=self.slide_map.len() {
+            let slide_path = PathBuf::from(format!("ppt/slides/slide{}.xml", i));
+            match self.slide_map.get(&slide_path) {
+                Some(slide) => slides.push(slide),
+                None => error!("Slide file doesn't exists: {}", slide_path.display()),
+            }
+        }
+        slides
     }
 }
 
