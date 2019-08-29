@@ -1,9 +1,9 @@
 use enum_from_str::ParseEnumVariantError;
 use enum_from_str_derive::FromStr;
+use msoffice_shared::drawingml;
 use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
-use msoffice_shared::drawingml;
 use std::io::Read;
 use zip::read::ZipFile;
 
@@ -389,11 +389,7 @@ impl SlideMaster {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
-                "clrMap" => {
-                    color_mapping = Some(Box::new(drawingml::ColorMapping::from_xml_element(
-                        child_node,
-                    )?))
-                }
+                "clrMap" => color_mapping = Some(Box::new(drawingml::ColorMapping::from_xml_element(child_node)?)),
                 "sldLayoutIdLst" => {
                     let mut vec = Vec::new();
                     for slide_layout_id_node in &child_node.child_nodes {
@@ -515,9 +511,7 @@ impl SlideLayout {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(
-                        clr_map_node,
-                    )?);
+                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -630,9 +624,7 @@ impl Slide {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(
-                        clr_map_node,
-                    )?);
+                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -1103,16 +1095,8 @@ impl Shape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
-                "spPr" => {
-                    shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(
-                        child_node,
-                    )?))
-                }
-                "style" => {
-                    shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(
-                        child_node,
-                    )?))
-                }
+                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 "txBody" => text_body = Some(drawingml::TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
@@ -1166,13 +1150,12 @@ impl ShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(
-                        drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
-                    ))
+                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "cNvSpPr" => {
-                    shape_drawing_props =
-                        Some(drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)
+                    shape_drawing_props = Some(drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1222,9 +1205,7 @@ impl GroupShape {
                         non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
                     }
                     "grpSpPr" => {
-                        group_shape_props = Some(drawingml::GroupShapeProperties::from_xml_element(
-                            child_node,
-                        )?)
+                        group_shape_props = Some(drawingml::GroupShapeProperties::from_xml_element(child_node)?)
                     }
                     _ => (),
                 }
@@ -1262,13 +1243,14 @@ impl GroupShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(
-                        drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
-                    ))
+                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "cNvGrpSpPr" => {
-                    group_drawing_props =
-                        Some(drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(child_node)?)
+                    group_drawing_props = Some(drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
+                        child_node,
+                    )?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1325,16 +1307,8 @@ impl GraphicalObjectFrame {
                 "nvGraphicFramePr" => {
                     non_visual_props = Some(Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?))
                 }
-                "xfrm" => {
-                    transform = Some(Box::new(drawingml::Transform2D::from_xml_element(
-                        child_node,
-                    )?))
-                }
-                "graphic" => {
-                    graphic = Some(drawingml::GraphicalObject::from_xml_element(
-                        child_node,
-                    )?)
-                }
+                "xfrm" => transform = Some(Box::new(drawingml::Transform2D::from_xml_element(child_node)?)),
+                "graphic" => graphic = Some(drawingml::GraphicalObject::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -1371,13 +1345,14 @@ impl GraphicalObjectFrameNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(
-                        drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
-                    ))
+                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "cNvGraphicFramePr" => {
-                    graphic_frame_props =
-                        Some(drawingml::NonVisualGraphicFrameProperties::from_xml_element(child_node)?)
+                    graphic_frame_props = Some(drawingml::NonVisualGraphicFrameProperties::from_xml_element(
+                        child_node,
+                    )?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1444,16 +1419,8 @@ impl Connector {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvCxnSpPr" => non_visual_props = Some(Box::new(ConnectorNonVisual::from_xml_element(child_node)?)),
-                "spPr" => {
-                    shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(
-                        child_node,
-                    )?))
-                }
-                "style" => {
-                    shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(
-                        child_node,
-                    )?))
-                }
+                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -1488,13 +1455,12 @@ impl ConnectorNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(
-                        drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
-                    ))
+                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "cNvCxnSpPr" => {
-                    connector_props =
-                        Some(drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
+                    connector_props = Some(drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1572,21 +1538,9 @@ impl Picture {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvPicPr" => non_visual_props = Some(Box::new(PictureNonVisual::from_xml_element(child_node)?)),
-                "blipFill" => {
-                    blip_fill = Some(Box::new(
-                        drawingml::BlipFillProperties::from_xml_element(child_node)?,
-                    ))
-                }
-                "spPr" => {
-                    shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(
-                        child_node,
-                    )?))
-                }
-                "style" => {
-                    shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(
-                        child_node,
-                    )?))
-                }
+                "blipFill" => blip_fill = Some(Box::new(drawingml::BlipFillProperties::from_xml_element(child_node)?)),
+                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -1639,13 +1593,12 @@ impl PictureNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(
-                        drawingml::NonVisualDrawingProps::from_xml_element(child_node)?,
-                    ))
+                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                        child_node,
+                    )?))
                 }
                 "cNvPicPr" => {
-                    picture_props =
-                        Some(drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
+                    picture_props = Some(drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1808,19 +1761,13 @@ impl SlideMasterTextStyles {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "titleStyle" => {
-                    instance.title_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(
-                        child_node,
-                    )?))
+                    instance.title_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 "bodyStyle" => {
-                    instance.body_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(
-                        child_node,
-                    )?))
+                    instance.body_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 "otherStyle" => {
-                    instance.other_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(
-                        child_node,
-                    )?))
+                    instance.other_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
                 }
                 _ => (),
             }

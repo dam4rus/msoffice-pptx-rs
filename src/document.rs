@@ -1,10 +1,7 @@
 use crate::docprops::{AppInfo, Core};
-use crate::pml::{Presentation, SlideMaster, SlideLayout, Slide};
-use msoffice_shared::{
-    relationship::Relationship,
-    drawingml::OfficeStyleSheet,
-};
-use log::{info, error};
+use crate::pml::{Presentation, Slide, SlideLayout, SlideMaster};
+use log::info;
+use msoffice_shared::{drawingml::OfficeStyleSheet, relationship::Relationship};
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -35,9 +32,7 @@ impl PPTXDocument {
         info!("parsing docProps/core.xml");
         let core = Core::from_zip(&mut zipper).map(|val| val.into()).ok();
         info!("parsing ppt/presentation.xml");
-        let presentation = Presentation::from_zip(&mut zipper)
-            .map(|val| val.into())
-            .ok();
+        let presentation = Presentation::from_zip(&mut zipper).map(|val| val.into()).ok();
         let mut theme_map = HashMap::new();
         let mut slide_master_map = HashMap::new();
         let mut slide_layout_map = HashMap::new();
@@ -53,14 +48,9 @@ impl PPTXDocument {
             let file_path = PathBuf::from(zip_file.name());
             if file_path.starts_with("ppt/theme") {
                 info!("parsing theme file: {}", zip_file.name());
-                theme_map.insert(
-                    file_path,
-                    Box::new(OfficeStyleSheet::from_zip_file(
-                        &mut zip_file,
-                    )?),
-                );
+                theme_map.insert(file_path, Box::new(OfficeStyleSheet::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/slideMasters/_rels") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                if file_path.extension().unwrap_or_default() != "rels" {
                     continue;
                 }
 
@@ -70,17 +60,14 @@ impl PPTXDocument {
                     msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slideMasters") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_default() != "xml" {
                     continue;
                 }
 
                 info!("parsing slide master file: {}", zip_file.name());
-                slide_master_map.insert(
-                    file_path,
-                    Box::new(SlideMaster::from_zip_file(&mut zip_file)?),
-                );
+                slide_master_map.insert(file_path, Box::new(SlideMaster::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/slideLayouts/_rels") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                if file_path.extension().unwrap_or_default() != "rels" {
                     continue;
                 }
 
@@ -90,17 +77,14 @@ impl PPTXDocument {
                     msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slideLayouts") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_default() != "xml" {
                     continue;
                 }
 
                 info!("parsing slide layout file: {}", zip_file.name());
-                slide_layout_map.insert(
-                    file_path,
-                    Box::new(SlideLayout::from_zip_file(&mut zip_file)?),
-                );
+                slide_layout_map.insert(file_path, Box::new(SlideLayout::from_zip_file(&mut zip_file)?));
             } else if file_path.starts_with("ppt/slides/_rels") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "rels" {
+                if file_path.extension().unwrap_or_default() != "rels" {
                     continue;
                 }
 
@@ -110,7 +94,7 @@ impl PPTXDocument {
                     msoffice_shared::relationship::relationships_from_zip_file(&mut zip_file)?,
                 );
             } else if file_path.starts_with("ppt/slides") {
-                if file_path.extension().unwrap_or_else(|| "".as_ref()) != "xml" {
+                if file_path.extension().unwrap_or_default() != "xml" {
                     continue;
                 }
 
@@ -137,25 +121,87 @@ impl PPTXDocument {
         })
     }
 
-    pub fn slides(&self) -> Vec<&Box<Slide>> {
-        let mut slides = Vec::new();
-        for i in 1..=self.slide_map.len() {
-            let slide_path = PathBuf::from(format!("ppt/slides/slide{}.xml", i));
-            match self.slide_map.get(&slide_path) {
-                Some(slide) => slides.push(slide),
-                None => error!("Slide file doesn't exists: {}", slide_path.display()),
+    // pub fn slides(&self) -> Vec<&Box<Slide>> {
+    //     let mut slides = Vec::new();
+    //     for i in 1..=self.slide_map.len() {
+    //         let slide_path = PathBuf::from(format!("ppt/slides/slide{}.xml", i));
+    //         match self.slide_map.get(&slide_path) {
+    //             Some(slide) => slides.push(slide),
+    //             None => error!("Slide file doesn't exists: {}", slide_path.display()),
+    //         }
+    //     }
+    //     slides
+    // }
+
+    pub fn slides(&self) -> Slides {
+        Slides::new(&self.slide_map)
+    }
+}
+
+pub struct Slides<'a> {
+    slide_map: &'a HashMap<PathBuf, Box<Slide>>,
+    current_page_num: usize,
+}
+
+impl<'a> Slides<'a> {
+    pub fn new(slide_map: &'a HashMap<PathBuf, Box<Slide>>) -> Self {
+        Self {
+            slide_map,
+            current_page_num: 1,
+        }
+    }
+}
+
+impl<'a> Iterator for Slides<'a> {
+    type Item = &'a Slide;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        for i in self.current_page_num..=self.slide_map.len() {
+            let opt_slide = self.slide_map.get(&PathBuf::from(format!("ppt/slides/slide{}.xml", i)));
+            self.current_page_num += 1;
+            if let Some(slide) = opt_slide {
+                return Some(slide);
             }
         }
-        slides
+
+        None
     }
 }
 
 #[cfg(test)]
 #[test]
 fn test_sample_pptx() {
+    use msoffice_shared::drawingml::{Point2D, PositiveSize2D};
+
     simple_logger::init().unwrap();
     let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let sample_pptx_path = test_dir.join("tests/samplepptx.pptx");
 
-    PPTXDocument::from_file(&sample_pptx_path).unwrap();
+    let document = PPTXDocument::from_file(&sample_pptx_path).unwrap();
+    let mut slides = document.slides();
+    {
+        let first_slide = slides.next().unwrap();
+        let sptree = &first_slide.common_slide_data.shape_tree;
+        assert_eq!(sptree.non_visual_props.drawing_props.id, 1);
+        let transform = sptree.group_shape_props.transform.as_ref().unwrap();
+        assert_eq!(*transform.offset.as_ref().unwrap(), Point2D::new(0, 0));
+        assert_eq!(*transform.extents.as_ref().unwrap(), PositiveSize2D::new(0, 0));
+        assert_eq!(*transform.child_offset.as_ref().unwrap(), Point2D::new(0, 0));
+        assert_eq!(*transform.child_extents.as_ref().unwrap(), PositiveSize2D::new(0, 0));
+        assert_eq!(sptree.shape_array.len(), 2);
+    }
+
+    {
+        let second_slide = slides.next().unwrap();
+        let sptree = &second_slide.common_slide_data.shape_tree;
+        assert_eq!(sptree.non_visual_props.drawing_props.id, 1);
+        let transform = sptree.group_shape_props.transform.as_ref().unwrap();
+        assert_eq!(*transform.offset.as_ref().unwrap(), Point2D::new(0, 0));
+        assert_eq!(*transform.extents.as_ref().unwrap(), PositiveSize2D::new(0, 0));
+        assert_eq!(*transform.child_offset.as_ref().unwrap(), Point2D::new(0, 0));
+        assert_eq!(*transform.child_extents.as_ref().unwrap(), PositiveSize2D::new(0, 0));
+        assert_eq!(sptree.shape_array.len(), 2);
+    }
+
+    assert_eq!(slides.next().is_none(), true);
 }
