@@ -310,7 +310,7 @@ pub enum SlideLayoutType {
 /// shapes. The other properties within a slide master slide specify other properties for within a presentation slide
 /// such as color information, headers and footers, as well as timing and transition information for all corresponding
 /// presentation slides.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideMaster {
     /// Specifies whether the corresponding slide layout is deleted when all the slides that follow
     /// that layout are deleted. If this attribute is not specified then a value of false should be
@@ -424,7 +424,7 @@ impl SlideMaster {
 /// This element specifies an instance of a slide layout. The slide layout contains in essence a template slide design
 /// that can be applied to any existing slide. When applied to an existing slide all corresponding content should be
 /// mapped to the new slide layout.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideLayout {
     /// Specifies a name to be used in place of the name attribute within the cSld element. This
     /// is used for layout matching in response to layout changes and template applications.
@@ -554,7 +554,7 @@ impl SlideLayout {
 /// </p:custShowLst>
 /// ```
 /// In the above example the order specified to present the slides is slide 4, then 3, 2 and finally 5.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Slide {
     /// Specifies that the current slide should be shown in slide show. If this attribute is omitted
     /// then a value of true is assumed.
@@ -645,7 +645,7 @@ impl Slide {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BackgroundProperties {
     /// Specifies whether the background of the slide is of a shade to title background type. This
     /// kind of gradient fill is on the slide background and changes based on the placement of
@@ -685,7 +685,7 @@ impl BackgroundProperties {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BackgroundGroup {
     /// This element specifies visual effects used to render the slide background. This includes any fill, image, or effects
     /// that are to make up the background of the slide.
@@ -741,7 +741,7 @@ impl BackgroundGroup {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Background {
     /// Specifies that the background should be rendered using only black and white coloring.
     /// That is, the coloring information for the background should be converted to either black
@@ -775,7 +775,7 @@ impl Background {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Placeholder {
     /// Specifies what content type a placeholder is intended to contain.
     pub placeholder_type: Option<PlaceholderType>,
@@ -811,7 +811,7 @@ impl Placeholder {
 
 /// This element specifies non-visual properties for objects. These properties include multimedia content associated
 /// with an object and properties indicating how the object is to be used or displayed in different contexts.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct ApplicationNonVisualDrawingProps {
     /// Specifies whether the picture belongs to a photo album and should thus be included
     /// when editing a photo album within the generating application.
@@ -859,7 +859,7 @@ impl ApplicationNonVisualDrawingProps {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ShapeGroup {
     /// This element specifies the existence of a single shape. A shape can either be a preset or a custom geometry,
     /// defined using the DrawingML framework. In addition to a geometry each shape can have both visual and non-
@@ -1030,7 +1030,7 @@ impl ShapeGroup {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Shape {
     /// Specifies that the shape fill should be set to that of the slide background surface.
     ///
@@ -1114,7 +1114,7 @@ impl Shape {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ShapeNonVisual {
     pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a shape. These properties are to be used by the
@@ -1173,7 +1173,7 @@ impl ShapeNonVisual {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GroupShape {
     /// This element specifies all non-visual properties for a group shape. This element is a container for the
     /// non-visual identification properties, shape properties and application properties that are to be associated
@@ -1223,7 +1223,7 @@ impl GroupShape {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GroupShapeNonVisual {
     pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a group shape. These non-visual properties are
@@ -1267,7 +1267,7 @@ impl GroupShapeNonVisual {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GraphicalObjectFrame {
     /// Specifies how the graphical object should be rendered, using color, black or white,
     /// or grayscale.
@@ -1325,7 +1325,7 @@ impl GraphicalObjectFrame {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GraphicalObjectFrameNonVisual {
     pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a graphic frame. These non-visual properties are
@@ -1370,7 +1370,7 @@ impl GraphicalObjectFrameNonVisual {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Connector {
     /// This element specifies all non-visual properties for a connection shape. This element is a container for the non-
     /// visual identification properties, shape properties and application properties that are to be associated with a
@@ -1435,7 +1435,7 @@ impl Connector {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConnectorNonVisual {
     pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties specific to a connector shape. This includes
@@ -1478,7 +1478,7 @@ impl ConnectorNonVisual {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Picture {
     /// This element specifies all non-visual properties for a picture. This element is a container for the non-visual
     /// identification properties, shape properties and application properties that are to be associated with a picture.
@@ -1557,7 +1557,7 @@ impl Picture {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PictureNonVisual {
     pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
     /// This element specifies the non-visual properties for the picture canvas. These properties are to be used by the
@@ -1638,7 +1638,7 @@ impl PictureNonVisual {
 ///   ...
 /// </p:sld>
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CommonSlideData {
     /// Specifies the slide name property that is used to further identify this unique configuration
     /// of common slide data. This might be used to aid in distinguishing different slide layouts or
@@ -1725,7 +1725,7 @@ impl CommonSlideData {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct SlideMasterTextStyles {
     /// This element specifies the text formatting style for the title text within a master slide. This formatting is used on
     /// all title text within related presentation slides. The text formatting is specified by utilizing the DrawingML
@@ -1775,7 +1775,7 @@ impl SlideMasterTextStyles {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct OrientationTransition {
     /// This attribute specifies a horizontal or vertical transition.
     ///
@@ -1794,7 +1794,7 @@ impl OrientationTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct EightDirectionTransition {
     /// This attribute specifies if the direction of the transition.
     ///
@@ -1813,7 +1813,7 @@ impl EightDirectionTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct OptionalBlackTransition {
     /// This attribute specifies if the transition starts from a black screen (and then transition the
     /// new slide over black).
@@ -1833,7 +1833,7 @@ impl OptionalBlackTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct SideDirectionTransition {
     /// This attribute specifies the direction of the slide transition.
     ///
@@ -1852,7 +1852,7 @@ impl SideDirectionTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct SplitTransition {
     /// This attribute specifies the orientation of a "split" slide transition.
     ///
@@ -1880,7 +1880,7 @@ impl SplitTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct CornerDirectionTransition {
     /// This attribute specifies if the direction of the transition.
     ///
@@ -1899,7 +1899,7 @@ impl CornerDirectionTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct WheelTransition {
     /// This attributes specifies the number of spokes ("pie pieces") in the wheel
     ///
@@ -1918,7 +1918,7 @@ impl WheelTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct InOutTransition {
     /// This attribute specifies the direction of an "in/out" slide transition.
     ///
@@ -1937,7 +1937,7 @@ impl InOutTransition {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SlideTransitionGroup {
     /// This element describes the blinds slide transition effect, which uses a set of horizontal or vertical bars and wipes
     /// them either left-to-right or top-to-bottom, respectively, until the new slide is fully shown. The rendering of this
@@ -2273,7 +2273,7 @@ impl SlideTransitionGroup {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TransitionStartSoundAction {
     /// This attribute specifies if the sound loops until the next sound event occurs in slideshow.
     ///
@@ -2313,7 +2313,7 @@ impl TransitionStartSoundAction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TransitionSoundAction {
     /// This element describes the sound that starts playing during a slide transition.
     ///
@@ -2368,7 +2368,7 @@ impl TransitionSoundAction {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct SlideTransition {
     /// Specifies the transition speed that is to be used when transitioning from the current slide
     /// to the next.
@@ -2433,7 +2433,7 @@ impl SlideTransition {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct SlideTiming {
     /// This element specifies a list of time node elements used in an animation sequence.
     ///
@@ -2501,7 +2501,7 @@ impl SlideTiming {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct HeaderFooter {
     /// Specifies whether the slide number placeholder is enabled. If this attribute is not
     /// specified, a value of true should be assumed by the generating application.
@@ -2535,7 +2535,7 @@ impl HeaderFooter {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Control {
     pub picture: Option<Box<Picture>>,
     pub ole_attributes: Box<OleAttributes>,
@@ -2560,7 +2560,7 @@ impl Control {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct OleAttributes {
     pub shape_id: Option<drawingml::ShapeId>,
     /// Specifies the identifying name class used by scripting languages. This name is also used to

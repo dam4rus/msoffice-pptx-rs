@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
-
+#[derive(Debug, Clone, PartialEq)]
 pub struct PPTXDocument {
     pub file_path: PathBuf,
     pub app: Option<Box<AppInfo>>,
@@ -121,23 +121,11 @@ impl PPTXDocument {
         })
     }
 
-    // pub fn slides(&self) -> Vec<&Box<Slide>> {
-    //     let mut slides = Vec::new();
-    //     for i in 1..=self.slide_map.len() {
-    //         let slide_path = PathBuf::from(format!("ppt/slides/slide{}.xml", i));
-    //         match self.slide_map.get(&slide_path) {
-    //             Some(slide) => slides.push(slide),
-    //             None => error!("Slide file doesn't exists: {}", slide_path.display()),
-    //         }
-    //     }
-    //     slides
-    // }
-
     pub fn slides(&self) -> Slides {
         Slides::new(&self.slide_map)
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct Slides<'a> {
     slide_map: &'a HashMap<PathBuf, Box<Slide>>,
     current_page_num: usize,

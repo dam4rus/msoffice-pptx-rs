@@ -161,7 +161,7 @@ pub enum OleObjectFollowColorScheme {
     TextAndBackground,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct CustomerDataList {
     pub customer_data_list: Vec<RelationshipId>,
     /// This element specifies the existence of customer data in the form of tags. This allows for the storage of customer
@@ -201,7 +201,7 @@ impl CustomerDataList {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideSize {
     /// Specifies the length of the extents rectangle in EMUs. This rectangle shall dictate the size
     /// of the object as displayed (the result of any scaling to the original object).
@@ -252,7 +252,7 @@ impl SlideSize {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideIdListEntry {
     /// Specifies the slide identifier that is to contain a value that is unique throughout the presentation.
     pub id: SlideId,
@@ -283,7 +283,7 @@ impl SlideIdListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideLayoutIdListEntry {
     /// Specifies the identification number that uniquely identifies this slide layout within the
     /// presentation file.
@@ -314,7 +314,7 @@ impl SlideLayoutIdListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SlideMasterIdListEntry {
     /// Specifies the slide master identifier that is to contain a value that is unique throughout
     /// the presentation.
@@ -345,7 +345,7 @@ impl SlideMasterIdListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NotesMasterIdListEntry {
     /// Specifies the relationship identifier that is used in conjunction with a corresponding
     /// relationship file to resolve the location within a presentation of the notesMaster element
@@ -365,7 +365,7 @@ impl NotesMasterIdListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct HandoutMasterIdListEntry {
     /// Specifies the relationship identifier that is used in conjunction with a corresponding
     /// relationship file to resolve the location within a presentation of the handoutMaster
@@ -385,7 +385,7 @@ impl HandoutMasterIdListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EmbeddedFontListEntry {
     /// This element specifies specific properties describing an embedded font. Once specified, this font is available
     /// for use within the presentation.
@@ -543,7 +543,7 @@ impl EmbeddedFontListEntry {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CustomShow {
     /// Specifies a name for the custom show.
     pub name: Name,
@@ -586,7 +586,7 @@ impl CustomShow {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct PhotoAlbum {
     /// Specifies whether all pictures in the photo album are to be displayed as black and white.
     ///
@@ -626,7 +626,7 @@ impl PhotoAlbum {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Kinsoku {
     /// Specifies the corresponding East Asian language that these settings apply to.
     pub language: Option<String>,
@@ -664,7 +664,7 @@ impl Kinsoku {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct ModifyVerifier {
     /// Specifies the specific cryptographic hashing algorithm which shall be used along with the
     /// salt attribute and input password in order to compute the hash value.
@@ -809,7 +809,7 @@ impl ModifyVerifier {
 ///  </p:defaultTextStyle>
 /// </p:presentation>
 /// ```
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Presentation {
     /// Specifies the scaling to be used when the presentation is embedded in another
     /// document. The embedded slides are to be scaled by this percentage.

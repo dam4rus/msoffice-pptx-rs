@@ -1,5 +1,8 @@
-use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError};
-use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use msoffice_shared::{
+    drawingml::DrawingElementId,
+    error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
+    xml::{parse_xml_bool, XmlNode},
+};
 use std::str::FromStr;
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
@@ -392,7 +395,7 @@ pub enum TLCommandType {
     Verb,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IndexRange {
     /// This attribute defines the start of the index range.
     pub start: Index,
@@ -401,6 +404,10 @@ pub struct IndexRange {
 }
 
 impl IndexRange {
+    pub fn new(start: Index, end: Index) -> Self {
+        Self { start, end }
+    }
+
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let mut start = None;
         let mut end = None;
@@ -420,7 +427,7 @@ impl IndexRange {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TimeNodeGroup {
     /// This element describes the Parallel time node which can be activated along with other parallel time node
     /// containers.
@@ -796,7 +803,7 @@ impl TimeNodeGroup {
 ///   </p:cBhvr>
 /// </p:anim>
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLCommonBehaviorData {
     pub additive: Option<TLBehaviorAdditiveType>,
     pub accumulate: Option<TLBehaviorAccumulateType>,
@@ -998,7 +1005,12 @@ impl TLCommonBehaviorData {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
-                "tgtEl" => target_element = Some(TLTimeTargetElement::from_xml_element(child_node)?),
+                "tgtEl" => {
+                    let target_element_node = child_node.child_nodes.first().ok_or_else(|| {
+                        MissingChildNodeError::new(child_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt")
+                    })?;
+                    target_element = Some(TLTimeTargetElement::from_xml_element(target_element_node)?);
+                }
                 "attrNameLst" => {
                     let mut vec = Vec::new();
                     for attr_name_node in &child_node.child_nodes {
@@ -1057,7 +1069,7 @@ impl TLCommonBehaviorData {
 ///   </p:cMediaNode>
 /// </p:audio>
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLCommonMediaNodeData {
     /// This attribute describes the volume of the media element.
     ///
@@ -1123,7 +1135,7 @@ impl TLCommonMediaNodeData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLBuildParagraph {
     pub build_common: TLBuildCommonAttributes,
     /// This attribute describe the build types.
@@ -1219,7 +1231,7 @@ impl TLBuildParagraph {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLPoint {
     /// This attribute describes the X coordinate.
     pub x: msoffice_shared::drawingml::Percentage,
@@ -1247,7 +1259,7 @@ impl TLPoint {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLTime {
     TimePoint(u32),
     Indefinite,
@@ -1264,7 +1276,7 @@ impl FromStr for TLTime {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLTemplate {
     /// This attribute describes the paragraph indent level to which this template effect applies.
     ///
@@ -1295,7 +1307,7 @@ impl TLTemplate {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLBuildCommonAttributes {
     /// This attribute specifies the shape to which the build applies.
     pub shape_id: msoffice_shared::drawingml::DrawingElementId,
@@ -1311,7 +1323,7 @@ pub struct TLBuildCommonAttributes {
     pub ui_expand: Option<bool>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLBuildDiagram {
     pub build_common: TLBuildCommonAttributes,
     /// This attribute describes how the diagram is built. The animation animates the sub-
@@ -1352,7 +1364,7 @@ impl TLBuildDiagram {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLOleBuildChart {
     pub build_common: TLBuildCommonAttributes,
     /// This attribute describes how the diagram is built. The animation animates the sub-
@@ -1400,7 +1412,7 @@ impl TLOleBuildChart {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLGraphicalObjectBuild {
     pub build_common: TLBuildCommonAttributes,
     pub build_choice: TLGraphicalObjectBuildChoice,
@@ -1445,7 +1457,7 @@ impl TLGraphicalObjectBuild {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLGraphicalObjectBuildChoice {
     /// This element specifies in the build list to build the entire graphical object as one entity.
     ///
@@ -1505,7 +1517,7 @@ impl TLGraphicalObjectBuildChoice {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLTimeNodeSequence {
     /// This attribute specifies if concurrency is enabled or disabled. By default this attribute has
     /// a value of "disabled". When the value is set to "enabled", the previous element is left
@@ -1625,7 +1637,7 @@ impl TLTimeNodeSequence {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateBehavior {
     /// This attribute specifies a relative offset value for the animation with respect to its
     /// position before the start of the animation.
@@ -1713,7 +1725,7 @@ impl TLAnimateBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateColorBehavior {
     /// This attribute specifies the color space in which to interpolate the animation. Values for
     /// example can be HSL & RGB.
@@ -1853,7 +1865,7 @@ impl TLAnimateColorBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateEffectBehavior {
     /// This attribute specifies whether to transition the element in or out or treat it as a static
     /// filter. The values are "None", "In" and "Out", and the default value is "In".
@@ -1976,7 +1988,7 @@ impl TLAnimateEffectBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateMotionBehavior {
     /// Specifies what the origin of the motion path is relative to such as the layout of the slide,
     /// or the parent.
@@ -2121,7 +2133,7 @@ impl TLAnimateMotionBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateRotationBehavior {
     /// This attribute describes the relative offset value for the animation.
     pub by: Option<msoffice_shared::drawingml::Angle>,
@@ -2162,7 +2174,7 @@ impl TLAnimateRotationBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateScaleBehavior {
     /// This attribute specifies whether to zoom the contents of an object when doing a scaling
     /// animation.
@@ -2260,7 +2272,7 @@ impl TLAnimateScaleBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLCommandBehavior {
     /// This attribute specifies the kind of command that is issued by the rendering application to
     /// the appropriate target application or object.
@@ -2356,7 +2368,7 @@ impl TLCommandBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLSetBehavior {
     pub common_behavior_data: Box<TLCommonBehaviorData>,
     /// The element specifies the certain attribute of a time node after an animation effect.
@@ -2408,7 +2420,7 @@ impl TLSetBehavior {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLMediaNodeAudio {
     /// This attribute indicates whether the audio is a narration for the slide.
     ///
@@ -2437,7 +2449,7 @@ impl TLMediaNodeAudio {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLMediaNodeVideo {
     /// This attribute specifies if the video is displayed in full-screen.
     ///
@@ -2488,7 +2500,7 @@ impl TLMediaNodeVideo {
 ///   </p:tavLst>
 /// </p:anim>
 /// ```
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct TLTimeAnimateValue {
     /// This attribute specifies the time at which the attribute being animated takes on the value.
     ///
@@ -2699,7 +2711,7 @@ impl TLTimeAnimateValue {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLTimeAnimateValueTime {
     Percentage(msoffice_shared::drawingml::PositiveFixedPercentage),
     Indefinite,
@@ -2718,7 +2730,7 @@ impl FromStr for TLTimeAnimateValueTime {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLAnimVariant {
     /// This element specifies a boolean value to be used for evaluation by a parent element. The exact meaning of the
     /// value contained within this element is not defined here but is dependent on the usage of this element in
@@ -2807,7 +2819,7 @@ impl TLAnimVariant {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLTimeConditionTriggerGroup {
     TargetElement(TLTimeTargetElement),
     /// This element describes the time node trigger choice.
@@ -2866,8 +2878,8 @@ impl TLTimeConditionTriggerGroup {
             "tgtEl" => {
                 let target_element_node = xml_node
                     .child_nodes
-                    .get(0)
-                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_TLTimeTargetElement"))?;
+                    .first()
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt"))?;
                 Ok(TLTimeConditionTriggerGroup::TargetElement(
                     TLTimeTargetElement::from_xml_element(target_element_node)?,
                 ))
@@ -2892,7 +2904,7 @@ impl TLTimeConditionTriggerGroup {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLTimeTargetElement {
     /// This element specifies the slide as the target element.
     ///
@@ -2983,16 +2995,9 @@ impl TLTimeTargetElement {
             "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
                 msoffice_shared::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
             )),
-            "spTgt" => {
-                let child_node = xml_node
-                    .child_nodes
-                    .get(0)
-                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_TLShapeTargetElement"))?;
-
-                Ok(TLTimeTargetElement::ShapeTarget(
-                    TLShapeTargetElement::from_xml_element(child_node)?,
-                ))
-            }
+            "spTgt" => Ok(TLTimeTargetElement::ShapeTarget(
+                TLShapeTargetElement::from_xml_element(xml_node)?,
+            )),
             "inkTgt" => {
                 let spid_attr = xml_node
                     .attribute("spid")
@@ -3008,14 +3013,18 @@ impl TLTimeTargetElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLShapeTargetElement {
     /// This attribute specifies the shape identifier.
-    pub shape_id: msoffice_shared::drawingml::DrawingElementId,
+    pub shape_id: DrawingElementId,
     pub target: Option<TLShapeTargetElementGroup>,
 }
 
 impl TLShapeTargetElement {
+    pub fn new(shape_id: DrawingElementId, target: Option<TLShapeTargetElementGroup>) -> Self {
+        Self { shape_id, target }
+    }
+
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         let shape_id_attr = xml_node
             .attribute("spid")
@@ -3031,7 +3040,7 @@ impl TLShapeTargetElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLShapeTargetElementGroup {
     /// This element is used to specify animating the background of an object.
     ///
@@ -3170,7 +3179,7 @@ impl TLShapeTargetElementGroup {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLOleChartTargetElement {
     /// This attribute specifies how to chart should be built during its animation.
     pub element_type: TLChartSubelementType,
@@ -3199,7 +3208,7 @@ impl TLOleChartTargetElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLTextTargetElement {
     /// This element specifies animation on a character range defined by a start and end character position.
     ///
@@ -3295,7 +3304,7 @@ impl TLTextTargetElement {
 ///   </p:childTnLst>
 /// </p:cTn>
 /// ```
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct TLTimeCondition {
     /// This attribute describes the event that triggers an animation.
     pub trigger_event: Option<TLTriggerEvent>,
@@ -3325,7 +3334,7 @@ impl TLTimeCondition {
 }
 
 /// This element describes the properties that are common for time nodes.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct TLCommonTimeNodeData {
     /// This attribute specifies the identifier for the timenode.
     pub id: Option<TLTimeNodeId>,
@@ -3609,7 +3618,7 @@ impl TLCommonTimeNodeData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLIterateDataChoice {
     /// This element describes the duration of the iteration interval in absolute time.
     ///
@@ -3682,7 +3691,7 @@ impl TLIterateDataChoice {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLIterateData {
     /// This attribute specifies the iteration behavior and applies it to each letter, word or shape
     /// within a container element.
@@ -3727,7 +3736,7 @@ impl TLIterateData {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TLByAnimateColorTransform {
     /// The element specifies an incremental RGB value to add to the color property
     ///
@@ -3800,7 +3809,7 @@ impl TLByAnimateColorTransform {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLByRgbColorTransform {
     /// This attribute specifies a red component luminance as a percentage. Values are in the range [-100%, 100%].
     pub r: msoffice_shared::drawingml::FixedPercentage,
@@ -3833,7 +3842,7 @@ impl TLByRgbColorTransform {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TLByHslColorTransform {
     /// Specifies hue as an angle. The values range from [0, 360] degrees
     pub h: msoffice_shared::drawingml::Angle,
@@ -3866,7 +3875,7 @@ impl TLByHslColorTransform {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Build {
     /// This element specifies how to build paragraph level properties.
     ///
@@ -3956,5 +3965,58 @@ impl Build {
                 "CT_BuildList",
             ))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    pub fn test_index_range_from_xml() {
+        use super::{IndexRange, XmlNode};
+        let index_range = IndexRange::from_xml_element(&XmlNode::from_str("<node st=\"0\" end=\"5\"></node>").unwrap());
+        assert_eq!(index_range.unwrap(), IndexRange::new(0, 5));
+    }
+
+    #[test]
+    pub fn test_common_behavior_data_from_xml() {
+        use super::{
+            IndexRange, TLBehaviorOverrideType, TLCommonBehaviorData, TLCommonTimeNodeData, TLShapeTargetElement,
+            TLShapeTargetElementGroup, TLTextTargetElement, TLTime, TLTimeNodeFillType, TLTimeTargetElement, XmlNode,
+        };
+
+        simple_logger::init().unwrap();
+
+        let xml = r#"<p:cBhvr override="childStyle">
+            <p:cTn id="6" dur="2000" fill="hold"/>
+            <p:tgtEl>
+                <p:spTgt spid="3">
+                    <p:txEl>
+                        <p:charRg st="4294967295" end="4294967295"/>
+                    </p:txEl>
+                </p:spTgt>
+            </p:tgtEl>
+            <p:attrNameLst>
+                <p:attrName>style.fontSize</p:attrName>
+            </p:attrNameLst>
+        </p:cBhvr>"#;
+
+        let common_behavior_data = TLCommonBehaviorData::from_xml_element(&XmlNode::from_str(xml).unwrap()).unwrap();
+        assert_eq!(
+            common_behavior_data.override_type,
+            Some(TLBehaviorOverrideType::ChildStyle)
+        );
+        let mut ctn: TLCommonTimeNodeData = Default::default();
+        ctn.id = Some(6);
+        ctn.duration = Some(TLTime::TimePoint(2000));
+        ctn.fill_type = Some(TLTimeNodeFillType::Hold);
+        assert_eq!(*common_behavior_data.common_time_node_data, ctn);
+        let target_element = TLTimeTargetElement::ShapeTarget(TLShapeTargetElement::new(
+            3,
+            Some(TLShapeTargetElementGroup::TextElement(Some(
+                TLTextTargetElement::CharRange(IndexRange::new(4294967295, 4294967295)),
+            ))),
+        ));
+        assert_eq!(common_behavior_data.target_element, target_element);
+        assert_eq!(common_behavior_data.attr_name_list, Some(vec![String::from("style.fontSize")]));
     }
 }

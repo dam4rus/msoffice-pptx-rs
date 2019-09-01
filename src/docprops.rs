@@ -1,6 +1,6 @@
 use msoffice_shared::xml::XmlNode;
 use std::io::{Read, Seek};
-
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AppInfo {
     pub app_name: Option<String>,
     pub app_version: Option<String>,
@@ -30,7 +30,7 @@ impl AppInfo {
         Ok(Self { app_name, app_version })
     }
 }
-
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Core {
     pub title: Option<String>,
     pub creator: Option<String>,
