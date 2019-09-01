@@ -2,9 +2,6 @@ use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGr
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
 use std::str::FromStr;
 
-use enum_from_str::ParseEnumVariantError;
-use enum_from_str_derive::FromStr;
-
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 /// This simple type defines the position of an object in an ordered list.
@@ -14,384 +11,384 @@ pub type TLTimeNodeId = u32;
 pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
 
 /// This simple type defines an animation target element that is represented by a subelement of a chart.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLChartSubelementType {
-    #[from_str = "gridLegend"]
+    #[strum(serialize = "gridLegend")]
     GridLegend,
-    #[from_str = "series"]
+    #[strum(serialize = "series")]
     Series,
-    #[from_str = "category"]
+    #[strum(serialize = "category")]
     Category,
-    #[from_str = "ptInSeries"]
+    #[strum(serialize = "ptInSeries")]
     PointInSeries,
-    #[from_str = "ptInCategory"]
+    #[strum(serialize = "ptInCategory")]
     PointInCategory,
 }
 
 /// This simple type describes how to build a paragraph.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLParaBuildType {
     /// Specifies to animate all paragraphs at once.
-    #[from_str = "allAtOnce"]
+    #[strum(serialize = "allAtOnce")]
     AllAtOnce,
     /// Specifies to animate paragraphs grouped by bullet level.
-    #[from_str = "p"]
+    #[strum(serialize = "p")]
     Paragraph,
     /// Specifies the build has custom user settings.
-    #[from_str = "cust"]
+    #[strum(serialize = "cust")]
     Custom,
     /// Specifies to animate the entire body of text as one block.
-    #[from_str = "whole"]
+    #[strum(serialize = "whole")]
     Whole,
 }
 
 /// This simple type specifies the different diagram build types.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLDiagramBuildType {
-    #[from_str = "whole"]
+    #[strum(serialize = "whole")]
     Whole,
-    #[from_str = "depthByNode"]
+    #[strum(serialize = "depthByNode")]
     DepthByNode,
-    #[from_str = "depthByBranch"]
+    #[strum(serialize = "depthByBranch")]
     DepthByBranch,
-    #[from_str = "breadthByNode"]
+    #[strum(serialize = "breadthByNode")]
     BreadthByNode,
-    #[from_str = "breadthByLvl"]
+    #[strum(serialize = "breadthByLvl")]
     BreadthByLevel,
-    #[from_str = "cw"]
+    #[strum(serialize = "cw")]
     Clockwise,
-    #[from_str = "cwIn"]
+    #[strum(serialize = "cwIn")]
     ClockwiseIn,
-    #[from_str = "cwOut"]
+    #[strum(serialize = "cwOut")]
     ClockwiseOut,
-    #[from_str = "ccw"]
+    #[strum(serialize = "ccw")]
     CounterClockwise,
-    #[from_str = "ccwIn"]
+    #[strum(serialize = "ccwIn")]
     CounterClockwiseIn,
-    #[from_str = "ccwOut"]
+    #[strum(serialize = "ccwOut")]
     CounterClockwiseOut,
-    #[from_str = "inByRing"]
+    #[strum(serialize = "inByRing")]
     InByRing,
-    #[from_str = "outByRing"]
+    #[strum(serialize = "outByRing")]
     OutByRing,
-    #[from_str = "up"]
+    #[strum(serialize = "up")]
     Up,
-    #[from_str = "down"]
+    #[strum(serialize = "down")]
     Down,
-    #[from_str = "allAtOnce"]
+    #[strum(serialize = "allAtOnce")]
     AllAtOnce,
-    #[from_str = "cust"]
+    #[strum(serialize = "cust")]
     Custom,
 }
 
 /// This simple type describes how to build an embedded Chart.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLOleChartBuildType {
-    #[from_str = "allAtOnce"]
+    #[strum(serialize = "allAtOnce")]
     AllAtOnce,
-    #[from_str = "series"]
+    #[strum(serialize = "series")]
     Series,
-    #[from_str = "category"]
+    #[strum(serialize = "category")]
     Category,
-    #[from_str = "seriesEl"]
+    #[strum(serialize = "seriesEl")]
     SeriesElement,
-    #[from_str = "categoryEl"]
+    #[strum(serialize = "categoryEl")]
     CategoryElement,
 }
 
 /// This simple type specifies the child time node that triggers a time condition. References a child TimeNode or all
 /// child nodes. Order is based on the child's end time.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTriggerRuntimeNode {
-    #[from_str = "first"]
+    #[strum(serialize = "first")]
     First,
-    #[from_str = "last"]
+    #[strum(serialize = "last")]
     Last,
-    #[from_str = "all"]
+    #[strum(serialize = "all")]
     All,
 }
 
 /// This simple type specifies a particular event that causes the time condition to be true.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTriggerEvent {
     /// Fire trigger at the beginning
-    #[from_str = "onBegin"]
+    #[strum(serialize = "onBegin")]
     OnBegin,
     /// Fire trigger at the end
-    #[from_str = "onEnd"]
+    #[strum(serialize = "onEnd")]
     OnEnd,
     /// Fire trigger at the beginning
-    #[from_str = "begin"]
+    #[strum(serialize = "begin")]
     Begin,
     /// Fire trigger at the end
-    #[from_str = "end"]
+    #[strum(serialize = "end")]
     End,
     /// Fire trigger on a mouse click
-    #[from_str = "onClick"]
+    #[strum(serialize = "onClick")]
     OnClick,
     /// Fire trigger on double-mouse click
-    #[from_str = "onDblClick"]
+    #[strum(serialize = "onDblClick")]
     OnDoubleClick,
     /// Fire trigger on mouse over
-    #[from_str = "onMouseOver"]
+    #[strum(serialize = "onMouseOver")]
     OnMouseOver,
     /// Fire trigger on mouse out
-    #[from_str = "onMouseOut"]
+    #[strum(serialize = "onMouseOut")]
     OnMouseOut,
     /// Fire trigger on next node
-    #[from_str = "onNext"]
+    #[strum(serialize = "onNext")]
     OnNext,
     /// Fire trigger on previous node
-    #[from_str = "onPrev"]
+    #[strum(serialize = "onPrev")]
     OnPrev,
     /// Fire trigger on stop audio
-    #[from_str = "onStopAudio"]
+    #[strum(serialize = "onStopAudio")]
     OnStopAudio,
 }
 
 /// This simple type specifies how the animation is applied over subelements of the target element.
-#[derive(Debug, Copy, Clone, PartialEq, FromStr)]
+#[derive(Debug, Copy, Clone, PartialEq, EnumString)]
 pub enum IterateType {
     /// Iterate by element.
-    #[from_str = "el"]
+    #[strum(serialize = "el")]
     Element,
     /// Iterate by Letter.
-    #[from_str = "wd"]
+    #[strum(serialize = "wd")]
     Word,
     /// Iterate by Word.
-    #[from_str = "lt"]
+    #[strum(serialize = "lt")]
     Letter,
 }
 
 /// This simple type specifies the class of effect in which this effect belongs.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodePresetClassType {
-    #[from_str = "entr"]
+    #[strum(serialize = "entr")]
     Entrance,
-    #[from_str = "exit"]
+    #[strum(serialize = "exit")]
     Exit,
-    #[from_str = "emph"]
+    #[strum(serialize = "emph")]
     Emphasis,
-    #[from_str = "path"]
+    #[strum(serialize = "path")]
     Path,
-    #[from_str = "verb"]
+    #[strum(serialize = "verb")]
     Verb,
-    #[from_str = "mediacall"]
+    #[strum(serialize = "mediacall")]
     Mediacall,
 }
 
 /// This simple type determines whether an effect can play more than once.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeRestartType {
     /// Always restart node
-    #[from_str = "always"]
+    #[strum(serialize = "always")]
     Always,
     /// Restart when node is not active
-    #[from_str = "whenNotActive"]
+    #[strum(serialize = "whenNotActive")]
     WhenNotActive,
     /// Never restart node
-    #[from_str = "never"]
+    #[strum(serialize = "never")]
     Never,
 }
 
 /// This simple type specifies what modifications the effect leaves on the target element's properties when the
 /// effect ends.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeFillType {
-    #[from_str = "remove"]
+    #[strum(serialize = "remove")]
     Remove,
-    #[from_str = "freeze"]
+    #[strum(serialize = "freeze")]
     Freeze,
-    #[from_str = "hold"]
+    #[strum(serialize = "hold")]
     Hold,
-    #[from_str = "transition"]
+    #[strum(serialize = "transition")]
     Transition,
 }
 
 /// This simple type specifies how the time node synchronizes to its group.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeSyncType {
-    #[from_str = "canSlip"]
+    #[strum(serialize = "canSlip")]
     CanSlip,
-    #[from_str = "locked"]
+    #[strum(serialize = "locked")]
     Locked,
 }
 
 /// This simple type specifies how the time node plays back relative to its master time node.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeMasterRelation {
-    #[from_str = "sameClick"]
+    #[strum(serialize = "sameClick")]
     SameClick,
-    #[from_str = "lastClick"]
+    #[strum(serialize = "lastClick")]
     LastClick,
-    #[from_str = "nextClick"]
+    #[strum(serialize = "nextClick")]
     NextClick,
 }
 
 /// This simple type specifies time node types.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeType {
-    #[from_str = "clickEffect"]
+    #[strum(serialize = "clickEffect")]
     ClickEffect,
-    #[from_str = "withEffect"]
+    #[strum(serialize = "withEffect")]
     WithEffect,
-    #[from_str = "afterEffect"]
+    #[strum(serialize = "afterEffect")]
     AfterEffect,
-    #[from_str = "mainSequence"]
+    #[strum(serialize = "mainSequence")]
     MainSequence,
-    #[from_str = "interactiveSeq"]
+    #[strum(serialize = "interactiveSeq")]
     InteractiveSequence,
-    #[from_str = "clickPar"]
+    #[strum(serialize = "clickPar")]
     ClickParagraph,
-    #[from_str = "withGroup"]
+    #[strum(serialize = "withGroup")]
     WithGroup,
-    #[from_str = "afterGroup"]
+    #[strum(serialize = "afterGroup")]
     AfterGroup,
-    #[from_str = "tmRoot"]
+    #[strum(serialize = "tmRoot")]
     TimingRoot,
 }
 
 /// This simple type specifies what to do when going forward in a sequence. When the value is Seek, it seeks the
 /// current child element to its natural end time before advancing to the next element.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLNextActionType {
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
-    #[from_str = "seek"]
+    #[strum(serialize = "seek")]
     Seek,
 }
 
 /// This simple type specifies what to do when going backwards in a sequence. When the value is SkipTimed, the
 /// sequence continues to go backwards until it reaches a sequence element that was defined to being only on a
 /// "next" event.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLPreviousActionType {
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
-    #[from_str = "skipTimed"]
+    #[strum(serialize = "skipTimed")]
     SkipTimed,
 }
 
 /// This simple type specifies how the animation flows from point to point.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateBehaviorCalcMode {
-    #[from_str = "discrete"]
+    #[strum(serialize = "discrete")]
     Discrete,
-    #[from_str = "fmla"]
+    #[strum(serialize = "fmla")]
     Formula,
-    #[from_str = "lin"]
+    #[strum(serialize = "lin")]
     Linear,
 }
 
 /// This simple type specifies the type of property value.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateBehaviorValueType {
-    #[from_str = "clr"]
+    #[strum(serialize = "clr")]
     Color,
-    #[from_str = "num"]
+    #[strum(serialize = "num")]
     Number,
-    #[from_str = "str"]
+    #[strum(serialize = "str")]
     String,
 }
 
 /// This simple type specifies how to apply the animation values to the original value for the property.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorAdditiveType {
-    #[from_str = "base"]
+    #[strum(serialize = "base")]
     Base,
-    #[from_str = "sum"]
+    #[strum(serialize = "sum")]
     Sum,
-    #[from_str = "repl"]
+    #[strum(serialize = "repl")]
     Replace,
-    #[from_str = "mult"]
+    #[strum(serialize = "mult")]
     Multiply,
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
 }
 
 /// This simple type makes a repeating animation build with each iteration when set to "always."
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorAccumulateType {
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
-    #[from_str = "always"]
+    #[strum(serialize = "always")]
     Always,
 }
 
 /// This simple type specifies how the behavior animates the target element.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorTransformType {
-    #[from_str = "pt"]
+    #[strum(serialize = "pt")]
     Point,
-    #[from_str = "img"]
+    #[strum(serialize = "img")]
     Image,
 }
 
 /// This simple type specifies how a behavior should override values of the attribute being animated on the target
 /// element. The ChildStyle clears the attributes on the children contained inside the target element.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorOverrideType {
-    #[from_str = "normal"]
+    #[strum(serialize = "normal")]
     Normal,
-    #[from_str = "childStyle"]
+    #[strum(serialize = "childStyle")]
     ChildStyle,
 }
 
 /// This simple type specifies the color space of the animation.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateColorSpace {
-    #[from_str = "rgb"]
+    #[strum(serialize = "rgb")]
     Rgb,
-    #[from_str = "hsl"]
+    #[strum(serialize = "hsl")]
     Hsl,
 }
 
 /// This simple type specifies the direction in which to interpolate the animation (clockwise or counterclockwise).
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateColorDirection {
-    #[from_str = "cw"]
+    #[strum(serialize = "cw")]
     Clockwise,
-    #[from_str = "ccw"]
+    #[strum(serialize = "ccw")]
     CounterClockwise,
 }
 
 /// This simple type specifies whether the effect is a transition in, transition out, or neither.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateEffectTransition {
-    #[from_str = "in"]
+    #[strum(serialize = "in")]
     In,
-    #[from_str = "out"]
+    #[strum(serialize = "out")]
     Out,
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
 }
 
 /// This simple type specifies what the origin of the motion path is relative to.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateMotionBehaviorOrigin {
-    #[from_str = "parent"]
+    #[strum(serialize = "parent")]
     Parent,
-    #[from_str = "layout"]
+    #[strum(serialize = "layout")]
     Layout,
 }
 
 /// This simple type specifies how the motion path moves when the target element is moved.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateMotionPathEditMode {
-    #[from_str = "relative"]
+    #[strum(serialize = "relative")]
     Relative,
-    #[from_str = "fixed"]
+    #[strum(serialize = "fixed")]
     Fixed,
 }
 
 /// This simple type specifies a command type.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLCommandType {
-    #[from_str = "evt"]
+    #[strum(serialize = "evt")]
     Event,
-    #[from_str = "call"]
+    #[strum(serialize = "call")]
     Call,
-    #[from_str = "verb"]
+    #[strum(serialize = "verb")]
     Verb,
 }
 

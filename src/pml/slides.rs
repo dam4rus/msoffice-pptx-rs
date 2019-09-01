@@ -1,5 +1,3 @@
-use enum_from_str::ParseEnumVariantError;
-use enum_from_str_derive::FromStr;
 use msoffice_shared::drawingml;
 use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
 use msoffice_shared::relationship::RelationshipId;
@@ -13,175 +11,175 @@ use super::presentation::{CustomerDataList, SlideLayoutIdListEntry};
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
 /// This simple type facilitates the storing of the content type a placeholder should contain.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum PlaceholderType {
     /// Contains a slide title. Allowed for Slide, Slide Layout and Slide Master. Can be horizontal or vertical on Slide
     /// and Slide Layout.
-    #[from_str = "title"]
+    #[strum(serialize = "title")]
     Title,
     /// Contains body text. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master. Can be horizontal
     /// or vertical on Slide and Slide Layout.
-    #[from_str = "body"]
+    #[strum(serialize = "body")]
     Body,
     /// Contains a title intended to be centered on the slide. Allowed for Slide and Slide Layout.
-    #[from_str = "ctrTitle"]
+    #[strum(serialize = "ctrTitle")]
     CenteredTitle,
     /// Contains a subtitle. Allowed for Slide and Slide Layout.
-    #[from_str = "subTitle"]
+    #[strum(serialize = "subTitle")]
     SubTitle,
     /// Contains the date and time. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout Master
-    #[from_str = "dt"]
+    #[strum(serialize = "dt")]
     DateTime,
     /// Contains the number of a slide. Allowed for Slide, Slide Layout, Slide Master, Notes, Notes Master, Handout
     /// Master
-    #[from_str = "sldNum"]
+    #[strum(serialize = "sldNum")]
     SlideNumber,
     /// Contains text to be used as a footer in the document. Allowed for Slide, Slide Layout, Slide Master, Notes,
     /// Notes Master, Handout Master
-    #[from_str = "ftr"]
+    #[strum(serialize = "ftr")]
     Footer,
     /// Contains text to be used as a header for the document. Allowed for Notes, Notes Master, Handout Master.
-    #[from_str = "hdr"]
+    #[strum(serialize = "hdr")]
     Header,
     /// Contains any content type. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "obj"]
+    #[strum(serialize = "obj")]
     Object,
     /// Contains a chart or graph. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "chart"]
+    #[strum(serialize = "chart")]
     Chart,
     /// Contains a table. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "tbl"]
+    #[strum(serialize = "tbl")]
     Table,
     /// Contains a single clip art image. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "clipArt"]
+    #[strum(serialize = "clipArt")]
     ClipArt,
     /// Contains a diagram. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "dgm"]
+    #[strum(serialize = "dgm")]
     Diagram,
     /// Contains multimedia content such as audio or a movie clip. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "media"]
+    #[strum(serialize = "media")]
     Media,
     /// Contains an image of the slide. Allowed for Notes and Notes Master.
-    #[from_str = "sldImg"]
+    #[strum(serialize = "sldImg")]
     SlideImage,
     /// Contains a picture. Special type. Allowed for Slide and Slide Layout.
-    #[from_str = "pic"]
+    #[strum(serialize = "pic")]
     Picture,
 }
 
 /// This simple type defines a direction of either horizontal or vertical.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum Direction {
     /// Defines a horizontal direction.
-    #[from_str = "horz"]
+    #[strum(serialize = "horz")]
     Horizontal,
     /// Defines a vertical direction.
-    #[from_str = "vert"]
+    #[strum(serialize = "vert")]
     Vertical,
 }
 
 /// This simple type facilitates the storing of the size of the placeholder. This size is described relative to the body
 /// placeholder on the master.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum PlaceholderSize {
     /// Specifies that the placeholder should take the full size of the body placeholder on the master.
-    #[from_str = "full"]
+    #[strum(serialize = "full")]
     Full,
     /// Specifies that the placeholder should take the half size of the body placeholder on the master. Half size
     /// vertically or horizontally? Needs a picture.
-    #[from_str = "half"]
+    #[strum(serialize = "half")]
     Half,
     /// Specifies that the placeholder should take a quarter of the size of the body placeholder on the master. Picture
     /// would be helpful
-    #[from_str = "quarter"]
+    #[strum(serialize = "quarter")]
     Quarter,
 }
 
 /// This simple type defines a set of slide transition directions.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TransitionSideDirectionType {
     /// Specifies that the transition direction is left
-    #[from_str = "l"]
+    #[strum(serialize = "l")]
     Left,
     /// Specifies that the transition direction is up
-    #[from_str = "u"]
+    #[strum(serialize = "u")]
     Up,
     /// Specifies that the transition direction is right
-    #[from_str = "r"]
+    #[strum(serialize = "r")]
     Right,
     /// Specifies that the transition direction is down
-    #[from_str = "d"]
+    #[strum(serialize = "d")]
     Down,
 }
 
 /// This simple type specifies diagonal directions for slide transitions.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TransitionCornerDirectionType {
     /// Specifies the slide transition direction of left-up
-    #[from_str = "lu"]
+    #[strum(serialize = "lu")]
     LeftUp,
     /// Specifies the slide transition direction of right-up
-    #[from_str = "ru"]
+    #[strum(serialize = "ru")]
     RightUp,
     /// Specifies the slide transition direction of left-down
-    #[from_str = "ld"]
+    #[strum(serialize = "ld")]
     LeftDown,
     /// Specifies the slide transition direction of right-down
-    #[from_str = "rd"]
+    #[strum(serialize = "rd")]
     RightDown,
 }
 
 /// This simple type specifies the direction of an animation.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TransitionEightDirectionType {
     /// Specifies that the transition direction is left
-    #[from_str = "l"]
+    #[strum(serialize = "l")]
     Left,
     /// Specifies that the transition direction is up
-    #[from_str = "u"]
+    #[strum(serialize = "u")]
     Up,
     /// Specifies that the transition direction is right
-    #[from_str = "r"]
+    #[strum(serialize = "r")]
     Right,
     /// Specifies that the transition direction is down
-    #[from_str = "d"]
+    #[strum(serialize = "d")]
     Down,
     /// Specifies the slide transition direction of left-up
-    #[from_str = "lu"]
+    #[strum(serialize = "lu")]
     LeftUp,
     /// Specifies the slide transition direction of right-up
-    #[from_str = "ru"]
+    #[strum(serialize = "ru")]
     RightUp,
     /// Specifies the slide transition direction of left-down
-    #[from_str = "ld"]
+    #[strum(serialize = "ld")]
     LeftDown,
     /// Specifies the slide transition direction of right-down
-    #[from_str = "rd"]
+    #[strum(serialize = "rd")]
     RightDown,
 }
 
 /// This simple type specifies if a slide transition should go in or out.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TransitionInOutDirectionType {
     /// Specifies the slide transition should go in
-    #[from_str = "in"]
+    #[strum(serialize = "in")]
     In,
     /// Specifies the slide transition should go out
-    #[from_str = "out"]
+    #[strum(serialize = "out")]
     Out,
 }
 
 /// This simple type defines the allowed transition speeds for transitioning from the current slide to the next.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TransitionSpeed {
     /// Slow slide transition.
-    #[from_str = "slow"]
+    #[strum(serialize = "slow")]
     Slow,
     /// Medium slide transition.
-    #[from_str = "med"]
+    #[strum(serialize = "med")]
     Medium,
     /// Fast slide transition.
-    #[from_str = "fast"]
+    #[strum(serialize = "fast")]
     Fast,
 }
 
@@ -193,115 +191,115 @@ pub enum TransitionSpeed {
 /// Each layout contains zero or more placeholders, each with a specific content type. An "object" placeholder can
 /// contain any kind of data. Media placeholders are intended to hold video or audio clips. The enumeration value
 /// descriptions include illustrations of sample layouts for each value of the simple type.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum SlideLayoutType {
     /// Blank
-    #[from_str = "blank"]
+    #[strum(serialize = "blank")]
     Blank,
     /// Title and chart
-    #[from_str = "chart"]
+    #[strum(serialize = "chart")]
     Chart,
     /// Title, chart on left and text on right
-    #[from_str = "chartAndTx"]
+    #[strum(serialize = "chartAndTx")]
     ChartAndText,
     /// Title, clipart on left, text on right
-    #[from_str = "clipArtAndTx"]
+    #[strum(serialize = "clipArtAndTx")]
     ClipArtAndText,
     /// Title, clip art on left, vertical text on right
-    #[from_str = "clipArtAndVertTx"]
+    #[strum(serialize = "clipArtAndVertTx")]
     ClipArtAndVerticalText,
     /// Custom layout defined by user
-    #[from_str = "cust"]
+    #[strum(serialize = "cust")]
     Custom,
     /// Title and diagram
-    #[from_str = "dgm"]
+    #[strum(serialize = "dgm")]
     Diagram,
     /// Title and four objects
-    #[from_str = "fourObj"]
+    #[strum(serialize = "fourObj")]
     FourObjects,
     /// Title, media on left, text on right
-    #[from_str = "mediaAndTx"]
+    #[strum(serialize = "mediaAndTx")]
     MediaAndText,
     /// Title and object
-    #[from_str = "obj"]
+    #[strum(serialize = "obj")]
     Object,
     /// Title, one object on left, two objects on right
-    #[from_str = "objAndTwoObj"]
+    #[strum(serialize = "objAndTwoObj")]
     ObjectAndTwoObject,
     /// Title, object on left, text on right
-    #[from_str = "objAndTx"]
+    #[strum(serialize = "objAndTx")]
     ObjectAndText,
     /// Object only
-    #[from_str = "objOnly"]
+    #[strum(serialize = "objOnly")]
     ObjectOnly,
     /// Title, object on top, text on bottom
-    #[from_str = "objOverTx"]
+    #[strum(serialize = "objOverTx")]
     ObjectOverText,
     /// Title, object and caption text
-    #[from_str = "objTx"]
+    #[strum(serialize = "objTx")]
     ObjectText,
     /// Title, picture, and caption text
-    #[from_str = "picTx"]
+    #[strum(serialize = "picTx")]
     PictureText,
     /// Section header title and subtitle text
-    #[from_str = "secHead"]
+    #[strum(serialize = "secHead")]
     SectionHeader,
     /// Title and table
-    #[from_str = "tbl"]
+    #[strum(serialize = "tbl")]
     Table,
     /// Title layout with centered title and subtitle placeholders
-    #[from_str = "title"]
+    #[strum(serialize = "title")]
     Title,
     /// Title only
-    #[from_str = "titleOnly"]
+    #[strum(serialize = "titleOnly")]
     TitleOnly,
     /// Title, text on left, text on right
-    #[from_str = "twoColTx"]
+    #[strum(serialize = "twoColTx")]
     TwoColumnText,
     /// Title, object on left, object on right
-    #[from_str = "twoObj"]
+    #[strum(serialize = "twoObj")]
     TwoObject,
     /// Title, two objects on left, one object on right
-    #[from_str = "twoObjAndObj"]
+    #[strum(serialize = "twoObjAndObj")]
     TwoObjectsAndObject,
     /// Title, two objects on left, text on right
-    #[from_str = "twoObjAndTx"]
+    #[strum(serialize = "twoObjAndTx")]
     TwoObjectsAndText,
     /// Title, two objects on top, text on bottom
-    #[from_str = "twoObjOverTx"]
+    #[strum(serialize = "twoObjOverTx")]
     TwoObjectsOverText,
     /// Title, two objects each with text
-    #[from_str = "twoTxTwoObj"]
+    #[strum(serialize = "twoTxTwoObj")]
     TwoTextTwoObjects,
     /// Title and text
-    #[from_str = "tx"]
+    #[strum(serialize = "tx")]
     Text,
     /// Title, text on left and chart on right
-    #[from_str = "txAndChart"]
+    #[strum(serialize = "txAndChart")]
     TextAndChart,
     /// Title, text on left, clip art on right
-    #[from_str = "txAndClipArt"]
+    #[strum(serialize = "txAndClipArt")]
     TextAndClipArt,
     /// Title, text on left, media on right
-    #[from_str = "txAndMedia"]
+    #[strum(serialize = "txAndMedia")]
     TextAndMedia,
     /// Title, text on left, object on right
-    #[from_str = "txAndObj"]
+    #[strum(serialize = "txAndObj")]
     TextAndObject,
     /// Title, text on left, two objects on right
-    #[from_str = "txAndTwoObj"]
+    #[strum(serialize = "txAndTwoObj")]
     TextAndTwoObjects,
     /// Title, text on top, object on bottom
-    #[from_str = "txOverObj"]
+    #[strum(serialize = "txOverObj")]
     TextOverObject,
     /// Vertical title on right, vertical text on left
-    #[from_str = "vertTitleAndTx"]
+    #[strum(serialize = "vertTitleAndTx")]
     VerticalTitleAndText,
     /// Vertical title on right, vertical text on top, chart on bottom
-    #[from_str = "vertTitleAndTxOverChart"]
+    #[strum(serialize = "vertTitleAndTxOverChart")]
     VerticalTitleAndTextOverChart,
     /// Title and vertical text body
-    #[from_str = "vertTx"]
+    #[strum(serialize = "vertTx")]
     VerticalText,
 }
 

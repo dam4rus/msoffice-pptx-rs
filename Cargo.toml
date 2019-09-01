@@ -17,9 +17,8 @@ exclude = [
 zip = "0.5.2"
 log = "0.4.6"
 msoffice_shared = "0.1.1"
-#msoffice_shared = { path="../msoffice_shared" }
-enum_from_str = "0.1.0"
-enum_from_str_derive = "0.1.0"
+strum = "0.15.0"
+strum_macros = "0.15.0"
 
 [dev-dependencies]
 simple_logger = "1.2.0"

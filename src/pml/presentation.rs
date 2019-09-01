@@ -1,5 +1,3 @@
-use enum_from_str::ParseEnumVariantError;
-use enum_from_str_derive::FromStr;
 use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
@@ -31,135 +29,135 @@ pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32;
 /// This simple type specifies a name, such as for a comment author or custom show.
 pub type Name = String;
 
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum ConformanceClass {
-    #[from_str = "strict"]
+    #[strum(serialize = "strict")]
     Strict,
-    #[from_str = "transitional"]
+    #[strum(serialize = "transitional")]
     Transitional,
 }
 
 /// This simple type specifies the kind of slide size that the slide should be optimized for.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum SlideSizeType {
     /// Slide size should be optimized for 35mm film output
-    #[from_str = "mm35"]
+    #[strum(serialize = "mm35")]
     Mm35,
     /// Slide size should be optimized for A3 output
-    #[from_str = "a3"]
+    #[strum(serialize = "a3")]
     A3,
     /// Slide size should be optimized for A4 output
-    #[from_str = "a4"]
+    #[strum(serialize = "a4")]
     A4,
     /// Slide size should be optimized for B4ISO output
-    #[from_str = "b4ISO"]
+    #[strum(serialize = "b4ISO")]
     B4ISO,
     /// Slide size should be optimized for B4JIS output
-    #[from_str = "b4JIS"]
+    #[strum(serialize = "b4JIS")]
     B4JIS,
     /// Slide size should be optimized for B5ISO output
-    #[from_str = "b5ISO"]
+    #[strum(serialize = "b5ISO")]
     B5ISO,
     /// Slide size should be optimized for B5JIS output
-    #[from_str = "b5JIS"]
+    #[strum(serialize = "b5JIS")]
     B5JIS,
     /// Slide size should be optimized for banner output
-    #[from_str = "banner"]
+    #[strum(serialize = "banner")]
     Banner,
     /// Slide size should be optimized for custom output
-    #[from_str = "custom"]
+    #[strum(serialize = "custom")]
     Custom,
     /// Slide size should be optimized for hagaki card output
-    #[from_str = "hagakiCard"]
+    #[strum(serialize = "hagakiCard")]
     HagakiCard,
     /// Slide size should be optimized for ledger output
-    #[from_str = "ledger"]
+    #[strum(serialize = "ledger")]
     Ledger,
     /// Slide size should be optimized for letter output
-    #[from_str = "letter"]
+    #[strum(serialize = "letter")]
     Letter,
     /// Slide size should be optimized for overhead output
-    #[from_str = "overhead"]
+    #[strum(serialize = "overhead")]
     Overhead,
     /// Slide size should be optimized for 16x10 screen output
-    #[from_str = "screen16x10"]
+    #[strum(serialize = "screen16x10")]
     Screen16x10,
     /// Slide size should be optimized for 16x9 screen output
-    #[from_str = "screen16x9"]
+    #[strum(serialize = "screen16x9")]
     Screen16x9,
     /// Slide size should be optimized for 4x3 screen output
-    #[from_str = "screen4x3"]
+    #[strum(serialize = "screen4x3")]
     Screen4x3,
 }
 
 /// This simple type specifies the values for photo layouts within a photo album presentation.
 /// See Fundamentals And Markup Language Reference for examples
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum PhotoAlbumLayout {
     /// Fit Photos to Slide
-    #[from_str = "fitToSlide"]
+    #[strum(serialize = "fitToSlide")]
     FitToSlide,
     /// 1 Photo per Slide
-    #[from_str = "pic1"]
+    #[strum(serialize = "pic1")]
     Pic1,
     /// 2 Photo per Slide
-    #[from_str = "pic2"]
+    #[strum(serialize = "pic2")]
     Pic2,
     /// 4 Photo per Slide
-    #[from_str = "pic4"]
+    #[strum(serialize = "pic4")]
     Pic4,
     /// 1 Photo per Slide with Titles
-    #[from_str = "picTitle1"]
+    #[strum(serialize = "picTitle1")]
     PicTitle1,
     /// 2 Photo per Slide with Titles
-    #[from_str = "picTitle2"]
+    #[strum(serialize = "picTitle2")]
     PicTitle2,
     /// 4 Photo per Slide with Titles
-    #[from_str = "picTitle4"]
+    #[strum(serialize = "picTitle4")]
     PicTitle4,
 }
 
 /// This simple type specifies the values for photo frame types within a photo album presentation.
 /// See Fundamentals And Markup Language Reference for examples
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum PhotoAlbumFrameShape {
     /// Rectangle Photo Frame
-    #[from_str = "frameStyle1"]
+    #[strum(serialize = "frameStyle1")]
     FrameStyle1,
     /// Rounded Rectangle Photo Frame
-    #[from_str = "frameStyle2"]
+    #[strum(serialize = "frameStyle2")]
     FrameStyle2,
     /// Simple White Photo Frame
-    #[from_str = "frameStyle3"]
+    #[strum(serialize = "frameStyle3")]
     FrameStyle3,
     /// Simple Black Photo Frame
-    #[from_str = "frameStyle4"]
+    #[strum(serialize = "frameStyle4")]
     FrameStyle4,
     /// Compound Black Photo Frame
-    #[from_str = "frameStyle5"]
+    #[strum(serialize = "frameStyle5")]
     FrameStyle5,
     /// Center Shadow Photo Frame
-    #[from_str = "frameStyle6"]
+    #[strum(serialize = "frameStyle6")]
     FrameStyle6,
     /// Soft Edge Photo Frame
-    #[from_str = "frameStyle7"]
+    #[strum(serialize = "frameStyle7")]
     FrameStyle7,
 }
 
 /// This simple type determines if the Embedded object is re-colored to reflect changes to the color schemes.
-#[derive(Debug, Clone, Copy, PartialEq, FromStr)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum OleObjectFollowColorScheme {
     /// Setting this enumeration causes the Embedded object to not respond to changes in the color scheme in the
     /// presentation.
-    #[from_str = "none"]
+    #[strum(serialize = "none")]
     None,
     /// Setting this enumeration causes the Embedded object to respond to all changes in the color scheme in the
     /// presentation.
-    #[from_str = "full"]
+    #[strum(serialize = "full")]
     Full,
     /// Setting this enumeration causes the Embedded object to respond only to changes in the text and background
     /// colors of the color scheme in the presentation.
-    #[from_str = "textAndBackground"]
+    #[strum(serialize = "textAndBackground")]
     TextAndBackground,
 }
 
