@@ -4017,6 +4017,9 @@ mod tests {
             ))),
         ));
         assert_eq!(common_behavior_data.target_element, target_element);
-        assert_eq!(common_behavior_data.attr_name_list, Some(vec![String::from("style.fontSize")]));
+        assert_eq!(
+            common_behavior_data.attr_name_list,
+            Some(vec![String::from("style.fontSize")])
+        );
     }
 }
