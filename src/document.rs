@@ -161,7 +161,6 @@ impl<'a> Iterator for Slides<'a> {
 fn test_sample_pptx() {
     use msoffice_shared::drawingml::{Point2D, PositiveSize2D};
 
-    simple_logger::init().unwrap();
     let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let sample_pptx_path = test_dir.join("tests/samplepptx.pptx");
 

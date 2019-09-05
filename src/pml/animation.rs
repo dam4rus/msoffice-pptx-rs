@@ -3984,8 +3984,6 @@ mod tests {
             TLShapeTargetElementGroup, TLTextTargetElement, TLTime, TLTimeNodeFillType, TLTimeTargetElement, XmlNode,
         };
 
-        simple_logger::init().unwrap();
-
         let xml = r#"<p:cBhvr override="childStyle">
             <p:cTn id="6" dur="2000" fill="hold"/>
             <p:tgtEl>
