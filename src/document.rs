@@ -1,11 +1,15 @@
-use crate::docprops::{AppInfo, Core};
 use crate::pml::{Presentation, Slide, SlideLayout, SlideMaster};
 use log::info;
-use msoffice_shared::{drawingml::OfficeStyleSheet, relationship::Relationship};
+use msoffice_shared::{
+    docprops::{AppInfo, Core},
+    drawingml::OfficeStyleSheet,
+    relationship::Relationship,
+};
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PPTXDocument {
     pub file_path: PathBuf,

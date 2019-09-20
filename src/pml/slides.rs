@@ -1,5 +1,5 @@
 use msoffice_shared::drawingml;
-use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, XmlError};
+use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError};
 use msoffice_shared::relationship::RelationshipId;
 use msoffice_shared::xml::{parse_xml_bool, XmlNode};
 use std::io::Read;
@@ -404,9 +404,9 @@ impl SlideMaster {
         }
 
         let common_slide_data = common_slide_data
-            .ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "cSld")))?;
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
         let color_mapping =
-            color_mapping.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "clrMap")))?;
+            color_mapping.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrMap"))?;
 
         Ok(Self {
             common_slide_data,
@@ -1713,7 +1713,7 @@ impl CommonSlideData {
         }
 
         let shape_tree =
-            shape_tree.ok_or_else(|| XmlError::from(MissingChildNodeError::new(xml_node.name.clone(), "spTree")))?;
+            shape_tree.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "spTree"))?;
 
         Ok(Self {
             name,

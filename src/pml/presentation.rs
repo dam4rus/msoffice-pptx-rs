@@ -1,6 +1,9 @@
-use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError};
-use msoffice_shared::relationship::RelationshipId;
-use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use msoffice_shared::{
+    error::{MissingAttributeError, MissingChildNodeError},
+    relationship::RelationshipId,
+    xml::{parse_xml_bool, XmlNode},
+    sharedtypes::ConformanceClass,
+};
 use std::io::{Read, Seek};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
@@ -28,14 +31,6 @@ pub type BookmarkIdSeed = u32;
 pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32;
 /// This simple type specifies a name, such as for a comment author or custom show.
 pub type Name = String;
-
-#[derive(Debug, Clone, Copy, PartialEq, EnumString)]
-pub enum ConformanceClass {
-    #[strum(serialize = "strict")]
-    Strict,
-    #[strum(serialize = "transitional")]
-    Transitional,
-}
 
 /// This simple type specifies the kind of slide size that the slide should be optimized for.
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
