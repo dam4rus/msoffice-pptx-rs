@@ -2419,11 +2419,8 @@ impl SlideTransition {
             let child_local_name = child_node.local_name();
             if SlideTransitionGroup::is_choice_member(child_local_name) {
                 instance.transition_type = Some(SlideTransitionGroup::from_xml_element(child_node)?);
-            } else {
-                match child_local_name {
-                    "sndAc" => instance.sound_action = Some(TransitionSoundAction::from_xml_element(child_node)?),
-                    _ => (),
-                }
+            } else if child_local_name == "sndAc" {
+                instance.sound_action = Some(TransitionSoundAction::from_xml_element(child_node)?);
             }
         }
 
@@ -2548,9 +2545,8 @@ impl Control {
         }
 
         for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "pic" => instance.picture = Some(Box::new(Picture::from_xml_element(child_node)?)),
-                _ => (),
+            if child_node.local_name() == "pic" {
+                instance.picture = Some(Box::new(Picture::from_xml_element(child_node)?));
             }
         }
 
@@ -2577,17 +2573,17 @@ pub struct OleAttributes {
 }
 
 impl OleAttributes {
-    pub fn try_attribute_parse<T>(&mut self, attr: T, value: &String) -> Result<()>
+    pub fn try_attribute_parse<T>(&mut self, attr: T, value: T) -> Result<()>
     where
         T: AsRef<str>,
     {
         match attr.as_ref() {
-            "spid" => self.shape_id = Some(value.parse()?),
-            "name" => self.name = Some(value.clone()),
+            "spid" => self.shape_id = Some(value.as_ref().parse()?),
+            "name" => self.name = Some(value.as_ref().to_string()),
             "showAsIcon" => self.show_as_icon = Some(parse_xml_bool(value)?),
-            "r:id" => self.id = Some(value.clone()),
-            "imgW" => self.image_width = Some(value.parse()?),
-            "imgH" => self.image_height = Some(value.parse()?),
+            "r:id" => self.id = Some(value.as_ref().to_string()),
+            "imgW" => self.image_width = Some(value.as_ref().parse()?),
+            "imgH" => self.image_height = Some(value.as_ref().parse()?),
             _ => (),
         }
 

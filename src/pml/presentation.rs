@@ -1032,7 +1032,7 @@ pub struct Presentation {
     ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine
     /// which characters are to be stored in the corresponding font data files.
-    pub embedded_font_list: Vec<Box<EmbeddedFontListEntry>>,
+    pub embedded_font_list: Vec<EmbeddedFontListEntry>,
     /// This element specifies a list of all custom shows that are available within the corresponding presentation.
     /// A custom show is a defined slide sequence that allows for the displaying of the slides with the presentation in
     /// any arbitrary order.
@@ -1180,7 +1180,7 @@ impl Presentation {
                     for embedded_font_node in &child_node.child_nodes {
                         instance
                             .embedded_font_list
-                            .push(Box::new(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?));
+                            .push(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?);
                     }
                 }
                 "custShowLst" => {
