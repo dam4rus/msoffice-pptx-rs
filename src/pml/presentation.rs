@@ -1,8 +1,8 @@
 use msoffice_shared::{
     error::{MissingAttributeError, MissingChildNodeError},
     relationship::RelationshipId,
-    xml::{parse_xml_bool, XmlNode},
     sharedtypes::ConformanceClass,
+    xml::{parse_xml_bool, XmlNode},
 };
 use std::io::{Read, Seek};
 

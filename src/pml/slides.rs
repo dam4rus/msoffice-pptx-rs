@@ -403,10 +403,9 @@ impl SlideMaster {
             }
         }
 
-        let common_slide_data = common_slide_data
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
-        let color_mapping =
-            color_mapping.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrMap"))?;
+        let common_slide_data =
+            common_slide_data.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cSld"))?;
+        let color_mapping = color_mapping.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "clrMap"))?;
 
         Ok(Self {
             common_slide_data,
@@ -1712,8 +1711,7 @@ impl CommonSlideData {
             }
         }
 
-        let shape_tree =
-            shape_tree.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "spTree"))?;
+        let shape_tree = shape_tree.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "spTree"))?;
 
         Ok(Self {
             name,
