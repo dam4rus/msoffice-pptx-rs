@@ -1,5 +1,10 @@
 use msoffice_shared::{
-    drawingml::DrawingElementId,
+    drawingml::{
+        simpletypes::{DrawingElementId, ShapeId, PositiveFixedPercentage, Angle, FixedPercentage, Percentage, PositivePercentage},
+        core::{AnimationGraphicalObjectBuildProperties, AnimationElementChoice},
+        colors::Color,
+        audiovideo::EmbeddedWAVAudioFile,
+    },
     error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     xml::{parse_xml_bool, XmlNode},
 };
@@ -11,7 +16,7 @@ pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 pub type Index = u32;
 /// This simple type represents a node or event on the timeline by its identifier.
 pub type TLTimeNodeId = u32;
-pub type TLSubShapeId = msoffice_shared::drawingml::ShapeId;
+pub type TLSubShapeId = ShapeId;
 
 /// This simple type defines an animation target element that is represented by a subelement of a chart.
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
@@ -1074,7 +1079,7 @@ pub struct TLCommonMediaNodeData {
     /// This attribute describes the volume of the media element.
     ///
     /// Defaults to 50000
-    pub volume: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    pub volume: Option<PositiveFixedPercentage>,
     /// This attribute describes whether the media should be mute.
     ///
     /// Defaults to false
@@ -1234,9 +1239,9 @@ impl TLBuildParagraph {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLPoint {
     /// This attribute describes the X coordinate.
-    pub x: msoffice_shared::drawingml::Percentage,
+    pub x: Percentage,
     /// This attribute describes the Y coordinate.
-    pub y: msoffice_shared::drawingml::Percentage,
+    pub y: Percentage,
 }
 
 impl TLPoint {
@@ -1310,7 +1315,7 @@ impl TLTemplate {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLBuildCommonAttributes {
     /// This attribute specifies the shape to which the build applies.
-    pub shape_id: msoffice_shared::drawingml::DrawingElementId,
+    pub shape_id: DrawingElementId,
     /// This attribute ties effects persisted in the animation to the build information. The
     /// attribute is used by the editor when changes to the build information are made.
     /// GroupIDs are unique for a given shape. They are not guaranteed to be unique IDs across
@@ -1489,7 +1494,7 @@ pub enum TLGraphicalObjectBuildChoice {
     ///   </p:bldGraphic>
     /// </p:bldLst>
     /// ```
-    BuildSubElements(msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties),
+    BuildSubElements(AnimationGraphicalObjectBuildProperties),
 }
 
 impl TLGraphicalObjectBuildChoice {
@@ -1507,7 +1512,7 @@ impl TLGraphicalObjectBuildChoice {
         match xml_node.local_name() {
             "bldAsOne" => Ok(TLGraphicalObjectBuildChoice::BuildAsOne),
             "bldSub" => Ok(TLGraphicalObjectBuildChoice::BuildSubElements(
-                msoffice_shared::drawingml::AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?,
+                AnimationGraphicalObjectBuildProperties::from_xml_element(xml_node)?,
             )),
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
@@ -1784,7 +1789,7 @@ pub struct TLAnimateColorBehavior {
     ///   </p:to>
     /// </p:animClr>
     /// ```
-    pub from: Option<msoffice_shared::drawingml::Color>,
+    pub from: Option<Color>,
     /// This element specifies the resulting color for the animation color change.
     ///
     /// # Xml example
@@ -1801,13 +1806,11 @@ pub struct TLAnimateColorBehavior {
     ///   </p:animClr>
     /// </p:childTnLst>
     /// ```
-    pub to: Option<msoffice_shared::drawingml::Color>,
+    pub to: Option<Color>,
 }
 
 impl TLAnimateColorBehavior {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        use msoffice_shared::drawingml::Color;
-
         let mut color_space = None;
         let mut direction = None;
 
@@ -2008,7 +2011,7 @@ pub struct TLAnimateMotionBehavior {
     /// This attribute specifies how the motion path moves when the target element is moved.
     pub path_edit_mode: Option<TLAnimateMotionPathEditMode>,
     /// The attribute describes the relative angle of the motion path.
-    pub rotate_angle: Option<msoffice_shared::drawingml::Angle>,
+    pub rotate_angle: Option<Angle>,
     /// This attribute describes the point type of the points in the path attribute. The allowed
     /// values that are understood for the ptsTypes attribute are as follows:
     ///
@@ -2136,11 +2139,11 @@ impl TLAnimateMotionBehavior {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLAnimateRotationBehavior {
     /// This attribute describes the relative offset value for the animation.
-    pub by: Option<msoffice_shared::drawingml::Angle>,
+    pub by: Option<Angle>,
     /// This attribute describes the starting value for the animation.
-    pub from: Option<msoffice_shared::drawingml::Angle>,
+    pub from: Option<Angle>,
     /// This attribute describes the ending value for the animation.
-    pub to: Option<msoffice_shared::drawingml::Angle>,
+    pub to: Option<Angle>,
     pub common_behavior_data: Box<TLCommonBehaviorData>,
 }
 
@@ -2713,7 +2716,7 @@ impl TLTimeAnimateValue {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TLTimeAnimateValueTime {
-    Percentage(msoffice_shared::drawingml::PositiveFixedPercentage),
+    Percentage(PositiveFixedPercentage),
     Indefinite,
 }
 
@@ -2765,7 +2768,7 @@ pub enum TLAnimVariant {
     ///   </p:to>
     /// </p:set>
     /// ```
-    Color(msoffice_shared::drawingml::Color),
+    Color(Color),
 }
 
 impl TLAnimVariant {
@@ -2810,9 +2813,7 @@ impl TLAnimVariant {
                     .child_nodes
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Color"))?;
-                Ok(TLAnimVariant::Color(
-                    msoffice_shared::drawingml::Color::from_xml_element(child_node)?,
-                ))
+                Ok(TLAnimVariant::Color(Color::from_xml_element(child_node)?))
             }
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TLAnimVariant").into()),
         }
@@ -2942,7 +2943,7 @@ pub enum TLTimeTargetElement {
     ///   </p:audio>
     /// </p:subTnLst>
     /// ```
-    SoundTarget(msoffice_shared::drawingml::EmbeddedWAVAudioFile),
+    SoundTarget(EmbeddedWAVAudioFile),
     /// The element specifies the shape in which to apply a certain animation to.Err
     ///
     /// # Xml example
@@ -2992,9 +2993,7 @@ impl TLTimeTargetElement {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "sldTgt" => Ok(TLTimeTargetElement::SlideTarget),
-            "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
-                msoffice_shared::drawingml::EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
-            )),
+            "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(EmbeddedWAVAudioFile::from_xml_element(xml_node)?)),
             "spTgt" => Ok(TLTimeTargetElement::ShapeTarget(
                 TLShapeTargetElement::from_xml_element(xml_node)?,
             )),
@@ -3128,7 +3127,7 @@ pub enum TLShapeTargetElementGroup {
     ///   <p:to> … </p:to>
     /// </p:set>
     /// ```
-    GraphicElement(msoffice_shared::drawingml::AnimationElementChoice),
+    GraphicElement(AnimationElementChoice),
 }
 
 impl TLShapeTargetElementGroup {
@@ -3167,9 +3166,7 @@ impl TLShapeTargetElementGroup {
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
 
-                Ok(TLShapeTargetElementGroup::GraphicElement(
-                    msoffice_shared::drawingml::AnimationElementChoice::from_xml_element(child_node)?,
-                ))
+                Ok(TLShapeTargetElementGroup::GraphicElement(AnimationElementChoice::from_xml_element(child_node)?))
             }
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
@@ -3364,17 +3361,17 @@ pub struct TLCommonTimeNodeData {
     /// # Example
     ///
     /// If speed is 200% (200_000) and the specified duration is 10 seconds, the actual duration is 5 seconds.
-    pub speed: Option<msoffice_shared::drawingml::Percentage>,
+    pub speed: Option<Percentage>,
     /// This attribute describes the percentage of specified duration over which the element's
     /// time takes to accelerate from 0 up to the "run rate."
     ///
     /// Defaults to 0
-    pub acceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    pub acceleration: Option<PositiveFixedPercentage>,
     /// This attribute describes the percentage of specified duration over which the element's
     /// time takes to decelerate from the "run rate" down to 0.
     ///
     /// Defaults to 0
-    pub deceleration: Option<msoffice_shared::drawingml::PositiveFixedPercentage>,
+    pub deceleration: Option<PositiveFixedPercentage>,
     /// This attribute describes whether to automatically play the animation in reverse after
     /// playing it in the forward direction.
     ///
@@ -3655,7 +3652,7 @@ pub enum TLIterateDataChoice {
     ///   </p:cTn>
     /// </p:par>
     /// ```
-    Percent(msoffice_shared::drawingml::PositivePercentage),
+    Percent(PositivePercentage),
 }
 
 impl TLIterateDataChoice {
@@ -3812,11 +3809,11 @@ impl TLByAnimateColorTransform {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLByRgbColorTransform {
     /// This attribute specifies a red component luminance as a percentage. Values are in the range [-100%, 100%].
-    pub r: msoffice_shared::drawingml::FixedPercentage,
+    pub r: FixedPercentage,
     /// This attribute specifies a green component luminance as a percentage. Values are in the range [-100%, 100%].
-    pub g: msoffice_shared::drawingml::FixedPercentage,
+    pub g: FixedPercentage,
     /// This attribute specifies a blue component luminance as a percentage. Values are in the range [-100%, 100%].
-    pub b: msoffice_shared::drawingml::FixedPercentage,
+    pub b: FixedPercentage,
 }
 
 impl TLByRgbColorTransform {
@@ -3845,11 +3842,11 @@ impl TLByRgbColorTransform {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLByHslColorTransform {
     /// Specifies hue as an angle. The values range from [0, 360] degrees
-    pub h: msoffice_shared::drawingml::Angle,
+    pub h: Angle,
     /// Specifies a lightness as a percentage. The values are in the range [-100%, 100%].
-    pub s: msoffice_shared::drawingml::FixedPercentage,
+    pub s: FixedPercentage,
     /// Specifies a saturation as a percentage. The values are in the range [-100%, 100%].
-    pub l: msoffice_shared::drawingml::FixedPercentage,
+    pub l: FixedPercentage,
 }
 
 impl TLByHslColorTransform {

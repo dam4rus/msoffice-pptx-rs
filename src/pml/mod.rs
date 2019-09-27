@@ -1,7 +1,3 @@
-mod animation;
-mod presentation;
-mod slides;
-
-pub use self::animation::*;
-pub use self::presentation::*;
-pub use self::slides::*;
+pub mod animation;
+pub mod presentation;
+pub mod slides;

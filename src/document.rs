@@ -1,8 +1,11 @@
-use crate::pml::{Presentation, Slide, SlideLayout, SlideMaster};
+use crate::pml::{
+    presentation::Presentation,
+    slides::{Slide, SlideLayout, SlideMaster},
+};
 use log::info;
 use msoffice_shared::{
     docprops::{AppInfo, Core},
-    drawingml::OfficeStyleSheet,
+    drawingml::sharedstylesheet::OfficeStyleSheet,
     relationship::Relationship,
 };
 use std::collections::HashMap;
@@ -163,7 +166,7 @@ impl<'a> Iterator for Slides<'a> {
 #[cfg(test)]
 #[test]
 fn test_sample_pptx() {
-    use msoffice_shared::drawingml::{Point2D, PositiveSize2D};
+    use msoffice_shared::drawingml::coordsys::{Point2D, PositiveSize2D};
 
     let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let sample_pptx_path = test_dir.join("tests/samplepptx.pptx");

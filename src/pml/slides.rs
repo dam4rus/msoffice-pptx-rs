@@ -1,7 +1,23 @@
-use msoffice_shared::drawingml;
-use msoffice_shared::error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError};
-use msoffice_shared::relationship::RelationshipId;
-use msoffice_shared::xml::{parse_xml_bool, XmlNode};
+use msoffice_shared::{
+    drawingml::{
+        simpletypes::{PositiveCoordinate32, ShapeId, BlackWhiteMode},
+        audiovideo::{EmbeddedWAVAudioFile, Media},
+        text::bullet::TextListStyle,
+        core::{
+            NonVisualPictureProperties, NonVisualDrawingProps, ShapeStyle, ShapeProperties, NonVisualConnectorProperties,
+            NonVisualGraphicFrameProperties, GraphicalObject, NonVisualGroupDrawingShapeProps, GroupShapeProperties,
+            NonVisualDrawingShapeProps, TextBody,
+        },
+        shapeprops::{BlipFillProperties, EffectProperties, FillProperties},
+        coordsys::Transform2D,
+        styles::StyleMatrixReference,
+        colors::ColorMappingOverride,
+        sharedstylesheet::ColorMapping,
+    },
+    error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
+    relationship::RelationshipId,
+    xml::{parse_xml_bool, XmlNode},
+};
 use std::io::Read;
 use zip::read::ZipFile;
 
@@ -331,7 +347,7 @@ pub struct SlideMaster {
     /// accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5"
     /// accent6="accent6" hlink="hlink" folHlink="folHlink"/>
     /// ```
-    pub color_mapping: Box<drawingml::ColorMapping>,
+    pub color_mapping: Box<ColorMapping>,
     /// This element specifies the existence of the slide layout identification list. This list is contained within the slide
     /// master and is used to determine which layouts are being used within the slide master file. Each layout within the
     /// list of slide layouts has its own identification number and relationship identifier that uniquely identifies it within
@@ -387,7 +403,7 @@ impl SlideMaster {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
-                "clrMap" => color_mapping = Some(Box::new(drawingml::ColorMapping::from_xml_element(child_node)?)),
+                "clrMap" => color_mapping = Some(Box::new(ColorMapping::from_xml_element(child_node)?)),
                 "sldLayoutIdLst" => {
                     let mut vec = Vec::new();
                     for slide_layout_id_node in &child_node.child_nodes {
@@ -453,7 +469,7 @@ pub struct SlideLayout {
     /// Defaults to true
     pub show_master_placeholder_animations: Option<bool>,
     pub common_slide_data: Box<CommonSlideData>,
-    pub color_mapping_override: Option<drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<ColorMappingOverride>,
     /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
     /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
     /// complete.
@@ -508,7 +524,7 @@ impl SlideLayout {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -574,7 +590,7 @@ pub struct Slide {
     /// If the ColorMappingOverride::UseMaster element is present, the color scheme defined by the master is used.
     /// If the ColorMappingOverride::Override element is present, it defines a new color scheme specific to the
     /// parent notes slide, presentation slide, or slide layout.
-    pub color_mapping_override: Option<drawingml::ColorMappingOverride>,
+    pub color_mapping_override: Option<ColorMappingOverride>,
     /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
     /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
     /// complete.
@@ -621,7 +637,7 @@ impl Slide {
                     let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
                         MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
                     })?;
-                    color_mapping_override = Some(drawingml::ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(ColorMappingOverride::from_xml_element(clr_map_node)?);
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -652,8 +668,8 @@ pub struct BackgroundProperties {
     ///
     /// Defaults to false
     pub shade_to_title: Option<bool>,
-    pub fill: drawingml::FillProperties,
-    pub effect: Option<drawingml::EffectProperties>,
+    pub fill: FillProperties,
+    pub effect: Option<EffectProperties>,
 }
 
 impl BackgroundProperties {
@@ -667,10 +683,10 @@ impl BackgroundProperties {
         let mut effect = None;
 
         for child_node in &xml_node.child_nodes {
-            if drawingml::FillProperties::is_choice_member(child_node.local_name()) {
-                fill = Some(drawingml::FillProperties::from_xml_element(child_node)?);
-            } else if drawingml::EffectProperties::is_choice_member(child_node.local_name()) {
-                effect = Some(drawingml::EffectProperties::from_xml_element(child_node)?);
+            if FillProperties::is_choice_member(child_node.local_name()) {
+                fill = Some(FillProperties::from_xml_element(child_node)?);
+            } else if EffectProperties::is_choice_member(child_node.local_name()) {
+                effect = Some(EffectProperties::from_xml_element(child_node)?);
             }
         }
 
@@ -716,7 +732,7 @@ pub enum BackgroundGroup {
     ///
     /// The above code indicates a slide background with the style's first background fill style using the second
     /// background color of the color scheme.
-    Reference(drawingml::StyleMatrixReference),
+    Reference(StyleMatrixReference),
 }
 
 impl BackgroundGroup {
@@ -733,7 +749,7 @@ impl BackgroundGroup {
                 xml_node,
             )?)),
             "bgRef" => Ok(BackgroundGroup::Reference(
-                drawingml::StyleMatrixReference::from_xml_element(xml_node)?,
+                StyleMatrixReference::from_xml_element(xml_node)?,
             )),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
         }
@@ -750,7 +766,7 @@ pub struct Background {
     ///
     /// No gray is to be used in rendering this background, only stark black and stark
     /// white.
-    pub black_and_white_mode: Option<drawingml::BlackWhiteMode>, // white
+    pub black_and_white_mode: Option<BlackWhiteMode>, // white
     pub background: BackgroundGroup,
 }
 
@@ -823,7 +839,7 @@ pub struct ApplicationNonVisualDrawingProps {
     /// properties to alert the user that they can enter content into the shape. Different placeholder types are allowed
     /// and can be specified by using the placeholder type attribute for this element.
     pub placeholder: Option<Placeholder>,
-    pub media: Option<drawingml::Media>,
+    pub media: Option<Media>,
     pub customer_data_list: Option<CustomerDataList>,
 }
 
@@ -841,8 +857,8 @@ impl ApplicationNonVisualDrawingProps {
 
         for child_node in &xml_node.child_nodes {
             let local_name = child_node.local_name();
-            if drawingml::Media::is_choice_member(local_name) {
-                instance.media = Some(drawingml::Media::from_xml_element(child_node)?);
+            if Media::is_choice_member(local_name) {
+                instance.media = Some(Media::from_xml_element(child_node)?);
             } else {
                 match child_node.local_name() {
                     "ph" => instance.placeholder = Some(Placeholder::from_xml_element(child_node)?),
@@ -1044,7 +1060,7 @@ pub struct Shape {
     pub non_visual_props: Box<ShapeNonVisual>,
     /// This element specifies the visual shape properties that can be applied to a shape. These properties include the
     /// shape fill, outline, geometry, effects, and 3D orientation.
-    pub shape_props: Box<drawingml::ShapeProperties>,
+    pub shape_props: Box<ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
     ///
@@ -1070,11 +1086,11 @@ pub struct Shape {
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
-    pub shape_style: Option<Box<drawingml::ShapeStyle>>,
+    pub shape_style: Option<Box<ShapeStyle>>,
     /// This element specifies the existence of text to be contained within the corresponding shape. All visible text and
     /// visible text related properties are contained within this element. There can be multiple paragraphs and within
     /// paragraphs multiple runs of text.
-    pub text_body: Option<drawingml::TextBody>,
+    pub text_body: Option<TextBody>,
 }
 
 impl Shape {
@@ -1092,9 +1108,9 @@ impl Shape {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvSpPr" => non_visual_props = Some(Box::new(ShapeNonVisual::from_xml_element(child_node)?)),
-                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
-                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
-                "txBody" => text_body = Some(drawingml::TextBody::from_xml_element(child_node)?),
+                "spPr" => shape_props = Some(Box::new(ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(ShapeStyle::from_xml_element(child_node)?)),
+                "txBody" => text_body = Some(TextBody::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -1115,7 +1131,7 @@ impl Shape {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShapeNonVisual {
-    pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
+    pub drawing_props: Box<NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a shape. These properties are to be used by the
     /// generating application to determine how the shape should be dealt with.
     ///
@@ -1134,7 +1150,7 @@ pub struct ShapeNonVisual {
     /// ```
     ///
     /// This shape lock is stored within the non-visual drawing properties for this shape.
-    pub shape_drawing_props: drawingml::NonVisualDrawingShapeProps,
+    pub shape_drawing_props: NonVisualDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1147,12 +1163,12 @@ impl ShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvSpPr" => {
-                    shape_drawing_props = Some(drawingml::NonVisualDrawingShapeProps::from_xml_element(child_node)?)
+                    shape_drawing_props = Some(NonVisualDrawingShapeProps::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1182,7 +1198,7 @@ pub struct GroupShape {
     /// This element specifies the properties that are to be common across all of the shapes within the corresponding
     /// group. If there are any conflicting properties within the group shape properties and the individual shape
     /// properties then the individual shape properties should take precedence.
-    pub group_shape_props: drawingml::GroupShapeProperties,
+    pub group_shape_props: GroupShapeProperties,
     pub shape_array: Vec<ShapeGroup>,
 }
 
@@ -1202,7 +1218,7 @@ impl GroupShape {
                         non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
                     }
                     "grpSpPr" => {
-                        group_shape_props = Some(drawingml::GroupShapeProperties::from_xml_element(child_node)?)
+                        group_shape_props = Some(GroupShapeProperties::from_xml_element(child_node)?)
                     }
                     _ => (),
                 }
@@ -1224,10 +1240,10 @@ impl GroupShape {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GroupShapeNonVisual {
-    pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
+    pub drawing_props: Box<NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a group shape. These non-visual properties are
     /// properties that the generating application would utilize when rendering the slide surface.
-    pub group_drawing_props: drawingml::NonVisualGroupDrawingShapeProps,
+    pub group_drawing_props: NonVisualGroupDrawingShapeProps,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1240,12 +1256,12 @@ impl GroupShapeNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvGrpSpPr" => {
-                    group_drawing_props = Some(drawingml::NonVisualGroupDrawingShapeProps::from_xml_element(
+                    group_drawing_props = Some(NonVisualGroupDrawingShapeProps::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -1276,7 +1292,7 @@ pub struct GraphicalObjectFrame {
     /// This does not mean that the graphical object itself is stored with only black
     /// and white or grayscale information. This attribute instead sets the rendering mode
     /// that the graphical object uses.
-    pub black_white_mode: Option<drawingml::BlackWhiteMode>,
+    pub black_white_mode: Option<BlackWhiteMode>,
     /// This element specifies all non-visual properties for a graphic frame. This element is a container for the
     /// non-visual identification properties, shape properties and application properties that are to be associated
     /// with a graphic frame.
@@ -1284,8 +1300,8 @@ pub struct GraphicalObjectFrame {
     pub non_visual_props: Box<GraphicalObjectFrameNonVisual>,
     /// This element specifies the transform to be applied to the corresponding graphic frame. This transformation is
     /// applied to the graphic frame just as it would be for a shape or group shape.
-    pub transform: Box<drawingml::Transform2D>,
-    pub graphic: drawingml::GraphicalObject,
+    pub transform: Box<Transform2D>,
+    pub graphic: GraphicalObject,
 }
 
 impl GraphicalObjectFrame {
@@ -1304,8 +1320,8 @@ impl GraphicalObjectFrame {
                 "nvGraphicFramePr" => {
                     non_visual_props = Some(Box::new(GraphicalObjectFrameNonVisual::from_xml_element(child_node)?))
                 }
-                "xfrm" => transform = Some(Box::new(drawingml::Transform2D::from_xml_element(child_node)?)),
-                "graphic" => graphic = Some(drawingml::GraphicalObject::from_xml_element(child_node)?),
+                "xfrm" => transform = Some(Box::new(Transform2D::from_xml_element(child_node)?)),
+                "graphic" => graphic = Some(GraphicalObject::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -1326,10 +1342,10 @@ impl GraphicalObjectFrame {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GraphicalObjectFrameNonVisual {
-    pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
+    pub drawing_props: Box<NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties for a graphic frame. These non-visual properties are
     /// properties that the generating application would utilize when rendering the slide surface.
-    pub graphic_frame_props: drawingml::NonVisualGraphicFrameProperties,
+    pub graphic_frame_props: NonVisualGraphicFrameProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1342,12 +1358,12 @@ impl GraphicalObjectFrameNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvGraphicFramePr" => {
-                    graphic_frame_props = Some(drawingml::NonVisualGraphicFrameProperties::from_xml_element(
+                    graphic_frame_props = Some(NonVisualGraphicFrameProperties::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -1378,7 +1394,7 @@ pub struct Connector {
     pub non_visual_props: Box<ConnectorNonVisual>,
     /// This element specifies the visual shape properties that can be applied to a shape. These properties include the
     /// shape fill, outline, geometry, effects, and 3D orientation.
-    pub shape_props: Box<drawingml::ShapeProperties>,
+    pub shape_props: Box<ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
     ///
@@ -1404,7 +1420,7 @@ pub struct Connector {
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
-    pub shape_style: Option<Box<drawingml::ShapeStyle>>,
+    pub shape_style: Option<Box<ShapeStyle>>,
 }
 
 impl Connector {
@@ -1416,8 +1432,8 @@ impl Connector {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvCxnSpPr" => non_visual_props = Some(Box::new(ConnectorNonVisual::from_xml_element(child_node)?)),
-                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
-                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "spPr" => shape_props = Some(Box::new(ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -1436,10 +1452,10 @@ impl Connector {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConnectorNonVisual {
-    pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
+    pub drawing_props: Box<NonVisualDrawingProps>,
     /// This element specifies the non-visual drawing properties specific to a connector shape. This includes
     /// information specifying the shapes to which the connector shape is connected.
-    pub connector_props: drawingml::NonVisualConnectorProperties,
+    pub connector_props: NonVisualConnectorProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1452,12 +1468,12 @@ impl ConnectorNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvCxnSpPr" => {
-                    connector_props = Some(drawingml::NonVisualConnectorProperties::from_xml_element(child_node)?)
+                    connector_props = Some(NonVisualConnectorProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1495,8 +1511,8 @@ pub struct Picture {
     /// </p:pic>
     /// ```
     pub non_visual_props: Box<PictureNonVisual>,
-    pub blip_fill: Box<drawingml::BlipFillProperties>,
-    pub shape_props: Box<drawingml::ShapeProperties>,
+    pub blip_fill: Box<BlipFillProperties>,
+    pub shape_props: Box<ShapeProperties>,
     /// This element specifies the style information for a shape. This is used to define a shape's appearance in terms of
     /// the preset styles defined by the style matrix for the theme.
     ///
@@ -1522,7 +1538,7 @@ pub struct Picture {
     /// The parent shape of the above code is to have an outline that uses the third line style defined by the theme, use
     /// the first fill defined by the scheme, and be rendered with the first effect defined by the theme. Text inside the
     /// shape is to use the minor font defined by the theme.
-    pub shape_style: Option<Box<drawingml::ShapeStyle>>,
+    pub shape_style: Option<Box<ShapeStyle>>,
 }
 
 impl Picture {
@@ -1535,9 +1551,9 @@ impl Picture {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "nvPicPr" => non_visual_props = Some(Box::new(PictureNonVisual::from_xml_element(child_node)?)),
-                "blipFill" => blip_fill = Some(Box::new(drawingml::BlipFillProperties::from_xml_element(child_node)?)),
-                "spPr" => shape_props = Some(Box::new(drawingml::ShapeProperties::from_xml_element(child_node)?)),
-                "style" => shape_style = Some(Box::new(drawingml::ShapeStyle::from_xml_element(child_node)?)),
+                "blipFill" => blip_fill = Some(Box::new(BlipFillProperties::from_xml_element(child_node)?)),
+                "spPr" => shape_props = Some(Box::new(ShapeProperties::from_xml_element(child_node)?)),
+                "style" => shape_style = Some(Box::new(ShapeStyle::from_xml_element(child_node)?)),
                 _ => (),
             }
         }
@@ -1558,7 +1574,7 @@ impl Picture {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PictureNonVisual {
-    pub drawing_props: Box<drawingml::NonVisualDrawingProps>,
+    pub drawing_props: Box<NonVisualDrawingProps>,
     /// This element specifies the non-visual properties for the picture canvas. These properties are to be used by the
     /// generating application to determine how certain properties are to be changed for the picture object in question.
     ///
@@ -1577,7 +1593,7 @@ pub struct PictureNonVisual {
     ///   ...
     /// </p:pic>
     /// ```
-    pub picture_props: drawingml::NonVisualPictureProperties,
+    pub picture_props: NonVisualPictureProperties,
     pub app_props: ApplicationNonVisualDrawingProps,
 }
 
@@ -1590,12 +1606,12 @@ impl PictureNonVisual {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cNvPr" => {
-                    drawing_props = Some(Box::new(drawingml::NonVisualDrawingProps::from_xml_element(
+                    drawing_props = Some(Box::new(NonVisualDrawingProps::from_xml_element(
                         child_node,
                     )?))
                 }
                 "cNvPicPr" => {
-                    picture_props = Some(drawingml::NonVisualPictureProperties::from_xml_element(child_node)?)
+                    picture_props = Some(NonVisualPictureProperties::from_xml_element(child_node)?)
                 }
                 "nvPr" => app_props = Some(ApplicationNonVisualDrawingProps::from_xml_element(child_node)?),
                 _ => (),
@@ -1729,14 +1745,14 @@ pub struct SlideMasterTextStyles {
     /// all title text within related presentation slides. The text formatting is specified by utilizing the DrawingML
     /// framework just as within a regular presentation slide. Within a title style there can be many different style types
     /// defined as there are different kinds of text stored within a slide title.
-    pub title_styles: Option<Box<drawingml::TextListStyle>>,
+    pub title_styles: Option<Box<TextListStyle>>,
     /// This element specifies the text formatting style for all body text within a master slide.
     /// This formatting is used on all body text within presentation slides related to this master.
     /// The text formatting is specified by utilizing the DrawingML framework just as within a regular
     /// presentation slide.
     /// Within the bodyStyle element there can be many different style types defined as there are different kinds of
     /// text stored within the body of a slide.
-    pub body_styles: Option<Box<drawingml::TextListStyle>>,
+    pub body_styles: Option<Box<TextListStyle>>,
     /// This element specifies the text formatting style for the all other text within a master slide. This formatting is
     /// used on all text not covered by the title_styles or body_styles elements within related presentation slides. The text
     /// formatting is specified by utilizing the DrawingML framework just as within a regular presentation slide. Within
@@ -1747,7 +1763,7 @@ pub struct SlideMasterTextStyles {
     ///
     /// The other_styles element is to be used for specifying the text formatting of text within a slide shape but
     /// not within a text box. Text box styling is handled from within the body_styles element.
-    pub other_styles: Option<Box<drawingml::TextListStyle>>,
+    pub other_styles: Option<Box<TextListStyle>>,
 }
 
 impl SlideMasterTextStyles {
@@ -1757,13 +1773,13 @@ impl SlideMasterTextStyles {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "titleStyle" => {
-                    instance.title_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.title_styles = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
                 }
                 "bodyStyle" => {
-                    instance.body_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.body_styles = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
                 }
                 "otherStyle" => {
-                    instance.other_styles = Some(Box::new(drawingml::TextListStyle::from_xml_element(child_node)?))
+                    instance.other_styles = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
                 }
                 _ => (),
             }
@@ -2291,7 +2307,7 @@ pub struct TransitionStartSoundAction {
     ///   </p:sndAc>
     /// </p:transition>
     /// ```
-    pub sound_file: drawingml::EmbeddedWAVAudioFile,
+    pub sound_file: EmbeddedWAVAudioFile,
 }
 
 impl TransitionStartSoundAction {
@@ -2305,7 +2321,7 @@ impl TransitionStartSoundAction {
             .child_nodes
             .get(0)
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "snd"))?;
-        let sound_file = drawingml::EmbeddedWAVAudioFile::from_xml_element(sound_file_node)?;
+        let sound_file = EmbeddedWAVAudioFile::from_xml_element(sound_file_node)?;
 
         Ok(Self { is_looping, sound_file })
     }
@@ -2556,7 +2572,7 @@ impl Control {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct OleAttributes {
-    pub shape_id: Option<drawingml::ShapeId>,
+    pub shape_id: Option<ShapeId>,
     /// Specifies the identifying name class used by scripting languages. This name is also used to
     /// construct the clipboard name.
     pub name: Option<String>,
@@ -2567,9 +2583,9 @@ pub struct OleAttributes {
     /// Specifies the relationship id that is used to identify this Embedded object from within a slide.
     pub id: Option<RelationshipId>,
     /// Specifies the width of the embedded control.
-    pub image_width: Option<drawingml::PositiveCoordinate32>,
+    pub image_width: Option<PositiveCoordinate32>,
     /// Specifies the height of the embedded control.
-    pub image_height: Option<drawingml::PositiveCoordinate32>,
+    pub image_height: Option<PositiveCoordinate32>,
 }
 
 impl OleAttributes {

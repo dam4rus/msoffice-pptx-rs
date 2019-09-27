@@ -3,6 +3,14 @@ use msoffice_shared::{
     relationship::RelationshipId,
     sharedtypes::ConformanceClass,
     xml::{parse_xml_bool, XmlNode},
+    drawingml::{
+        simpletypes::{PositiveCoordinate32, Percentage},
+        coordsys::PositiveSize2D,
+        text::{
+            runformatting::TextFont,
+            bullet::TextListStyle,
+        },
+    },
 };
 use std::io::{Read, Seek};
 
@@ -28,7 +36,7 @@ pub type BookmarkIdSeed = u32;
 /// This simple type specifies the slide size coordinate in EMUs (English Metric Units).AsRef
 ///
 /// Values represented by this type are restricted to: 914400 <= n <= 51206400
-pub type SlideSizeCoordinate = msoffice_shared::drawingml::PositiveCoordinate32;
+pub type SlideSizeCoordinate = PositiveCoordinate32;
 /// This simple type specifies a name, such as for a comment author or custom show.
 pub type Name = String;
 
@@ -408,7 +416,7 @@ pub struct EmbeddedFontListEntry {
     ///
     /// Not all characters for a typeface must be stored. It is up to the generating application to determine which
     /// characters are to be stored in the corresponding font data files.
-    pub font: msoffice_shared::drawingml::TextFont,
+    pub font: TextFont,
     /// This element specifies a regular embedded font that is linked to a parent typeface. Once specified, this regular
     /// version of the given typeface name is available for use within the presentation. The actual font data is
     /// referenced using a relationships file that contains links to all fonts available. This font data contains font
@@ -497,7 +505,7 @@ impl EmbeddedFontListEntry {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "font" => font = Some(msoffice_shared::drawingml::TextFont::from_xml_element(child_node)?),
+                "font" => font = Some(TextFont::from_xml_element(child_node)?),
                 "regular" => {
                     let id_attr = child_node
                         .attribute("r:id")
@@ -810,7 +818,7 @@ pub struct Presentation {
     /// document. The embedded slides are to be scaled by this percentage.
     ///
     /// Defaults to 50_000
-    pub server_zoom: Option<msoffice_shared::drawingml::Percentage>,
+    pub server_zoom: Option<Percentage>,
     /// Specifies the first slide number in the presentation.
     ///
     /// Defaults to 1
@@ -966,7 +974,7 @@ pub struct Presentation {
     ///   ...
     /// </p:presentation>
     /// ```
-    pub notes_size: Option<msoffice_shared::drawingml::PositiveSize2D>,
+    pub notes_size: Option<PositiveSize2D>,
     /// This element specifies that references to smart tags exist within this document.
     /// To denote the location of smart tags on individual runs of text, there smart tag identifier attributes are
     /// specified for each run to which a smart tag applies.
@@ -1069,7 +1077,7 @@ pub struct Presentation {
     /// The text style defined here can be referenced when inserting a new slide if that slide is not associated with a
     /// master slide or if no styling information has been otherwise specified for the text within the
     /// presentation slide.
-    pub default_text_style: Option<Box<msoffice_shared::drawingml::TextListStyle>>,
+    pub default_text_style: Option<Box<TextListStyle>>,
     /// This element specifies the write protection settings which have been applied to a PresentationML document.
     /// Write protection refers to a mode in which the document's contents should not be modified, and the document
     /// should not be resaved using the same file name.
@@ -1166,7 +1174,7 @@ impl Presentation {
                 }
                 "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
                 "notesSz" => {
-                    instance.notes_size = Some(msoffice_shared::drawingml::PositiveSize2D::from_xml_element(
+                    instance.notes_size = Some(PositiveSize2D::from_xml_element(
                         child_node,
                     )?)
                 }
@@ -1195,7 +1203,7 @@ impl Presentation {
                 "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
                 "defaultTextStyle" => {
                     instance.default_text_style = Some(Box::new(
-                        msoffice_shared::drawingml::TextListStyle::from_xml_element(child_node)?,
+                        TextListStyle::from_xml_element(child_node)?,
                     ))
                 }
                 "modifyVerifier" => {
