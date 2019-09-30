@@ -1,16 +1,13 @@
 use msoffice_shared::{
+    drawingml::{
+        coordsys::PositiveSize2D,
+        simpletypes::{Percentage, PositiveCoordinate32},
+        text::{bullet::TextListStyle, runformatting::TextFont},
+    },
     error::{MissingAttributeError, MissingChildNodeError},
     relationship::RelationshipId,
     sharedtypes::ConformanceClass,
     xml::{parse_xml_bool, XmlNode},
-    drawingml::{
-        simpletypes::{PositiveCoordinate32, Percentage},
-        coordsys::PositiveSize2D,
-        text::{
-            runformatting::TextFont,
-            bullet::TextListStyle,
-        },
-    },
 };
 use std::io::{Read, Seek};
 
@@ -1173,11 +1170,7 @@ impl Presentation {
                     }
                 }
                 "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
-                "notesSz" => {
-                    instance.notes_size = Some(PositiveSize2D::from_xml_element(
-                        child_node,
-                    )?)
-                }
+                "notesSz" => instance.notes_size = Some(PositiveSize2D::from_xml_element(child_node)?),
                 "smartTags" => {
                     let r_id_attr = child_node
                         .attribute("r:id")
@@ -1202,9 +1195,7 @@ impl Presentation {
                 "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
                 "defaultTextStyle" => {
-                    instance.default_text_style = Some(Box::new(
-                        TextListStyle::from_xml_element(child_node)?,
-                    ))
+                    instance.default_text_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
                 }
                 "modifyVerifier" => {
                     instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))

@@ -1,9 +1,11 @@
 use msoffice_shared::{
     drawingml::{
-        simpletypes::{DrawingElementId, ShapeId, PositiveFixedPercentage, Angle, FixedPercentage, Percentage, PositivePercentage},
-        core::{AnimationGraphicalObjectBuildProperties, AnimationElementChoice},
-        colors::Color,
         audiovideo::EmbeddedWAVAudioFile,
+        colors::Color,
+        core::{AnimationElementChoice, AnimationGraphicalObjectBuildProperties},
+        simpletypes::{
+            Angle, DrawingElementId, FixedPercentage, Percentage, PositiveFixedPercentage, PositivePercentage, ShapeId,
+        },
     },
     error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     xml::{parse_xml_bool, XmlNode},
@@ -2993,7 +2995,9 @@ impl TLTimeTargetElement {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "sldTgt" => Ok(TLTimeTargetElement::SlideTarget),
-            "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(EmbeddedWAVAudioFile::from_xml_element(xml_node)?)),
+            "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
+                EmbeddedWAVAudioFile::from_xml_element(xml_node)?,
+            )),
             "spTgt" => Ok(TLTimeTargetElement::ShapeTarget(
                 TLShapeTargetElement::from_xml_element(xml_node)?,
             )),
@@ -3166,7 +3170,9 @@ impl TLShapeTargetElementGroup {
                     .get(0)
                     .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
 
-                Ok(TLShapeTargetElementGroup::GraphicElement(AnimationElementChoice::from_xml_element(child_node)?))
+                Ok(TLShapeTargetElementGroup::GraphicElement(
+                    AnimationElementChoice::from_xml_element(child_node)?,
+                ))
             }
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
