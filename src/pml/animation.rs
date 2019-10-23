@@ -7,8 +7,9 @@ use msoffice_shared::{
             Angle, DrawingElementId, FixedPercentage, Percentage, PositiveFixedPercentage, PositivePercentage, ShapeId,
         },
     },
-    error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
+    error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, LimitViolationError, MaxOccurs},
     xml::{parse_xml_bool, XmlNode},
+    xsdtypes::XsdChoice,
 };
 use std::str::FromStr;
 
@@ -21,6 +22,7 @@ pub type TLTimeNodeId = u32;
 pub type TLSubShapeId = ShapeId;
 
 /// This simple type defines an animation target element that is represented by a subelement of a chart.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLChartSubelementType {
     #[strum(serialize = "gridLegend")]
@@ -36,6 +38,7 @@ pub enum TLChartSubelementType {
 }
 
 /// This simple type describes how to build a paragraph.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLParaBuildType {
     /// Specifies to animate all paragraphs at once.
@@ -53,6 +56,7 @@ pub enum TLParaBuildType {
 }
 
 /// This simple type specifies the different diagram build types.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLDiagramBuildType {
     #[strum(serialize = "whole")]
@@ -92,6 +96,7 @@ pub enum TLDiagramBuildType {
 }
 
 /// This simple type describes how to build an embedded Chart.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLOleChartBuildType {
     #[strum(serialize = "allAtOnce")]
@@ -108,6 +113,7 @@ pub enum TLOleChartBuildType {
 
 /// This simple type specifies the child time node that triggers a time condition. References a child TimeNode or all
 /// child nodes. Order is based on the child's end time.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTriggerRuntimeNode {
     #[strum(serialize = "first")]
@@ -119,6 +125,7 @@ pub enum TLTriggerRuntimeNode {
 }
 
 /// This simple type specifies a particular event that causes the time condition to be true.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTriggerEvent {
     /// Fire trigger at the beginning
@@ -157,6 +164,7 @@ pub enum TLTriggerEvent {
 }
 
 /// This simple type specifies how the animation is applied over subelements of the target element.
+#[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, EnumString)]
 pub enum IterateType {
     /// Iterate by element.
@@ -171,6 +179,7 @@ pub enum IterateType {
 }
 
 /// This simple type specifies the class of effect in which this effect belongs.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodePresetClassType {
     #[strum(serialize = "entr")]
@@ -188,6 +197,7 @@ pub enum TLTimeNodePresetClassType {
 }
 
 /// This simple type determines whether an effect can play more than once.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeRestartType {
     /// Always restart node
@@ -203,6 +213,7 @@ pub enum TLTimeNodeRestartType {
 
 /// This simple type specifies what modifications the effect leaves on the target element's properties when the
 /// effect ends.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeFillType {
     #[strum(serialize = "remove")]
@@ -216,6 +227,7 @@ pub enum TLTimeNodeFillType {
 }
 
 /// This simple type specifies how the time node synchronizes to its group.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeSyncType {
     #[strum(serialize = "canSlip")]
@@ -225,6 +237,7 @@ pub enum TLTimeNodeSyncType {
 }
 
 /// This simple type specifies how the time node plays back relative to its master time node.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeMasterRelation {
     #[strum(serialize = "sameClick")]
@@ -236,6 +249,7 @@ pub enum TLTimeNodeMasterRelation {
 }
 
 /// This simple type specifies time node types.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLTimeNodeType {
     #[strum(serialize = "clickEffect")]
@@ -260,6 +274,7 @@ pub enum TLTimeNodeType {
 
 /// This simple type specifies what to do when going forward in a sequence. When the value is Seek, it seeks the
 /// current child element to its natural end time before advancing to the next element.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLNextActionType {
     #[strum(serialize = "none")]
@@ -271,6 +286,7 @@ pub enum TLNextActionType {
 /// This simple type specifies what to do when going backwards in a sequence. When the value is SkipTimed, the
 /// sequence continues to go backwards until it reaches a sequence element that was defined to being only on a
 /// "next" event.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLPreviousActionType {
     #[strum(serialize = "none")]
@@ -280,6 +296,7 @@ pub enum TLPreviousActionType {
 }
 
 /// This simple type specifies how the animation flows from point to point.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateBehaviorCalcMode {
     #[strum(serialize = "discrete")]
@@ -291,6 +308,7 @@ pub enum TLAnimateBehaviorCalcMode {
 }
 
 /// This simple type specifies the type of property value.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateBehaviorValueType {
     #[strum(serialize = "clr")]
@@ -302,6 +320,7 @@ pub enum TLAnimateBehaviorValueType {
 }
 
 /// This simple type specifies how to apply the animation values to the original value for the property.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorAdditiveType {
     #[strum(serialize = "base")]
@@ -317,6 +336,7 @@ pub enum TLBehaviorAdditiveType {
 }
 
 /// This simple type makes a repeating animation build with each iteration when set to "always."
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorAccumulateType {
     #[strum(serialize = "none")]
@@ -326,6 +346,7 @@ pub enum TLBehaviorAccumulateType {
 }
 
 /// This simple type specifies how the behavior animates the target element.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorTransformType {
     #[strum(serialize = "pt")]
@@ -336,6 +357,7 @@ pub enum TLBehaviorTransformType {
 
 /// This simple type specifies how a behavior should override values of the attribute being animated on the target
 /// element. The ChildStyle clears the attributes on the children contained inside the target element.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLBehaviorOverrideType {
     #[strum(serialize = "normal")]
@@ -345,6 +367,7 @@ pub enum TLBehaviorOverrideType {
 }
 
 /// This simple type specifies the color space of the animation.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateColorSpace {
     #[strum(serialize = "rgb")]
@@ -354,6 +377,7 @@ pub enum TLAnimateColorSpace {
 }
 
 /// This simple type specifies the direction in which to interpolate the animation (clockwise or counterclockwise).
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateColorDirection {
     #[strum(serialize = "cw")]
@@ -363,6 +387,7 @@ pub enum TLAnimateColorDirection {
 }
 
 /// This simple type specifies whether the effect is a transition in, transition out, or neither.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateEffectTransition {
     #[strum(serialize = "in")]
@@ -374,6 +399,7 @@ pub enum TLAnimateEffectTransition {
 }
 
 /// This simple type specifies what the origin of the motion path is relative to.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateMotionBehaviorOrigin {
     #[strum(serialize = "parent")]
@@ -383,6 +409,7 @@ pub enum TLAnimateMotionBehaviorOrigin {
 }
 
 /// This simple type specifies how the motion path moves when the target element is moved.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLAnimateMotionPathEditMode {
     #[strum(serialize = "relative")]
@@ -392,6 +419,7 @@ pub enum TLAnimateMotionPathEditMode {
 }
 
 /// This simple type specifies a command type.
+#[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
 pub enum TLCommandType {
     #[strum(serialize = "evt")]
@@ -402,7 +430,7 @@ pub enum TLCommandType {
     Verb,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct IndexRange {
     /// This attribute defines the start of the index range.
     pub start: Index,
@@ -730,8 +758,8 @@ pub enum TimeNodeGroup {
     Video(Box<TLMediaNodeVideo>),
 }
 
-impl TimeNodeGroup {
-    pub fn is_choice_member<T>(name: T) -> bool
+impl XsdChoice for TimeNodeGroup {
+    fn is_choice_member<T>(name: T) -> bool
     where
         T: AsRef<str>,
     {
@@ -742,7 +770,7 @@ impl TimeNodeGroup {
         }
     }
 
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "par" => Ok(TimeNodeGroup::Parallel(Box::new(
                 TLCommonTimeNodeData::from_xml_element(xml_node)?,
@@ -786,6 +814,21 @@ impl TimeNodeGroup {
                 "TimeNodeGroup",
             ))),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TLTimeNodeList(pub Vec<TimeNodeGroup>);
+
+impl TLTimeNodeList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let vec = xml_node
+            .child_nodes
+            .iter()
+            .filter_map(TimeNodeGroup::try_from_xml_element)
+            .collect::<Result<Vec<_>>>()?;
+            
+        Ok(Self(vec))
     }
 }
 
@@ -1013,24 +1056,28 @@ impl TLCommonBehaviorData {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
                 "tgtEl" => {
-                    let target_element_node = child_node.child_nodes.first().ok_or_else(|| {
-                        MissingChildNodeError::new(child_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt")
-                    })?;
-                    target_element = Some(TLTimeTargetElement::from_xml_element(target_element_node)?);
+                    target_element = Some(child_node
+                        .child_nodes
+                        .first()
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt").into())
+                        .and_then(TLTimeTargetElement::from_xml_element)?
+                    );
                 }
                 "attrNameLst" => {
-                    let mut vec = Vec::new();
-                    for attr_name_node in &child_node.child_nodes {
-                        vec.push(match attr_name_node.text {
-                            Some(ref text) => text.clone(),
-                            None => String::new(), // TODO: maybe it's an error to have an empty node?
-                        });
-                    }
+                    let vec = child_node
+                        .child_nodes
+                        .iter()
+                        .filter(|attr_name_node| attr_name_node.local_name() == "attrName")
+                        .map(|attr_name_node| attr_name_node.text.as_ref().cloned().unwrap_or_default())
+                        .collect::<Vec<_>>();
 
                     if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(
+                        return Err(Box::new(LimitViolationError::new(
                             child_node.name.clone(),
                             "attrName",
+                            1,
+                            MaxOccurs::Unbounded,
+                            0,
                         )));
                     }
 
@@ -1121,7 +1168,14 @@ impl TLCommonMediaNodeData {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
-                "tgtEl" => target_element = Some(TLTimeTargetElement::from_xml_element(child_node)?),
+                "tgtEl" => {
+                    target_element = Some(child_node
+                        .child_nodes
+                        .first()
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLTimeTargetElement").into())
+                        .and_then(TLTimeTargetElement::from_xml_element)?
+                    )
+                }
                 _ => (),
             }
         }
@@ -1177,7 +1231,7 @@ pub struct TLBuildParagraph {
     ///
     /// Defaults to TLTime::Indefinite
     pub auto_advance_time: Option<TLTime>,
-    pub template_list: Option<Vec<TLTemplate>>, // size: 0-9
+    pub template_list: Option<TLTemplateList>,
 }
 
 impl TLBuildParagraph {
@@ -1207,19 +1261,15 @@ impl TLBuildParagraph {
             }
         }
 
-        let template_list = match xml_node.child_nodes.get(0) {
-            Some(child_node) => {
-                let mut vec = Vec::new();
-                for template_node in &child_node.child_nodes {
-                    vec.push(TLTemplate::from_xml_element(template_node)?);
-                }
-                Some(vec)
-            }
-            None => None,
-        };
-
         let shape_id = shape_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
         let group_id = group_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "grpId"))?;
+
+        let template_list = xml_node
+            .child_nodes
+            .iter()
+            .find(|child_node| child_node.local_name() == "tmplLst")
+            .map(TLTemplateList::from_xml_element)
+            .transpose()?;
 
         Ok(Self {
             build_common: TLBuildCommonAttributes {
@@ -1283,34 +1333,56 @@ impl FromStr for TLTime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct TLTemplate {
     /// This attribute describes the paragraph indent level to which this template effect applies.
     ///
     /// Defaults to 0
     pub level: Option<u32>,
-    pub time_node_list: Vec<TimeNodeGroup>,
+    pub time_node_list: TLTimeNodeList,
 }
 
 impl TLTemplate {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let level = match xml_node.attribute("lvl") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let level = xml_node
+            .attributes
+            .get("lvl")
+            .map(|value| value.parse())
+            .transpose()?;
 
-        let time_node_list = match xml_node.child_nodes.get(0) {
-            Some(child_node) => {
-                let mut vec = Vec::new();
-                for time_node in &child_node.child_nodes {
-                    vec.push(TimeNodeGroup::from_xml_element(time_node)?);
-                }
-                vec
-            }
-            None => return Err(Box::new(MissingChildNodeError::new(xml_node.name.clone(), "tnLst"))),
-        };
+        let time_node_list = xml_node
+            .child_nodes
+            .iter()
+            .find(|child_node| child_node.local_name() == "tnLst")
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "tnLst").into())
+            .and_then(TLTimeNodeList::from_xml_element)?;
 
         Ok(Self { level, time_node_list })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TLTemplateList(pub Vec<TLTemplate>);
+
+impl TLTemplateList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let vec = xml_node
+            .child_nodes
+            .iter()
+            .filter(|child_node| child_node.local_name() == "tmpl")
+            .map(TLTemplate::from_xml_element)
+            .collect::<Result<Vec<_>>>()?;
+        
+        match vec.len() {
+            0..=9 => Ok(Self(vec)),
+            len => Err(Box::new(LimitViolationError::new(
+                xml_node.name.clone(),
+                "tmpl",
+                0,
+                MaxOccurs::Value(9),
+                len as u32
+            )))
+        }
     }
 }
 
@@ -1440,15 +1512,11 @@ impl TLGraphicalObjectBuild {
             }
         }
 
-        let build_choice = match xml_node.child_nodes.get(0) {
-            Some(child_node) => TLGraphicalObjectBuildChoice::from_xml_element(child_node)?,
-            None => {
-                return Err(Box::new(MissingChildNodeError::new(
-                    xml_node.name.clone(),
-                    "TLGraphicalObjectBuildChoice",
-                )))
-            }
-        };
+        let build_choice = xml_node
+            .child_nodes
+            .first()
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLGraphicalObjectBuildChoice").into())
+            .and_then(TLGraphicalObjectBuildChoice::from_xml_element)?;
 
         let shape_id = shape_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
         let group_id = group_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "grpId"))?;
@@ -1572,7 +1640,7 @@ pub struct TLTimeNodeSequence {
     ///   </p:nextCondLst>
     /// </p:seq>
     /// ```
-    pub prev_condition_list: Vec<TLTimeCondition>,
+    pub prev_condition_list: Option<TLTimeConditionList>,
     /// This element describes a list of conditions that shall be met to advance to the next animation sequence.
     ///
     /// # Xml example
@@ -1591,7 +1659,7 @@ pub struct TLTimeNodeSequence {
     ///   </p:nextCondLst>
     /// </p:seq>
     /// ```
-    pub next_condition_list: Vec<TLTimeCondition>,
+    pub next_condition_list: Option<TLTimeConditionList>,
 }
 
 impl TLTimeNodeSequence {
@@ -1610,22 +1678,14 @@ impl TLTimeNodeSequence {
         }
 
         let mut common_time_node_data = None;
-        let mut prev_condition_list = Vec::new();
-        let mut next_condition_list = Vec::new();
+        let mut prev_condition_list = None;
+        let mut next_condition_list = None;
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
-                "prevCondLst" => {
-                    for condition_node in &child_node.child_nodes {
-                        prev_condition_list.push(TLTimeCondition::from_xml_element(condition_node)?);
-                    }
-                }
-                "nextCondLst" => {
-                    for condition_node in &child_node.child_nodes {
-                        next_condition_list.push(TLTimeCondition::from_xml_element(condition_node)?);
-                    }
-                }
+                "prevCondLst" => prev_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
+                "nextCondLst" => next_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -1677,7 +1737,7 @@ pub struct TLAnimateBehavior {
     ///   </p:tavLst>
     /// </p:anim>
     /// ```
-    pub time_animate_value_list: Option<Vec<TLTimeAnimateValue>>,
+    pub time_animate_value_list: Option<TLTimeAnimateValueList>,
 }
 
 impl TLAnimateBehavior {
@@ -1705,14 +1765,7 @@ impl TLAnimateBehavior {
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
-                "tavLst" => {
-                    let mut vec = Vec::new();
-                    for tav_node in &child_node.child_nodes {
-                        vec.push(TLTimeAnimateValue::from_xml_element(tav_node)?);
-                    }
-
-                    time_animate_value_list = Some(vec);
-                }
+                "tavLst" => time_animate_value_list = Some(TLTimeAnimateValueList::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -2704,15 +2757,36 @@ impl TLTimeAnimateValue {
             }
         }
 
-        if let Some(child_node) = xml_node.child_nodes.get(0) {
-            let val_node = child_node
-                .child_nodes
-                .get(0)
-                .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?;
-            instance.value = Some(TLAnimVariant::from_xml_element(val_node)?);
-        }
+        instance.value = xml_node
+            .child_nodes
+            .iter()
+            .find(|child_node| child_node.local_name() == "val")
+            .map(|child_node| {
+                child_node
+                    .child_nodes
+                    .first()
+                    .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLAnimVariant").into())
+                    .and_then(TLAnimVariant::from_xml_element)
+            })
+            .transpose()?;
 
         Ok(instance)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TLTimeAnimateValueList(pub Vec<TLTimeAnimateValue>);
+
+impl TLTimeAnimateValueList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let vec = xml_node
+            .child_nodes
+            .iter()
+            .filter(|child_node| child_node.local_name() == "tav")
+            .map(TLTimeAnimateValue::from_xml_element)
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self(vec))
     }
 }
 
@@ -3336,6 +3410,27 @@ impl TLTimeCondition {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TLTimeConditionList(pub Vec<TLTimeCondition>);
+
+impl TLTimeConditionList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let list = xml_node
+            .child_nodes
+            .iter()
+            .filter(|child_node| child_node.local_name() == "cond")
+            .map(TLTimeCondition::from_xml_element)
+            .collect::<Result<Vec<_>>>()?;
+
+        if list.is_empty() {
+            Err(Box::new(LimitViolationError::new(xml_node.name.clone(), "cond", 1, MaxOccurs::Unbounded, 0)))
+        } else {
+            Ok(Self(list))
+        }
+
+    }
+}
+
 /// This element describes the properties that are common for time nodes.
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct TLCommonTimeNodeData {
@@ -3423,7 +3518,7 @@ pub struct TLCommonTimeNodeData {
     ///   </p:cTn>
     /// </p:par>
     /// ```
-    pub start_condition_list: Option<Vec<TLTimeCondition>>,
+    pub start_condition_list: Option<TLTimeConditionList>,
     /// This element describes a list of the end conditions that shall be met in order to stop the time node.
     ///
     /// # Xml example
@@ -3447,7 +3542,7 @@ pub struct TLCommonTimeNodeData {
     ///   </p:cMediaNode>
     /// </p:audio>
     /// ```
-    pub end_condition_list: Option<Vec<TLTimeCondition>>,
+    pub end_condition_list: Option<TLTimeConditionList>,
     /// This element is used to synchronizes the stopping of parallel elements in the timing tree. It is used on interactive
     /// timeline sequences to specify that the interactive sequence’s duration ends when all of the child timenodes
     /// have ended. It is also used to make interactive sequences restart-able (so that the entire interactive sequence
@@ -3490,7 +3585,7 @@ pub struct TLCommonTimeNodeData {
     pub iterate: Option<TLIterateData>,
     /// This element describes the list of time nodes that have a fixed location in the timing tree based on their parent
     /// time node. The children's start time is defined relative to their parent time node’s start.
-    pub child_time_node_list: Option<Vec<TimeNodeGroup>>,
+    pub child_time_node_list: Option<TLTimeNodeList>,
     /// This element describes time nodes that have a start time which is not based on the containing timenode. It is
     /// instead based on their master relationship (masterRel). At runtime, they are inserted dynamically into the
     /// timing tree as child timenodes for playback, based on the logic defined by the master relationship. These
@@ -3519,7 +3614,7 @@ pub struct TLCommonTimeNodeData {
     ///   </p:cTn>
     /// </p:par>
     /// ```
-    pub sub_time_node_list: Option<Vec<TimeNodeGroup>>,
+    pub sub_time_node_list: Option<TLTimeNodeList>,
 }
 
 impl TLCommonTimeNodeData {
@@ -3557,62 +3652,12 @@ impl TLCommonTimeNodeData {
 
         for child_node in &xml_node.child_nodes {
             match child_node.local_name() {
-                "stCondLst" => {
-                    let mut vec = Vec::new();
-                    for cond_node in &child_node.child_nodes {
-                        vec.push(TLTimeCondition::from_xml_element(cond_node)?);
-                    }
-
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "cond")));
-                    }
-
-                    instance.start_condition_list = Some(vec);
-                }
-                "endCondLst" => {
-                    let mut vec = Vec::new();
-                    for cond_node in &child_node.child_nodes {
-                        vec.push(TLTimeCondition::from_xml_element(cond_node)?);
-                    }
-
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "cond")));
-                    }
-
-                    instance.end_condition_list = Some(vec);
-                }
+                "stCondLst" => instance.start_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
+                "endCondLst" => instance.end_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
                 "endSync" => instance.end_sync = Some(TLTimeCondition::from_xml_element(child_node)?),
                 "iterate" => instance.iterate = Some(TLIterateData::from_xml_element(child_node)?),
-                "childTnLst" => {
-                    let mut vec = Vec::new();
-                    for time_node in &child_node.child_nodes {
-                        vec.push(TimeNodeGroup::from_xml_element(time_node)?);
-                    }
-
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(
-                            child_node.name.clone(),
-                            "TimeNode",
-                        )));
-                    }
-
-                    instance.child_time_node_list = Some(vec);
-                }
-                "subTnLst" => {
-                    let mut vec = Vec::new();
-                    for time_node in &child_node.child_nodes {
-                        vec.push(TimeNodeGroup::from_xml_element(time_node)?);
-                    }
-
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(
-                            child_node.name.clone(),
-                            "TimeNode",
-                        )));
-                    }
-
-                    instance.sub_time_node_list = Some(vec);
-                }
+                "childTnLst" => instance.child_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
+                "subTnLst" => instance.sub_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
                 _ => (),
             }
         }
@@ -3725,11 +3770,11 @@ impl TLIterateData {
             }
         }
 
-        let interval_node = xml_node
+        let interval = xml_node
             .child_nodes
-            .get(0)
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLIterateDataChoice"))?;
-        let interval = TLIterateDataChoice::from_xml_element(interval_node)?;
+            .first()
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLIterateDataChoice").into())
+            .and_then(TLIterateDataChoice::from_xml_element)?;
 
         Ok(Self {
             iterate_type,
@@ -3973,54 +4018,548 @@ impl Build {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    impl IndexRange {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} st="0" end="5"></{node_name}>"#, node_name=node_name)
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                start: 0,
+                end: 5,
+            }
+        }
+    }
+
     #[test]
     pub fn test_index_range_from_xml() {
-        use super::{IndexRange, XmlNode};
-        let index_range = IndexRange::from_xml_element(&XmlNode::from_str("<node st=\"0\" end=\"5\"></node>").unwrap());
-        assert_eq!(index_range.unwrap(), IndexRange::new(0, 5));
+        let xml = IndexRange::test_xml("index");
+        assert_eq!(
+            IndexRange::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            IndexRange::test_instance(),
+        );
+    }
+
+    impl TLCommonBehaviorData {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} additive="sum" accumulate="none" xfrmType="pt" from="Example" to="Example"
+                by="Example" rctx="Example" override="childStyle">
+                {}
+                <tgtEl>
+                    <sldTgt />
+                </tgtEl>
+                <attrNameLst>
+                    <attrName>style.fontSize</p:attrName>
+                </attrNameLst>
+            </{node_name}>"#,
+                TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                additive: Some(TLBehaviorAdditiveType::Sum),
+                accumulate: Some(TLBehaviorAccumulateType::None),
+                transform_type: Some(TLBehaviorTransformType::Point),
+                from: Some(String::from("Example")),
+                to: Some(String::from("Example")),
+                by: Some(String::from("Example")),
+                runtime_context: Some(String::from("Example")),
+                override_type: Some(TLBehaviorOverrideType::ChildStyle),
+                common_time_node_data: Box::new(TLCommonTimeNodeData::test_instance_non_recursive()),
+                target_element: TLTimeTargetElement::SlideTarget,
+                attr_name_list: Some(vec![String::from("style.fontSize")]),
+            }
+        }
     }
 
     #[test]
-    pub fn test_common_behavior_data_from_xml() {
-        use super::{
-            IndexRange, TLBehaviorOverrideType, TLCommonBehaviorData, TLCommonTimeNodeData, TLShapeTargetElement,
-            TLShapeTargetElementGroup, TLTextTargetElement, TLTime, TLTimeNodeFillType, TLTimeTargetElement, XmlNode,
-        };
-
-        let xml = r#"<p:cBhvr override="childStyle">
-            <p:cTn id="6" dur="2000" fill="hold"/>
-            <p:tgtEl>
-                <p:spTgt spid="3">
-                    <p:txEl>
-                        <p:charRg st="4294967295" end="4294967295"/>
-                    </p:txEl>
-                </p:spTgt>
-            </p:tgtEl>
-            <p:attrNameLst>
-                <p:attrName>style.fontSize</p:attrName>
-            </p:attrNameLst>
-        </p:cBhvr>"#;
-
-        let common_behavior_data = TLCommonBehaviorData::from_xml_element(&XmlNode::from_str(xml).unwrap()).unwrap();
+    pub fn test_tl_common_behavior_data_from_xml() {
+        let xml = TLCommonBehaviorData::test_xml("tlCommonBehaviorData");
         assert_eq!(
-            common_behavior_data.override_type,
-            Some(TLBehaviorOverrideType::ChildStyle)
-        );
-        let mut ctn: TLCommonTimeNodeData = Default::default();
-        ctn.id = Some(6);
-        ctn.duration = Some(TLTime::TimePoint(2000));
-        ctn.fill_type = Some(TLTimeNodeFillType::Hold);
-        assert_eq!(*common_behavior_data.common_time_node_data, ctn);
-        let target_element = TLTimeTargetElement::ShapeTarget(TLShapeTargetElement::new(
-            3,
-            Some(TLShapeTargetElementGroup::TextElement(Some(
-                TLTextTargetElement::CharRange(IndexRange::new(4294967295, 4294967295)),
-            ))),
-        ));
-        assert_eq!(common_behavior_data.target_element, target_element);
-        assert_eq!(
-            common_behavior_data.attr_name_list,
-            Some(vec![String::from("style.fontSize")])
+            TLCommonBehaviorData::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLCommonBehaviorData::test_instance()
         );
     }
+
+    impl TLCommonMediaNodeData {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} vol="50000" mute="false" numSld="1" showWhenStopped="true">
+                {}
+                <tgtEl>
+                    <sldTgt />
+                </tgtEl>
+            </{node_name}>"#,
+                TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                volume: Some(50_000.0),
+                mute: Some(false),
+                number_of_slides: Some(1),
+                show_when_stopped: Some(true),
+                common_time_node_data: Box::new(TLCommonTimeNodeData::test_instance_non_recursive()),
+                target_element: TLTimeTargetElement::SlideTarget,
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_common_media_node_data_from_xml() {
+        let xml = TLCommonMediaNodeData::test_xml("tlCommonMediaNodeData");
+        assert_eq!(
+            TLCommonMediaNodeData::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLCommonMediaNodeData::test_instance(),
+        );
+    }
+
+    impl TLPoint {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} x="100000" y="100000"></{node_name}>"#, node_name=node_name)
+        }
+
+        pub fn test_instance() -> Self {
+            Self { x: 100_000.0, y: 100_000.0 }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_point_from_xml() {
+        let xml = TLPoint::test_xml("tlPoint");
+        assert_eq!(
+            TLPoint::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLPoint::test_instance(),
+        );
+    }
+
+    impl TLTimeCondition {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} evt="onClick" delay="1000">
+                <tgtEl>
+                    <sldTgt/>
+                </tgtEl>
+            </{node_name}>"#,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                trigger_event: Some(TLTriggerEvent::OnClick),
+                delay: Some(TLTime::TimePoint(1000)),
+                trigger: Some(TLTimeConditionTriggerGroup::TargetElement(TLTimeTargetElement::SlideTarget)),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_time_condition_from_xml() {
+        let xml = TLTimeCondition::test_xml("tlTimeCondition");
+        assert_eq!(
+            TLTimeCondition::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTimeCondition::test_instance(),
+        );
+    }
+
+    impl TLTimeConditionList {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name}>{}</{node_name}>"#,
+                TLTimeCondition::test_xml("cond"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self(vec![TLTimeCondition::test_instance()])
+        }
+    }
+
+    #[test]
+    pub fn test_tl_time_condition_list_from_xml() {
+        let xml = TLTimeConditionList::test_xml("tlTimeConditionList");
+        assert_eq!(
+            TLTimeConditionList::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTimeConditionList::test_instance(),
+        );
+    }
+
+    impl TLTimeNodeList {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name}>
+                {}
+                {}
+            </{node_name}>"#,
+                TLCommonTimeNodeData::test_xml_non_recursive("par"),
+                TLTimeNodeSequence::test_xml("seq"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self(vec![
+                TimeNodeGroup::Parallel(Box::new(TLCommonTimeNodeData::test_instance_non_recursive())),
+                TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::test_instance()))
+                ])
+        }
+    }
+
+    #[test]
+    pub fn test_tl_time_node_list_from_xml() {
+        let xml = TLTimeNodeList::test_xml("tlTimeNodeList");
+        assert_eq!(
+            TLTimeNodeList::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTimeNodeList::test_instance(),
+        );
+    }
+
+    impl TLCommonTimeNodeData {
+        const TEST_ATTRIBUTES: &'static str = r#"id="1" presetID="1" presetClass="entr" presetSubtype="0" dur="1000"
+            repeatCount="1000" repeatDur="1000" spd="100000" accel="0" decel="0" autoRev="false" restart="never"
+            fill="hold" syncBehavior="locked" tmFilter="Example filter" evtFilter="Example filter" display="true"
+            masterRel="sameClick" bldLvl="1" grpId="1" afterEffect="true" nodeType="mainSequence" nodePh="false""#;
+
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {}>
+                {}
+                {}
+                {}
+                {}
+                {}
+                {}
+            </{node_name}>"#,
+                Self::TEST_ATTRIBUTES,
+                TLTimeConditionList::test_xml("stCondLst"),
+                TLTimeConditionList::test_xml("endCondLst"),
+                TLTimeCondition::test_xml("endSync"),
+                TLIterateData::test_xml("iterate"),
+                TLTimeNodeList::test_xml("childTnLst"),
+                TLTimeNodeList::test_xml("subTnLst"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_xml_non_recursive(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {}></{node_name}>"#,
+                Self::TEST_ATTRIBUTES,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                start_condition_list: Some(TLTimeConditionList::test_instance()),
+                end_condition_list: Some(TLTimeConditionList::test_instance()),
+                end_sync: Some(TLTimeCondition::test_instance()),
+                iterate: Some(TLIterateData::test_instance()),
+                child_time_node_list: Some(TLTimeNodeList::test_instance()),
+                sub_time_node_list: Some(TLTimeNodeList::test_instance()),
+                ..Self::test_instance_non_recursive()
+            }
+        }
+
+        pub fn test_instance_non_recursive() -> Self {
+            Self {
+                id: Some(1),
+                preset_id: Some(1),
+                preset_class: Some(TLTimeNodePresetClassType::Entrance),
+                preset_subtype: Some(0),
+                duration: Some(TLTime::TimePoint(1000)),
+                repeat_count: Some(TLTime::TimePoint(1000)),
+                repeat_duration: Some(TLTime::TimePoint(1000)),
+                speed: Some(100_000.0),
+                acceleration: Some(0.0),
+                deceleration: Some(0.0),
+                auto_reverse: Some(false),
+                restart_type: Some(TLTimeNodeRestartType::Never),
+                fill_type: Some(TLTimeNodeFillType::Hold),
+                sync_behavior: Some(TLTimeNodeSyncType::Locked),
+                time_filter: Some(String::from("Example filter")),
+                event_filter: Some(String::from("Example filter")),
+                display: Some(true),
+                master_relationship: Some(TLTimeNodeMasterRelation::SameClick),
+                build_level: Some(1),
+                group_id: Some(1),
+                after_effect: Some(true),
+                node_type: Some(TLTimeNodeType::MainSequence),
+                node_placeholder: Some(false),
+                ..Default::default()
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_common_time_node_data_from_xml() {
+        let xml = TLCommonTimeNodeData::test_xml("tlCommonTimeNodeData");
+        assert_eq!(
+            TLCommonTimeNodeData::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLCommonTimeNodeData::test_instance(),
+        );
+    }
+
+    impl TLTimeNodeSequence {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} concurrent="false" prevAc="none" nextAc="none">
+                {}
+                {}
+                {}
+            </{node_name}>"#,
+                TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
+                TLTimeConditionList::test_xml("prevCondLst"),
+                TLTimeConditionList::test_xml("nextCondLst"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                concurrent: Some(false),
+                prev_action_type: Some(TLPreviousActionType::None),
+                next_action_type: Some(TLNextActionType::None),
+                common_time_node_data: Box::new(TLCommonTimeNodeData::test_instance_non_recursive()),
+                prev_condition_list: Some(TLTimeConditionList::test_instance()),
+                next_condition_list: Some(TLTimeConditionList::test_instance()),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_time_node_sequence_from_xml() {
+        let xml = TLTimeNodeSequence::test_xml("tlTimeNodeSequence");
+        assert_eq!(
+            TLTimeNodeSequence::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTimeNodeSequence::test_instance(),
+        );
+    }
+
+    impl TLIterateData {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} type="el" backwards="false">
+                <tmAbs val="10000" />
+            </{node_name}>"#,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                iterate_type: Some(IterateType::Element),
+                backwards: Some(false),
+                interval: TLIterateDataChoice::Absolute(TLTime::TimePoint(10_000)),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_iterate_data_from_xml() {
+        let xml = TLIterateData::test_xml("tlIterateData");
+        assert_eq!(
+            TLIterateData::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLIterateData::test_instance(),
+        );
+    }
+
+    impl TLTemplate {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} lvl="0">{}</{node_name}>"#, TLTimeNodeList::test_xml("tnLst"), node_name=node_name)
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                level: Some(0),
+                time_node_list: TLTimeNodeList::test_instance(),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_template_from_xml() {
+        let xml = TLTemplate::test_xml("tlTemplate");
+        assert_eq!(
+            TLTemplate::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTemplate::test_instance(),
+        );
+    }
+
+    impl TLTemplateList {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name}>{}</{node_name}>"#, TLTemplate::test_xml("tmpl"), node_name=node_name)
+        }
+
+        pub fn test_instance() -> Self {
+            Self(vec![TLTemplate::test_instance()])
+        }
+    }
+
+    #[test]
+    pub fn test_tl_template_list_from_xml() {
+        let xml = TLTemplateList::test_xml("tlTemplateList");
+        assert_eq!(
+            TLTemplateList::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLTemplateList::test_instance(),
+        );
+    }
+
+    impl TLBuildCommonAttributes {
+        const TEST_ATTRIBUTES: &'static str = r#"spid="0" grpId="0" uiExpand="true""#;
+
+        pub fn test_instance() -> Self {
+            Self {
+                shape_id: 0,
+                group_id: 0,
+                ui_expand: Some(true),
+            }
+        }
+    }
+
+    impl TLBuildParagraph {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {} build="whole" bldLvl="0" animBg="true" autoUpdateAnimBg="true" rev="false" advAuto="1000">
+                {}
+            </{node_name}>"#,
+                TLBuildCommonAttributes::TEST_ATTRIBUTES,
+                TLTemplateList::test_xml("tmplLst"),
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                build_common: TLBuildCommonAttributes::test_instance(),
+                build_type: Some(TLParaBuildType::Whole),
+                build_level: Some(0),
+                animate_bg: Some(true),
+                auto_update_anim_bg: Some(true),
+                reverse: Some(false),
+                auto_advance_time: Some(TLTime::TimePoint(1000)),
+                template_list: Some(TLTemplateList::test_instance()),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_build_paragraph_from_xml() {
+        let xml = TLBuildParagraph::test_xml("tlBuildParagraph");
+        assert_eq!(
+            TLBuildParagraph::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLBuildParagraph::test_instance(),
+        );
+    }
+
+    impl TLBuildDiagram {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {} bld="whole"></{node_name}>"#,
+                TLBuildCommonAttributes::TEST_ATTRIBUTES,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                build_common: TLBuildCommonAttributes::test_instance(),
+                build_type: Some(TLDiagramBuildType::Whole),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_build_diagram_from_xml() {
+        let xml = TLBuildDiagram::test_xml("tlBuildDiagram");
+        assert_eq!(
+            TLBuildDiagram::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLBuildDiagram::test_instance(),
+        );
+    }
+
+    impl TLOleBuildChart {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {} bld="allAtOnce" animBg="true"></{node_name}>"#,
+                TLBuildCommonAttributes::TEST_ATTRIBUTES,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                build_common: TLBuildCommonAttributes::test_instance(),
+                build_type: Some(TLOleChartBuildType::AllAtOnce),
+                animate_bg: Some(true),
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_ole_build_chart_from_xml() {
+        let xml = TLOleBuildChart::test_xml("tlOleBuildChart");
+        assert_eq!(
+            TLOleBuildChart::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLOleBuildChart::test_instance(),
+        );
+    }
+
+    impl TLGraphicalObjectBuild {
+        pub fn test_xml(node_name: &'static str) -> String {
+            format!(r#"<{node_name} {}>
+                <bldAsOne />
+            </{node_name}>"#,
+                TLBuildCommonAttributes::TEST_ATTRIBUTES,
+                node_name=node_name,
+            )
+        }
+
+        pub fn test_instance() -> Self {
+            Self {
+                build_common: TLBuildCommonAttributes::test_instance(),
+                build_choice: TLGraphicalObjectBuildChoice::BuildAsOne,
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_tl_graphical_object_build_from_xml() {
+        let xml = TLGraphicalObjectBuild::test_xml("tlGraphicalObjectBuild");
+        assert_eq!(
+            TLGraphicalObjectBuild::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+            TLGraphicalObjectBuild::test_instance(),
+        );
+    }
+
+    // impl TLAnimateBehavior {
+    //     pub fn test_xml(node_name: &'static str) -> String {
+    //         format!(r#"<{node_name} by="Example" from="Example" to="Example" calcmode="fmla" valueType="str">
+    //             {}
+    //             {}
+    //         </{node_name}>"#,
+    //             TLCommonBehaviorData::test_xml("cBhvr"),
+    //             TLTimeAnimateValueList::test_xml("tavLst"),
+    //             node_name=node_name,
+    //         )
+    //     }
+
+    //     pub fn test_instance() -> Self {
+    //         Self {
+    //             by: Some(String::from("Example")),
+    //             from: Some(String::from("Example")),
+    //             to: Some(String::from("Example")),
+    //             calc_mode: Some(TLAnimateBehaviorCalcMode::Formula),
+    //             value_type: Some(TLAnimateBehaviorValueType::String),
+    //             common_behavior_data: Box::new(TLCommonBehaviorData::test_instance()),
+    //             time_animate_value_list: Some(TLTimeAnimateValueList::test_instance()),
+    //         }
+    //     }
+    // }
+
+    // #[test]
+    // pub fn test_tl_animate_behavior_from_xml() {
+    //     let xml = TLAnimateBehavior::test_xml("tlAnimateBehavior");
+    //     assert_eq!(
+    //         TLAnimateBehavior::from_xml_element(&XmlNode::from_str(&xml).unwrap()).unwrap(),
+    //         TLAnimateBehavior::test_instance(),
+    //     );
+    // }
 }
