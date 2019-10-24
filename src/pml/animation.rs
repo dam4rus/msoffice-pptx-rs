@@ -7,7 +7,7 @@ use msoffice_shared::{
             Angle, DrawingElementId, FixedPercentage, Percentage, PositiveFixedPercentage, PositivePercentage, ShapeId,
         },
     },
-    error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError, LimitViolationError, MaxOccurs},
+    error::{LimitViolationError, MaxOccurs, MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     xml::{parse_xml_bool, XmlNode},
     xsdtypes::XsdChoice,
 };
@@ -827,7 +827,7 @@ impl TLTimeNodeList {
             .iter()
             .filter_map(TimeNodeGroup::try_from_xml_element)
             .collect::<Result<Vec<_>>>()?;
-            
+
         Ok(Self(vec))
     }
 }
@@ -1056,11 +1056,14 @@ impl TLCommonBehaviorData {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
                 "tgtEl" => {
-                    target_element = Some(child_node
-                        .child_nodes
-                        .first()
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt").into())
-                        .and_then(TLTimeTargetElement::from_xml_element)?
+                    target_element = Some(
+                        child_node
+                            .child_nodes
+                            .first()
+                            .ok_or_else(|| {
+                                MissingChildNodeError::new(child_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt").into()
+                            })
+                            .and_then(TLTimeTargetElement::from_xml_element)?,
                     );
                 }
                 "attrNameLst" => {
@@ -1169,11 +1172,14 @@ impl TLCommonMediaNodeData {
             match child_node.local_name() {
                 "cTn" => common_time_node_data = Some(Box::new(TLCommonTimeNodeData::from_xml_element(child_node)?)),
                 "tgtEl" => {
-                    target_element = Some(child_node
-                        .child_nodes
-                        .first()
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLTimeTargetElement").into())
-                        .and_then(TLTimeTargetElement::from_xml_element)?
+                    target_element = Some(
+                        child_node
+                            .child_nodes
+                            .first()
+                            .ok_or_else(|| {
+                                MissingChildNodeError::new(child_node.name.clone(), "TLTimeTargetElement").into()
+                            })
+                            .and_then(TLTimeTargetElement::from_xml_element)?,
                     )
                 }
                 _ => (),
@@ -1344,11 +1350,7 @@ pub struct TLTemplate {
 
 impl TLTemplate {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let level = xml_node
-            .attributes
-            .get("lvl")
-            .map(|value| value.parse())
-            .transpose()?;
+        let level = xml_node.attributes.get("lvl").map(|value| value.parse()).transpose()?;
 
         let time_node_list = xml_node
             .child_nodes
@@ -1372,7 +1374,7 @@ impl TLTemplateList {
             .filter(|child_node| child_node.local_name() == "tmpl")
             .map(TLTemplate::from_xml_element)
             .collect::<Result<Vec<_>>>()?;
-        
+
         match vec.len() {
             0..=9 => Ok(Self(vec)),
             len => Err(Box::new(LimitViolationError::new(
@@ -1380,8 +1382,8 @@ impl TLTemplateList {
                 "tmpl",
                 0,
                 MaxOccurs::Value(9),
-                len as u32
-            )))
+                len as u32,
+            ))),
         }
     }
 }
@@ -3423,11 +3425,16 @@ impl TLTimeConditionList {
             .collect::<Result<Vec<_>>>()?;
 
         if list.is_empty() {
-            Err(Box::new(LimitViolationError::new(xml_node.name.clone(), "cond", 1, MaxOccurs::Unbounded, 0)))
+            Err(Box::new(LimitViolationError::new(
+                xml_node.name.clone(),
+                "cond",
+                1,
+                MaxOccurs::Unbounded,
+                0,
+            )))
         } else {
             Ok(Self(list))
         }
-
     }
 }
 
@@ -4022,14 +4029,11 @@ mod tests {
 
     impl IndexRange {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} st="0" end="5"></{node_name}>"#, node_name=node_name)
+            format!(r#"<{node_name} st="0" end="5"></{node_name}>"#, node_name = node_name)
         }
 
         pub fn test_instance() -> Self {
-            Self {
-                start: 0,
-                end: 5,
-            }
+            Self { start: 0, end: 5 }
         }
     }
 
@@ -4044,7 +4048,8 @@ mod tests {
 
     impl TLCommonBehaviorData {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} additive="sum" accumulate="none" xfrmType="pt" from="Example" to="Example"
+            format!(
+                r#"<{node_name} additive="sum" accumulate="none" xfrmType="pt" from="Example" to="Example"
                 by="Example" rctx="Example" override="childStyle">
                 {}
                 <tgtEl>
@@ -4055,7 +4060,7 @@ mod tests {
                 </attrNameLst>
             </{node_name}>"#,
                 TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4087,14 +4092,15 @@ mod tests {
 
     impl TLCommonMediaNodeData {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} vol="50000" mute="false" numSld="1" showWhenStopped="true">
+            format!(
+                r#"<{node_name} vol="50000" mute="false" numSld="1" showWhenStopped="true">
                 {}
                 <tgtEl>
                     <sldTgt />
                 </tgtEl>
             </{node_name}>"#,
                 TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4121,11 +4127,17 @@ mod tests {
 
     impl TLPoint {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} x="100000" y="100000"></{node_name}>"#, node_name=node_name)
+            format!(
+                r#"<{node_name} x="100000" y="100000"></{node_name}>"#,
+                node_name = node_name
+            )
         }
 
         pub fn test_instance() -> Self {
-            Self { x: 100_000.0, y: 100_000.0 }
+            Self {
+                x: 100_000.0,
+                y: 100_000.0,
+            }
         }
     }
 
@@ -4140,12 +4152,13 @@ mod tests {
 
     impl TLTimeCondition {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} evt="onClick" delay="1000">
+            format!(
+                r#"<{node_name} evt="onClick" delay="1000">
                 <tgtEl>
                     <sldTgt/>
                 </tgtEl>
             </{node_name}>"#,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4153,7 +4166,9 @@ mod tests {
             Self {
                 trigger_event: Some(TLTriggerEvent::OnClick),
                 delay: Some(TLTime::TimePoint(1000)),
-                trigger: Some(TLTimeConditionTriggerGroup::TargetElement(TLTimeTargetElement::SlideTarget)),
+                trigger: Some(TLTimeConditionTriggerGroup::TargetElement(
+                    TLTimeTargetElement::SlideTarget,
+                )),
             }
         }
     }
@@ -4169,9 +4184,10 @@ mod tests {
 
     impl TLTimeConditionList {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name}>{}</{node_name}>"#,
+            format!(
+                r#"<{node_name}>{}</{node_name}>"#,
                 TLTimeCondition::test_xml("cond"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4191,21 +4207,22 @@ mod tests {
 
     impl TLTimeNodeList {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name}>
+            format!(
+                r#"<{node_name}>
                 {}
                 {}
             </{node_name}>"#,
                 TLCommonTimeNodeData::test_xml_non_recursive("par"),
                 TLTimeNodeSequence::test_xml("seq"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
         pub fn test_instance() -> Self {
             Self(vec![
                 TimeNodeGroup::Parallel(Box::new(TLCommonTimeNodeData::test_instance_non_recursive())),
-                TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::test_instance()))
-                ])
+                TimeNodeGroup::Sequence(Box::new(TLTimeNodeSequence::test_instance())),
+            ])
         }
     }
 
@@ -4225,7 +4242,8 @@ mod tests {
             masterRel="sameClick" bldLvl="1" grpId="1" afterEffect="true" nodeType="mainSequence" nodePh="false""#;
 
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} {}>
+            format!(
+                r#"<{node_name} {}>
                 {}
                 {}
                 {}
@@ -4240,14 +4258,15 @@ mod tests {
                 TLIterateData::test_xml("iterate"),
                 TLTimeNodeList::test_xml("childTnLst"),
                 TLTimeNodeList::test_xml("subTnLst"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
         pub fn test_xml_non_recursive(node_name: &'static str) -> String {
-            format!(r#"<{node_name} {}></{node_name}>"#,
+            format!(
+                r#"<{node_name} {}></{node_name}>"#,
                 Self::TEST_ATTRIBUTES,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4304,7 +4323,8 @@ mod tests {
 
     impl TLTimeNodeSequence {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} concurrent="false" prevAc="none" nextAc="none">
+            format!(
+                r#"<{node_name} concurrent="false" prevAc="none" nextAc="none">
                 {}
                 {}
                 {}
@@ -4312,7 +4332,7 @@ mod tests {
                 TLCommonTimeNodeData::test_xml_non_recursive("cTn"),
                 TLTimeConditionList::test_xml("prevCondLst"),
                 TLTimeConditionList::test_xml("nextCondLst"),
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4339,10 +4359,11 @@ mod tests {
 
     impl TLIterateData {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} type="el" backwards="false">
+            format!(
+                r#"<{node_name} type="el" backwards="false">
                 <tmAbs val="10000" />
             </{node_name}>"#,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4366,7 +4387,11 @@ mod tests {
 
     impl TLTemplate {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} lvl="0">{}</{node_name}>"#, TLTimeNodeList::test_xml("tnLst"), node_name=node_name)
+            format!(
+                r#"<{node_name} lvl="0">{}</{node_name}>"#,
+                TLTimeNodeList::test_xml("tnLst"),
+                node_name = node_name
+            )
         }
 
         pub fn test_instance() -> Self {
@@ -4388,7 +4413,11 @@ mod tests {
 
     impl TLTemplateList {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name}>{}</{node_name}>"#, TLTemplate::test_xml("tmpl"), node_name=node_name)
+            format!(
+                r#"<{node_name}>{}</{node_name}>"#,
+                TLTemplate::test_xml("tmpl"),
+                node_name = node_name
+            )
         }
 
         pub fn test_instance() -> Self {
@@ -4453,9 +4482,10 @@ mod tests {
 
     impl TLBuildDiagram {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} {} bld="whole"></{node_name}>"#,
+            format!(
+                r#"<{node_name} {} bld="whole"></{node_name}>"#,
                 TLBuildCommonAttributes::TEST_ATTRIBUTES,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4478,9 +4508,10 @@ mod tests {
 
     impl TLOleBuildChart {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} {} bld="allAtOnce" animBg="true"></{node_name}>"#,
+            format!(
+                r#"<{node_name} {} bld="allAtOnce" animBg="true"></{node_name}>"#,
                 TLBuildCommonAttributes::TEST_ATTRIBUTES,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
@@ -4504,11 +4535,12 @@ mod tests {
 
     impl TLGraphicalObjectBuild {
         pub fn test_xml(node_name: &'static str) -> String {
-            format!(r#"<{node_name} {}>
+            format!(
+                r#"<{node_name} {}>
                 <bldAsOne />
             </{node_name}>"#,
                 TLBuildCommonAttributes::TEST_ATTRIBUTES,
-                node_name=node_name,
+                node_name = node_name,
             )
         }
 
