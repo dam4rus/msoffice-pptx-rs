@@ -1,4 +1,4 @@
-use msoffice_shared::{
+ use msoffice_shared::{
     drawingml::{
         audiovideo::EmbeddedWAVAudioFile,
         colors::Color,
@@ -9,7 +9,7 @@ use msoffice_shared::{
     },
     error::{LimitViolationError, MaxOccurs, MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     xml::{parse_xml_bool, XmlNode},
-    xsdtypes::XsdChoice,
+    xsdtypes::{XsdType, XsdChoice},
 };
 use std::str::FromStr;
 
@@ -758,18 +758,7 @@ pub enum TimeNodeGroup {
     Video(Box<TLMediaNodeVideo>),
 }
 
-impl XsdChoice for TimeNodeGroup {
-    fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "par" | "seq" | "excl" | "anim" | "animClr" | "animEffect" | "animMotion" | "animRot" | "animScale"
-            | "cmd" | "set" | "audio" | "video" => true,
-            _ => false,
-        }
-    }
-
+impl XsdType for TimeNodeGroup {
     fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "par" => Ok(TimeNodeGroup::Parallel(Box::new(
@@ -813,6 +802,19 @@ impl XsdChoice for TimeNodeGroup {
                 xml_node.name.clone(),
                 "TimeNodeGroup",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TimeNodeGroup {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "par" | "seq" | "excl" | "anim" | "animClr" | "animEffect" | "animMotion" | "animRot" | "animScale"
+            | "cmd" | "set" | "audio" | "video" => true,
+            _ => false,
         }
     }
 }
