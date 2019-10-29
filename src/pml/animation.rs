@@ -1,4 +1,5 @@
- use msoffice_shared::{
+
+use msoffice_shared::{
     drawingml::{
         audiovideo::EmbeddedWAVAudioFile,
         colors::Color,
@@ -9,7 +10,7 @@
     },
     error::{LimitViolationError, MaxOccurs, MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     xml::{parse_xml_bool, XmlNode},
-    xsdtypes::{XsdType, XsdChoice},
+    xsdtypes::{XsdChoice, XsdType},
 };
 use std::str::FromStr;
 
