@@ -17,13 +17,15 @@ use msoffice_shared::{
     error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     relationship::RelationshipId,
     xml::{parse_xml_bool, XmlNode},
-    xsdtypes::XsdType,
+    xsdtypes::{XsdType, XsdChoice},
 };
 use std::io::Read;
 use zip::read::ZipFile;
 
-use super::animation::{Build, TimeNodeGroup};
-use super::presentation::{CustomerDataList, SlideLayoutIdListEntry};
+use super::{
+    animation::{Build, TimeNodeGroup},
+    presentation::{CustomerDataList, SlideLayoutIdListEntry},
+};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
