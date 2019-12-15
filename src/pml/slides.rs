@@ -17,12 +17,9 @@ use msoffice_shared::{
     error::{MissingAttributeError, MissingChildNodeError, NotGroupMemberError},
     relationship::RelationshipId,
     xml::{parse_xml_bool, XmlNode},
-    xsdtypes::{XsdType, XsdChoice},
+    xsdtypes::{XsdChoice, XsdType},
 };
-use std::{
-    io::Read,
-    str::FromStr,
-};
+use std::{io::Read, str::FromStr};
 use zip::read::ZipFile;
 
 use super::{
