@@ -19,7 +19,10 @@ use msoffice_shared::{
     xml::{parse_xml_bool, XmlNode},
     xsdtypes::{XsdType, XsdChoice},
 };
-use std::io::Read;
+use std::{
+    io::Read,
+    str::FromStr,
+};
 use zip::read::ZipFile;
 
 use super::{

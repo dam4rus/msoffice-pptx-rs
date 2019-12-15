@@ -9,7 +9,10 @@ use msoffice_shared::{
     sharedtypes::ConformanceClass,
     xml::{parse_xml_bool, XmlNode},
 };
-use std::io::{Read, Seek};
+use std::{
+    io::{Read, Seek},
+    str::FromStr,
+};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
 
