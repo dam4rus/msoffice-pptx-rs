@@ -1,3 +1,4 @@
+use super::util::XmlNodeExt;
 use msoffice_shared::{
     drawingml::{
         audiovideo::EmbeddedWAVAudioFile,
@@ -11,11 +12,7 @@ use msoffice_shared::{
     xml::{parse_xml_bool, XmlNode},
     xsdtypes::{XsdChoice, XsdType},
 };
-use super::util::XmlNodeExt;
-use std::{
-    str::FromStr,
-    error::Error,
-};
+use std::{error::Error, str::FromStr};
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn Error>>;
 
@@ -1905,7 +1902,7 @@ impl TLAnimateColorBehavior {
                             .transpose()?
                             .ok_or_else(|| {
                                 MissingChildNodeError::new(child_node.name.clone(), "TLByAnimateColorTransform")
-                            })?
+                            })?,
                     )
                 }
                 "from" => {
@@ -1915,7 +1912,7 @@ impl TLAnimateColorBehavior {
                             .iter()
                             .find_map(Color::try_from_xml_element)
                             .transpose()?
-                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?,
                     )
                 }
                 "to" => {
@@ -1925,7 +1922,7 @@ impl TLAnimateColorBehavior {
                             .iter()
                             .find_map(Color::try_from_xml_element)
                             .transpose()?
-                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?,
                     )
                 }
                 _ => (),
@@ -2046,12 +2043,13 @@ impl TLAnimateEffectBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "progress" => {
-                    progress = Some(child_node
-                        .child_nodes
-                        .iter()
-                        .find_map(TLAnimVariant::try_from_xml_element)
-                        .transpose()?
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?
+                    progress = Some(
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find_map(TLAnimVariant::try_from_xml_element)
+                            .transpose()?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?,
                     )
                 }
                 _ => (),
@@ -2488,12 +2486,13 @@ impl TLSetBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "to" => {
-                    to = Some(child_node
-                        .child_nodes
-                        .iter()
-                        .find_map(TLAnimVariant::try_from_xml_element)
-                        .transpose()?
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?
+                    to = Some(
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find_map(TLAnimVariant::try_from_xml_element)
+                            .transpose()?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?,
                     )
                 }
                 _ => (),
@@ -2521,11 +2520,7 @@ pub struct TLMediaNodeAudio {
 
 impl TLMediaNodeAudio {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let is_narration = xml_node
-            .attributes
-            .get("isNarration")
-            .map(parse_xml_bool)
-            .transpose()?;
+        let is_narration = xml_node.attributes.get("isNarration").map(parse_xml_bool).transpose()?;
 
         let common_media_node_data = xml_node
             .child_nodes
@@ -2553,11 +2548,7 @@ pub struct TLMediaNodeVideo {
 
 impl TLMediaNodeVideo {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let fullscreen = xml_node
-            .attributes
-            .get("fullScrn")
-            .map(parse_xml_bool)
-            .transpose()?;
+        let fullscreen = xml_node.attributes.get("fullScrn").map(parse_xml_bool).transpose()?;
 
         let common_media_node_data = xml_node
             .child_nodes
@@ -3710,12 +3701,20 @@ impl TLCommonTimeNodeData {
                     .iter()
                     .try_fold(instance, |mut instance, child_node| {
                         match child_node.local_name() {
-                            "stCondLst" => instance.start_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
-                            "endCondLst" => instance.end_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
+                            "stCondLst" => {
+                                instance.start_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?)
+                            }
+                            "endCondLst" => {
+                                instance.end_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?)
+                            }
                             "endSync" => instance.end_sync = Some(TLTimeCondition::from_xml_element(child_node)?),
                             "iterate" => instance.iterate = Some(TLIterateData::from_xml_element(child_node)?),
-                            "childTnLst" => instance.child_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
-                            "subTnLst" => instance.sub_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
+                            "childTnLst" => {
+                                instance.child_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?)
+                            }
+                            "subTnLst" => {
+                                instance.sub_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?)
+                            }
                             _ => (),
                         }
 

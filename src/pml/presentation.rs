@@ -10,9 +10,9 @@ use msoffice_shared::{
     xml::{parse_xml_bool, XmlNode},
 };
 use std::{
+    error::Error,
     io::{Read, Seek},
     str::FromStr,
-    error::Error,
 };
 
 pub type Result<T> = ::std::result::Result<T, Box<dyn Error>>;
@@ -554,7 +554,7 @@ impl EmbeddedFontListEntry {
                         .get("r:id")
                         .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
                         .clone();
-                        bold_italic = Some(id);
+                    bold_italic = Some(id);
                 }
                 _ => (),
             }
@@ -577,18 +577,17 @@ pub struct SlideRelationshipList(pub Vec<RelationshipId>);
 
 impl SlideRelationshipList {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let relationship_ids = xml_node
-            .child_nodes
-            .iter()
-            .filter(|child_node| child_node.local_name() == "sld")
-            .map(|child_node| {
-                child_node
-                    .attributes
-                    .get("r:id")
-                    .cloned()
-                    .ok_or_else(|| Box::<dyn Error>::from(MissingAttributeError::new(child_node.name.clone(), "r:id")))
-            })
-            .collect::<Result<Vec<_>>>()?;
+        let relationship_ids =
+            xml_node
+                .child_nodes
+                .iter()
+                .filter(|child_node| child_node.local_name() == "sld")
+                .map(|child_node| {
+                    child_node.attributes.get("r:id").cloned().ok_or_else(|| {
+                        Box::<dyn Error>::from(MissingAttributeError::new(child_node.name.clone(), "r:id"))
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
 
         Ok(Self(relationship_ids))
     }
@@ -1215,7 +1214,9 @@ impl Presentation {
                                 instance.handout_master_id = child_node
                                     .child_nodes
                                     .iter()
-                                    .find(|handout_master_id_node| handout_master_id_node.local_name() == "handoutMasterId")
+                                    .find(|handout_master_id_node| {
+                                        handout_master_id_node.local_name() == "handoutMasterId"
+                                    })
                                     .map(HandoutMasterIdListEntry::from_xml_element)
                                     .transpose()?;
                             }
@@ -1255,10 +1256,13 @@ impl Presentation {
                                     .collect::<Result<Vec<_>>>()?;
                             }
                             "photoAlbum" => instance.photo_album = Some(PhotoAlbum::from_xml_element(child_node)?),
-                            "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
+                            "custDataLst" => {
+                                instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?)
+                            }
                             "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
                             "defaultTextStyle" => {
-                                instance.default_text_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
+                                instance.default_text_style =
+                                    Some(Box::new(TextListStyle::from_xml_element(child_node)?))
                             }
                             "modifyVerifier" => {
                                 instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))
