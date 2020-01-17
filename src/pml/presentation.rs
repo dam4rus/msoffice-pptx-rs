@@ -12,9 +12,10 @@ use msoffice_shared::{
 use std::{
     io::{Read, Seek},
     str::FromStr,
+    error::Error,
 };
 
-pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn Error>>;
 
 /// This simple type specifies the allowed numbering for the slide identifier.
 ///
@@ -176,31 +177,32 @@ pub struct CustomerDataList {
 
 impl CustomerDataList {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut customer_data_list = Vec::new();
-        let mut tags = None;
-
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "custData" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    customer_data_list.push(id_attr.clone());
+        xml_node
+            .child_nodes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, child_node| {
+                match child_node.local_name() {
+                    "custData" => {
+                        let id = child_node
+                            .attributes
+                            .get("r:id")
+                            .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                            .clone();
+                        instance.customer_data_list.push(id);
+                    }
+                    "tags" => {
+                        let id = child_node
+                            .attributes
+                            .get("r:id")
+                            .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                            .clone();
+                        instance.tags = Some(id);
+                    }
+                    _ => (),
                 }
-                "tags" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    tags = Some(id_attr.clone());
-                }
-                _ => (),
-            }
-        }
 
-        Ok(Self {
-            customer_data_list,
-            tags,
-        })
+                Ok(instance)
+            })
     }
 }
 
@@ -317,6 +319,22 @@ impl SlideLayoutIdListEntry {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct SlideLayoutIdList(pub Vec<SlideLayoutIdListEntry>);
+
+impl SlideLayoutIdList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let id_list = xml_node
+            .child_nodes
+            .iter()
+            .filter(|child_node| child_node.local_name() == "sldLayoutId")
+            .map(SlideLayoutIdListEntry::from_xml_element)
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self(id_list))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct SlideMasterIdListEntry {
     /// Specifies the slide master identifier that is to contain a value that is unique throughout
@@ -358,13 +376,13 @@ pub struct NotesMasterIdListEntry {
 
 impl NotesMasterIdListEntry {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let r_id_attr = xml_node
-            .attribute("r:id")
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
+        let relationship_id = xml_node
+            .attributes
+            .get("r:id")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?
+            .clone();
 
-        Ok(Self {
-            relationship_id: r_id_attr.clone(),
-        })
+        Ok(Self { relationship_id })
     }
 }
 
@@ -378,13 +396,13 @@ pub struct HandoutMasterIdListEntry {
 
 impl HandoutMasterIdListEntry {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let r_id_attr = xml_node
-            .attribute("r:id")
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
+        let relationship_id = xml_node
+            .attributes
+            .get("r:id")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?
+            .clone();
 
-        Ok(Self {
-            relationship_id: r_id_attr.clone(),
-        })
+        Ok(Self { relationship_id })
     }
 }
 
@@ -507,28 +525,36 @@ impl EmbeddedFontListEntry {
             match child_node.local_name() {
                 "font" => font = Some(TextFont::from_xml_element(child_node)?),
                 "regular" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    regular = Some(id_attr.clone());
+                    let id = child_node
+                        .attributes
+                        .get("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                        .clone();
+                    regular = Some(id);
                 }
                 "bold" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    bold = Some(id_attr.clone());
+                    let id = child_node
+                        .attributes
+                        .get("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                        .clone();
+                    bold = Some(id);
                 }
                 "italic" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    italic = Some(id_attr.clone());
+                    let id = child_node
+                        .attributes
+                        .get("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                        .clone();
+                    italic = Some(id);
                 }
                 "boldItalic" => {
-                    let id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    bold_italic = Some(id_attr.clone());
+                    let id = child_node
+                        .attributes
+                        .get("r:id")
+                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                        .clone();
+                        bold_italic = Some(id);
                 }
                 _ => (),
             }
@@ -546,6 +572,28 @@ impl EmbeddedFontListEntry {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct SlideRelationshipList(pub Vec<RelationshipId>);
+
+impl SlideRelationshipList {
+    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        let relationship_ids = xml_node
+            .child_nodes
+            .iter()
+            .filter(|child_node| child_node.local_name() == "sld")
+            .map(|child_node| {
+                child_node
+                    .attributes
+                    .get("r:id")
+                    .cloned()
+                    .ok_or_else(|| Box::<dyn Error>::from(MissingAttributeError::new(child_node.name.clone(), "r:id")))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self(relationship_ids))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CustomShow {
     /// Specifies a name for the custom show.
@@ -553,7 +601,7 @@ pub struct CustomShow {
     /// Specifies the identification number for this custom show. This should be unique among
     /// all the custom shows within the corresponding presentation.
     pub id: u32,
-    pub slides: Vec<RelationshipId>,
+    pub slides: SlideRelationshipList,
 }
 
 impl CustomShow {
@@ -569,21 +617,15 @@ impl CustomShow {
             }
         }
 
-        let mut slides = Vec::new();
-
-        for child_node in &xml_node.child_nodes {
-            if child_node.local_name() == "sldLst" {
-                for slide_node in &child_node.child_nodes {
-                    let id_attr = slide_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(slide_node.name.clone(), "r:id"))?;
-                    slides.push(id_attr.clone());
-                }
-            }
-        }
-
         let name = name.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "name"))?;
         let id = id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "id"))?;
+
+        let slides = xml_node
+            .child_nodes
+            .iter()
+            .find(|child_node| child_node.local_name() == "sldLst")
+            .ok_or_else(|| Box::<dyn Error>::from(MissingChildNodeError::new(xml_node.name.clone(), "sldLst")))
+            .and_then(SlideRelationshipList::from_xml_element)?;
 
         Ok(Self { name, id, slides })
     }
@@ -613,19 +655,20 @@ pub struct PhotoAlbum {
 
 impl PhotoAlbum {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "bw" => instance.black_and_white = Some(parse_xml_bool(value)?),
+                    "showCaptions" => instance.show_captions = Some(parse_xml_bool(value)?),
+                    "layout" => instance.layout = Some(value.parse()?),
+                    "frame" => instance.frame = Some(value.parse()?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "bw" => instance.black_and_white = Some(parse_xml_bool(value)?),
-                "showCaptions" => instance.show_captions = Some(parse_xml_bool(value)?),
-                "layout" => instance.layout = Some(value.parse()?),
-                "frame" => instance.frame = Some(value.parse()?),
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                Ok(instance)
+            })
     }
 }
 
@@ -1122,91 +1165,109 @@ impl Presentation {
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "serverZoom" => instance.server_zoom = Some(value.parse()?),
+                    "firstSlideNum" => instance.first_slide_num = Some(value.parse()?),
+                    "showSpecialPlsOnTitleSld" => {
+                        instance.show_special_placeholders_on_title_slide = Some(parse_xml_bool(value)?);
+                    }
+                    "rtl" => instance.rtl = Some(parse_xml_bool(value)?),
+                    "removePersonalInfoOnSave" => instance.remove_personal_info_on_save = Some(parse_xml_bool(value)?),
+                    "compatMode" => instance.compatibility_mode = Some(parse_xml_bool(value)?),
+                    "strictFirstAndLastChars" => instance.strict_first_and_last_chars = Some(parse_xml_bool(value)?),
+                    "embedTrueTypeFonts" => instance.embed_true_type_fonts = Some(parse_xml_bool(value)?),
+                    "saveSubsetFonts" => instance.save_subset_fonts = Some(parse_xml_bool(value)?),
+                    "autoCompressPictures" => instance.auto_compress_pictures = Some(parse_xml_bool(value)?),
+                    "bookmarkIdSeed" => instance.bookmark_id_seed = Some(value.parse()?),
+                    "conformance" => instance.conformance = Some(value.parse()?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "serverZoom" => instance.server_zoom = Some(value.parse()?),
-                "firstSlideNum" => instance.first_slide_num = Some(value.parse()?),
-                "showSpecialPlsOnTitleSld" => {
-                    instance.show_special_placeholders_on_title_slide = Some(parse_xml_bool(value)?);
-                }
-                "rtl" => instance.rtl = Some(parse_xml_bool(value)?),
-                "removePersonalInfoOnSave" => instance.remove_personal_info_on_save = Some(parse_xml_bool(value)?),
-                "compatMode" => instance.compatibility_mode = Some(parse_xml_bool(value)?),
-                "strictFirstAndLastChars" => instance.strict_first_and_last_chars = Some(parse_xml_bool(value)?),
-                "embedTrueTypeFonts" => instance.embed_true_type_fonts = Some(parse_xml_bool(value)?),
-                "saveSubsetFonts" => instance.save_subset_fonts = Some(parse_xml_bool(value)?),
-                "autoCompressPictures" => instance.auto_compress_pictures = Some(parse_xml_bool(value)?),
-                "bookmarkIdSeed" => instance.bookmark_id_seed = Some(value.parse()?),
-                "conformance" => instance.conformance = Some(value.parse()?),
-                _ => (),
-            }
-        }
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                xml_node
+                    .child_nodes
+                    .iter()
+                    .try_fold(instance, |mut instance, child_node| {
+                        match child_node.local_name() {
+                            "sldMasterIdLst" => {
+                                instance.slide_master_id_list = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .filter(|sld_master_id_node| sld_master_id_node.local_name() == "sldMasterId")
+                                    .map(SlideMasterIdListEntry::from_xml_element)
+                                    .collect::<Result<Vec<_>>>()?;
+                            }
+                            "notesMasterIdLst" => {
+                                instance.notes_master_id = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .find(|notes_master_id_node| notes_master_id_node.local_name() == "notesMasterId")
+                                    .map(NotesMasterIdListEntry::from_xml_element)
+                                    .transpose()?;
+                            }
+                            "handoutMasterIdLst" => {
+                                instance.handout_master_id = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .find(|handout_master_id_node| handout_master_id_node.local_name() == "handoutMasterId")
+                                    .map(HandoutMasterIdListEntry::from_xml_element)
+                                    .transpose()?;
+                            }
+                            "sldIdLst" => {
+                                instance.slide_id_list = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .filter(|slide_id_node| slide_id_node.local_name() == "sldId")
+                                    .map(SlideIdListEntry::from_xml_element)
+                                    .collect::<Result<Vec<_>>>()?;
+                            }
+                            "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
+                            "notesSz" => instance.notes_size = Some(PositiveSize2D::from_xml_element(child_node)?),
+                            "smartTags" => {
+                                let r_id = child_node
+                                    .attributes
+                                    .get("r:id")
+                                    .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?
+                                    .clone();
 
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "sldMasterIdLst" => {
-                    for slide_master_id_node in &child_node.child_nodes {
-                        instance
-                            .slide_master_id_list
-                            .push(SlideMasterIdListEntry::from_xml_element(slide_master_id_node)?);
-                    }
-                }
-                "notesMasterIdLst" => {
-                    if let Some(notes_master_id_node) = child_node.child_nodes.get(0) {
-                        instance.notes_master_id =
-                            Some(NotesMasterIdListEntry::from_xml_element(notes_master_id_node)?);
-                    }
-                }
-                "handoutMasterIdLst" => {
-                    if let Some(handout_master_id_node) = child_node.child_nodes.get(0) {
-                        instance.handout_master_id =
-                            Some(HandoutMasterIdListEntry::from_xml_element(handout_master_id_node)?);
-                    }
-                }
-                "sldIdLst" => {
-                    for slide_id_node in &child_node.child_nodes {
-                        instance
-                            .slide_id_list
-                            .push(SlideIdListEntry::from_xml_element(slide_id_node)?);
-                    }
-                }
-                "sldSz" => instance.slide_size = Some(SlideSize::from_xml_element(child_node)?),
-                "notesSz" => instance.notes_size = Some(PositiveSize2D::from_xml_element(child_node)?),
-                "smartTags" => {
-                    let r_id_attr = child_node
-                        .attribute("r:id")
-                        .ok_or_else(|| MissingAttributeError::new(child_node.name.clone(), "r:id"))?;
-                    instance.smart_tags = Some(r_id_attr.clone());
-                }
-                "embeddedFontLst" => {
-                    for embedded_font_node in &child_node.child_nodes {
-                        instance
-                            .embedded_font_list
-                            .push(EmbeddedFontListEntry::from_xml_element(embedded_font_node)?);
-                    }
-                }
-                "custShowLst" => {
-                    for custom_show_node in &child_node.child_nodes {
-                        instance
-                            .custom_show_list
-                            .push(CustomShow::from_xml_element(custom_show_node)?);
-                    }
-                }
-                "photoAlbum" => instance.photo_album = Some(PhotoAlbum::from_xml_element(child_node)?),
-                "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
-                "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
-                "defaultTextStyle" => {
-                    instance.default_text_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
-                }
-                "modifyVerifier" => {
-                    instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))
-                }
-                _ => (),
-            }
-        }
+                                instance.smart_tags = Some(r_id);
+                            }
+                            "embeddedFontLst" => {
+                                instance.embedded_font_list = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .filter(|embedded_font_node| embedded_font_node.local_name() == "embeddedFont")
+                                    .map(EmbeddedFontListEntry::from_xml_element)
+                                    .collect::<Result<Vec<_>>>()?;
+                            }
+                            "custShowLst" => {
+                                instance.custom_show_list = child_node
+                                    .child_nodes
+                                    .iter()
+                                    .filter(|cust_show_node| cust_show_node.local_name() == "custShow")
+                                    .map(CustomShow::from_xml_element)
+                                    .collect::<Result<Vec<_>>>()?;
+                            }
+                            "photoAlbum" => instance.photo_album = Some(PhotoAlbum::from_xml_element(child_node)?),
+                            "custDataLst" => instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
+                            "kinsoku" => instance.kinsoku = Some(Box::new(Kinsoku::from_xml_element(child_node)?)),
+                            "defaultTextStyle" => {
+                                instance.default_text_style = Some(Box::new(TextListStyle::from_xml_element(child_node)?))
+                            }
+                            "modifyVerifier" => {
+                                instance.modify_verifier = Some(Box::new(ModifyVerifier::from_xml_element(child_node)?))
+                            }
+                            _ => (),
+                        }
 
-        Ok(instance)
+                        Ok(instance)
+                    })
+            })
     }
 }

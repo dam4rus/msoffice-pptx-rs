@@ -19,15 +19,15 @@ use msoffice_shared::{
     xml::{parse_xml_bool, XmlNode},
     xsdtypes::{XsdChoice, XsdType},
 };
-use std::{io::Read, str::FromStr};
+use std::{io::Read, str::FromStr, error::Error};
 use zip::read::ZipFile;
 
 use super::{
     animation::{Build, TimeNodeGroup},
-    presentation::{CustomerDataList, SlideLayoutIdListEntry},
+    presentation::{CustomerDataList, SlideLayoutIdList},
 };
 
-pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn Error>>;
 
 /// This simple type facilitates the storing of the content type a placeholder should contain.
 #[derive(Debug, Clone, Copy, PartialEq, EnumString)]
@@ -360,7 +360,7 @@ pub struct SlideMaster {
     /// The slide master has relationship identifiers that it uses internally for determining the slide layouts that should be
     /// used. Then, to resolve what these slide layouts should be the sldLayoutId elements in the sldLayoutIdLst are
     /// utilized.
-    pub slide_layout_id_list: Option<Vec<SlideLayoutIdListEntry>>,
+    pub slide_layout_id_list: Option<SlideLayoutIdList>,
     /// This element specifies the kind of slide transition that should be used to transition to the current slide from the
     /// previous slide. That is, the transition information is stored on the slide that appears after the transition is
     /// complete.
@@ -384,16 +384,16 @@ impl SlideMaster {
     pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
-        let xml_node = XmlNode::from_str(xml_string.as_str())?;
 
-        Self::from_xml_element(&xml_node)
+        Self::from_xml_element(&XmlNode::from_str(xml_string.as_str())?)
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let preserve = match xml_node.attribute("preserve") {
-            Some(val) => Some(parse_xml_bool(val)?),
-            None => None,
-        };
+        let preserve = xml_node
+            .attributes
+            .get("preserve")
+            .map(parse_xml_bool)
+            .transpose()?;
 
         let mut common_slide_data = None;
         let mut color_mapping = None;
@@ -407,13 +407,7 @@ impl SlideMaster {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMap" => color_mapping = Some(Box::new(ColorMapping::from_xml_element(child_node)?)),
-                "sldLayoutIdLst" => {
-                    let mut vec = Vec::new();
-                    for slide_layout_id_node in &child_node.child_nodes {
-                        vec.push(SlideLayoutIdListEntry::from_xml_element(slide_layout_id_node)?);
-                    }
-                    slide_layout_id_list = Some(vec);
-                }
+                "sldLayoutIdLst" => slide_layout_id_list = Some(SlideLayoutIdList::from_xml_element(child_node)?),
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
                 "hf" => header_footer = Some(HeaderFooter::from_xml_element(child_node)?),
@@ -489,9 +483,8 @@ impl SlideLayout {
     pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
-        let xml_node = XmlNode::from_str(xml_string.as_str())?;
 
-        Self::from_xml_element(&xml_node)
+        Self::from_xml_element(&XmlNode::from_str(xml_string.as_str())?)
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
@@ -524,10 +517,13 @@ impl SlideLayout {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
-                    let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
-                        MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
-                    })?;
-                    color_mapping_override = Some(ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(child_node
+                        .child_nodes
+                        .iter()
+                        .find_map(ColorMappingOverride::try_from_xml_element)
+                        .transpose()?
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?
+                    );
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -609,9 +605,8 @@ impl Slide {
     pub fn from_zip_file(zip_file: &mut ZipFile<'_>) -> Result<Self> {
         let mut xml_string = String::new();
         zip_file.read_to_string(&mut xml_string)?;
-        let xml_node = XmlNode::from_str(xml_string.as_str())?;
 
-        Self::from_xml_element(&xml_node)
+        Self::from_xml_element(&XmlNode::from_str(xml_string.as_str())?)
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
@@ -637,10 +632,13 @@ impl Slide {
             match child_node.local_name() {
                 "cSld" => common_slide_data = Some(Box::new(CommonSlideData::from_xml_element(child_node)?)),
                 "clrMapOvr" => {
-                    let clr_map_node = child_node.child_nodes.get(0).ok_or_else(|| {
-                        MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping")
-                    })?;
-                    color_mapping_override = Some(ColorMappingOverride::from_xml_element(clr_map_node)?);
+                    color_mapping_override = Some(child_node
+                        .child_nodes
+                        .iter()
+                        .find_map(ColorMappingOverride::try_from_xml_element)
+                        .transpose()?
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "masterClrMapping|overrideClrMapping"))?
+                    );
                 }
                 "transition" => transition = Some(Box::new(SlideTransition::from_xml_element(child_node)?)),
                 "timing" => timing = Some(SlideTiming::from_xml_element(child_node)?),
@@ -677,10 +675,11 @@ pub struct BackgroundProperties {
 
 impl BackgroundProperties {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let shade_to_title = match xml_node.attribute("shadeToTitle") {
-            Some(val) => Some(parse_xml_bool(val)?),
-            None => None,
-        };
+        let shade_to_title = xml_node
+            .attributes
+            .get("shadeToTitle")
+            .map(parse_xml_bool)
+            .transpose()?;
 
         let mut fill = None;
         let mut effect = None;
@@ -738,15 +737,8 @@ pub enum BackgroundGroup {
     Reference(StyleMatrixReference),
 }
 
-impl BackgroundGroup {
-    pub fn is_choice_member(name: &str) -> bool {
-        match name {
-            "bgPr" | "bgRef" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for BackgroundGroup {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bgPr" => Ok(BackgroundGroup::Properties(BackgroundProperties::from_xml_element(
                 xml_node,
@@ -755,6 +747,15 @@ impl BackgroundGroup {
                 xml_node,
             )?)),
             _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_Background").into()),
+        }
+    }
+}
+
+impl XsdChoice for BackgroundGroup {
+    fn is_choice_member<T: AsRef<str>>(name: T) -> bool {
+        match name.as_ref() {
+            "bgPr" | "bgRef" => true,
+            _ => false,
         }
     }
 }
@@ -775,16 +776,18 @@ pub struct Background {
 
 impl Background {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let black_and_white_mode = match xml_node.attribute("bwMode") {
-            Some(val) => Some(val.parse()?),
-            None => None,
-        };
+        let black_and_white_mode = xml_node
+            .attributes
+            .get("bwMode")
+            .map(|val| val.parse())
+            .transpose()?;
 
-        let background_node = xml_node
+        let background = xml_node
             .child_nodes
-            .get(0)
+            .iter()
+            .find_map(BackgroundGroup::try_from_xml_element)
+            .transpose()?
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Background"))?;
-        let background = BackgroundGroup::from_xml_element(background_node)?;
 
         Ok(Self {
             background,
@@ -810,20 +813,21 @@ pub struct Placeholder {
 
 impl Placeholder {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "type" => instance.placeholder_type = Some(value.parse()?),
+                    "orient" => instance.orientation = Some(value.parse()?),
+                    "sz" => instance.size = Some(value.parse()?),
+                    "idx" => instance.index = Some(value.parse()?),
+                    "hasCustomPrompt" => instance.has_custom_prompt = Some(parse_xml_bool(value)?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "type" => instance.placeholder_type = Some(value.parse()?),
-                "orient" => instance.orientation = Some(value.parse()?),
-                "sz" => instance.size = Some(value.parse()?),
-                "idx" => instance.index = Some(value.parse()?),
-                "hasCustomPrompt" => instance.has_custom_prompt = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                Ok(instance)
+            })
     }
 }
 
@@ -848,32 +852,37 @@ pub struct ApplicationNonVisualDrawingProps {
 
 impl ApplicationNonVisualDrawingProps {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "isPhoto" => instance.is_photo = Some(parse_xml_bool(value)?),
-                "userDrawn" => instance.is_user_drawn = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
-
-        for child_node in &xml_node.child_nodes {
-            let local_name = child_node.local_name();
-            if Media::is_choice_member(local_name) {
-                instance.media = Some(Media::from_xml_element(child_node)?);
-            } else {
-                match child_node.local_name() {
-                    "ph" => instance.placeholder = Some(Placeholder::from_xml_element(child_node)?),
-                    "custDataLst" => {
-                        instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?)
-                    }
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "isPhoto" => instance.is_photo = Some(parse_xml_bool(value)?),
+                    "userDrawn" => instance.is_user_drawn = Some(parse_xml_bool(value)?),
                     _ => (),
                 }
-            }
-        }
 
-        Ok(instance)
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                xml_node
+                    .child_nodes
+                    .iter()
+                    .try_fold(instance, |mut instance, child_node| {
+                        match child_node.local_name() {
+                            "ph" => instance.placeholder = Some(Placeholder::from_xml_element(child_node)?),
+                            "custDataLst" => {
+                                instance.customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?)
+                            }
+                            local_name if Media::is_choice_member(local_name) => {
+                                instance.media = Some(Media::from_xml_element(child_node)?)
+                            }
+                            _ => (),
+                        }
+
+                        Ok(instance)
+                    })
+            })
     }
 }
 
@@ -1012,18 +1021,8 @@ pub enum ShapeGroup {
     ContentPart(RelationshipId),
 }
 
-impl ShapeGroup {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "sp" | "grpSp" | "graphicFrame" | "cxnSp" | "pic" | "contentPart" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for ShapeGroup {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "sp" => Ok(ShapeGroup::Shape(Box::new(Shape::from_xml_element(xml_node)?))),
             "grpSp" => Ok(ShapeGroup::GroupShape(Box::new(GroupShape::from_xml_element(
@@ -1035,15 +1034,30 @@ impl ShapeGroup {
             "cxnSp" => Ok(ShapeGroup::Connector(Box::new(Connector::from_xml_element(xml_node)?))),
             "pic" => Ok(ShapeGroup::Picture(Box::new(Picture::from_xml_element(xml_node)?))),
             "contentPart" => {
-                let attr = xml_node
-                    .attribute("r:id")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?;
-                Ok(ShapeGroup::ContentPart(attr.clone()))
+                let rel_id = xml_node
+                    .attributes
+                    .get("r:id")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "r:id"))?
+                    .clone();
+
+                Ok(ShapeGroup::ContentPart(rel_id))
             }
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
                 "EG_ShapeGroup",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for ShapeGroup {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "sp" | "grpSp" | "graphicFrame" | "cxnSp" | "pic" | "contentPart" => true,
+            _ => false,
         }
     }
 }
@@ -1098,10 +1112,11 @@ pub struct Shape {
 
 impl Shape {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let use_bg_fill = match xml_node.attribute("useBgFill") {
-            Some(val) => Some(parse_xml_bool(val)?),
-            None => None,
-        };
+        let use_bg_fill = xml_node
+            .attributes
+            .get("useBgFill")
+            .map(parse_xml_bool)
+            .transpose()?;
 
         let mut non_visual_props = None;
         let mut shape_props = None;
@@ -1206,17 +1221,15 @@ impl GroupShape {
         let mut shape_array = Vec::new();
 
         for child_node in &xml_node.child_nodes {
-            let child_local_name = child_node.local_name();
-            if ShapeGroup::is_choice_member(child_local_name) {
-                shape_array.push(ShapeGroup::from_xml_element(child_node)?);
-            } else {
-                match child_local_name {
-                    "nvGrpSpPr" => {
-                        non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
-                    }
-                    "grpSpPr" => group_shape_props = Some(GroupShapeProperties::from_xml_element(child_node)?),
-                    _ => (),
+            match child_node.local_name() {
+                "nvGrpSpPr" => {
+                    non_visual_props = Some(Box::new(GroupShapeNonVisual::from_xml_element(child_node)?))
                 }
+                "grpSpPr" => group_shape_props = Some(GroupShapeProperties::from_xml_element(child_node)?),
+                local_name if ShapeGroup::is_choice_member(local_name) => {
+                    shape_array.push(ShapeGroup::from_xml_element(child_node)?)
+                }
+                _ => (),
             }
         }
 
@@ -1263,6 +1276,7 @@ impl GroupShapeNonVisual {
         let group_drawing_props =
             group_drawing_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cNvGrpSpPr"))?;
         let app_props = app_props.ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "nvPr"))?;
+
         Ok(Self {
             drawing_props,
             group_drawing_props,
@@ -1295,10 +1309,11 @@ pub struct GraphicalObjectFrame {
 
 impl GraphicalObjectFrame {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let black_white_mode = match xml_node.attribute("bwMode") {
-            Some(attr) => Some(attr.parse()?),
-            None => None,
-        };
+        let black_white_mode = xml_node
+            .attributes
+            .get("bwMode")
+            .map(|value| value.parse())
+            .transpose()?;
 
         let mut non_visual_props = None;
         let mut transform = None;
@@ -1675,7 +1690,7 @@ pub struct CommonSlideData {
 
 impl CommonSlideData {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let name = xml_node.attribute("name").cloned();
+        let name = xml_node.attributes.get("name").cloned();
         let mut background = None;
         let mut shape_tree = None;
         let mut customer_data_list = None;
@@ -1687,12 +1702,13 @@ impl CommonSlideData {
                 "spTree" => shape_tree = Some(Box::new(GroupShape::from_xml_element(child_node)?)),
                 "custDataList" => customer_data_list = Some(CustomerDataList::from_xml_element(child_node)?),
                 "controls" => {
-                    let mut vec = Vec::new();
-                    for control_node in &child_node.child_nodes {
-                        vec.push(Control::from_xml_element(control_node)?);
-                    }
-
-                    control_list = Some(vec);
+                    control_list = Some(child_node
+                        .child_nodes
+                        .iter()
+                        .filter(|control_node| control_node.local_name() == "control")
+                        .map(Control::from_xml_element)
+                        .collect::<Result<Vec<_>>>()?
+                    );
                 }
                 _ => (),
             }
@@ -1764,10 +1780,11 @@ pub struct OrientationTransition {
 
 impl OrientationTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let direction = match xml_node.attribute("dir") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let direction = xml_node
+            .attributes
+            .get("dir")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { direction })
     }
@@ -1783,10 +1800,11 @@ pub struct EightDirectionTransition {
 
 impl EightDirectionTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let direction = match xml_node.attribute("dir") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let direction = xml_node
+            .attributes
+            .get("dir")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { direction })
     }
@@ -1803,10 +1821,11 @@ pub struct OptionalBlackTransition {
 
 impl OptionalBlackTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let through_black = match xml_node.attribute("thruBlk") {
-            Some(value) => Some(parse_xml_bool(value)?),
-            None => None,
-        };
+        let through_black = xml_node
+            .attributes
+            .get("thruBlk")
+            .map(parse_xml_bool)
+            .transpose()?;
 
         Ok(Self { through_black })
     }
@@ -1822,10 +1841,11 @@ pub struct SideDirectionTransition {
 
 impl SideDirectionTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let direction = match xml_node.attribute("dir") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let direction = xml_node
+            .attributes
+            .get("dir")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { direction })
     }
@@ -1845,17 +1865,18 @@ pub struct SplitTransition {
 
 impl SplitTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "orient" => instance.orientation = Some(value.parse()?),
+                    "dir" => instance.direction = Some(value.parse()?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "orient" => instance.orientation = Some(value.parse()?),
-                "dir" => instance.direction = Some(value.parse()?),
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                Ok(instance)
+            })
     }
 }
 
@@ -1869,10 +1890,11 @@ pub struct CornerDirectionTransition {
 
 impl CornerDirectionTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let direction = match xml_node.attribute("dir") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let direction = xml_node
+            .attributes
+            .get("dir")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { direction })
     }
@@ -1888,10 +1910,11 @@ pub struct WheelTransition {
 
 impl WheelTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let spokes = match xml_node.attribute("spokes") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let spokes = xml_node
+            .attributes
+            .get("spokes")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { spokes })
     }
@@ -1907,10 +1930,11 @@ pub struct InOutTransition {
 
 impl InOutTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let direction = match xml_node.attribute("dir") {
-            Some(value) => Some(value.parse()?),
-            None => None,
-        };
+        let direction = xml_node
+            .attributes
+            .get("dir")
+            .map(|value| value.parse())
+            .transpose()?;
 
         Ok(Self { direction })
     }
@@ -2182,20 +2206,8 @@ pub enum SlideTransitionGroup {
     Zoom(InOutTransition),
 }
 
-impl SlideTransitionGroup {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "blinds" | "checker" | "circle" | "dissolve" | "comb" | "cover" | "cut" | "diamond" | "fade"
-            | "newsflash" | "plus" | "pull" | "push" | "random" | "randomBar" | "split" | "strips" | "wedge"
-            | "wheel" | "wipe" | "zoom" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for SlideTransitionGroup {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "blinds" => Ok(SlideTransitionGroup::Blinds(OrientationTransition::from_xml_element(
                 xml_node,
@@ -2252,6 +2264,20 @@ impl SlideTransitionGroup {
     }
 }
 
+impl XsdChoice for SlideTransitionGroup {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "blinds" | "checker" | "circle" | "dissolve" | "comb" | "cover" | "cut" | "diamond" | "fade"
+            | "newsflash" | "plus" | "pull" | "push" | "random" | "randomBar" | "split" | "strips" | "wedge"
+            | "wheel" | "wipe" | "zoom" => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransitionStartSoundAction {
     /// This attribute specifies if the sound loops until the next sound event occurs in slideshow.
@@ -2277,16 +2303,19 @@ pub struct TransitionStartSoundAction {
 
 impl TransitionStartSoundAction {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let is_looping = match xml_node.attribute("loop") {
-            Some(value) => Some(parse_xml_bool(value)?),
-            None => None,
-        };
+        let is_looping = xml_node
+            .attributes
+            .get("loop")
+            .map(parse_xml_bool)
+            .transpose()?;
 
-        let sound_file_node = xml_node
+        let sound_file = xml_node
             .child_nodes
-            .get(0)
+            .iter()
+            .find(|child_node| child_node.local_name() == "snd")
+            .map(EmbeddedWAVAudioFile::from_xml_element)
+            .transpose()?
             .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "snd"))?;
-        let sound_file = EmbeddedWAVAudioFile::from_xml_element(sound_file_node)?;
 
         Ok(Self { is_looping, sound_file })
     }
@@ -2322,18 +2351,8 @@ pub enum TransitionSoundAction {
     EndSound,
 }
 
-impl TransitionSoundAction {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "stSnd" | "endSnd" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for TransitionSoundAction {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "stSnd" => Ok(TransitionSoundAction::StartSound(
                 TransitionStartSoundAction::from_xml_element(xml_node)?,
@@ -2343,6 +2362,15 @@ impl TransitionSoundAction {
                 xml_node.name.clone(),
                 "CT_TransitionSoundAction",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TransitionSoundAction {
+    fn is_choice_member<T: AsRef<str>>(name: T) -> bool {
+        match name.as_ref() {
+            "stSnd" | "endSnd" => true,
+            _ => false,
         }
     }
 }
@@ -2385,27 +2413,37 @@ pub struct SlideTransition {
 
 impl SlideTransition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "spd" => instance.speed = Some(value.parse()?),
+                    "advClick" => instance.advance_on_click = Some(value.parse()?),
+                    "advTm" => instance.advance_on_time = Some(value.parse()?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "spd" => instance.speed = Some(value.parse()?),
-                "advClick" => instance.advance_on_click = Some(value.parse()?),
-                "advTm" => instance.advance_on_time = Some(value.parse()?),
-                _ => (),
-            }
-        }
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                xml_node
+                    .child_nodes
+                    .iter()
+                    .try_fold(instance, |mut instance, child_node| {
+                        match child_node.local_name() {
+                            "sndAc" => {
+                                instance.sound_action = Some(TransitionSoundAction::from_xml_element(child_node)?)
+                            }
+                            local_name if SlideTransitionGroup::is_choice_member(local_name) => {
+                                instance.transition_type = Some(SlideTransitionGroup::from_xml_element(child_node)?)
+                            }
+                            _ => (),
+                        }
 
-        for child_node in &xml_node.child_nodes {
-            let child_local_name = child_node.local_name();
-            if SlideTransitionGroup::is_choice_member(child_local_name) {
-                instance.transition_type = Some(SlideTransitionGroup::from_xml_element(child_node)?);
-            } else if child_local_name == "sndAc" {
-                instance.sound_action = Some(TransitionSoundAction::from_xml_element(child_node)?);
-            }
-        }
-
-        Ok(instance)
+                        Ok(instance)
+                    })
+            })
     }
 }
 
@@ -2443,37 +2481,44 @@ pub struct SlideTiming {
 
 impl SlideTiming {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .child_nodes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, child_node| {
+                match child_node.local_name() {
+                    "tnLst" => {
+                        let vec = child_node
+                            .child_nodes
+                            .iter()
+                            .filter(|tn_node| tn_node.local_name() == "tn")
+                            .map(TimeNodeGroup::from_xml_element)
+                            .collect::<Result<Vec<_>>>()?;
 
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "tnLst" => {
-                    let mut vec = Vec::new();
-                    for time_node in &child_node.child_nodes {
-                        vec.push(TimeNodeGroup::from_xml_element(time_node)?);
+                        instance.time_node_list = if !vec.is_empty() {
+                            Some(vec)
+                        } else {
+                            return Err(Box::<dyn Error>::from(MissingChildNodeError::new(child_node.name.clone(), "tn")));
+                        }
                     }
+                    "bldLst" => {
+                        let vec = child_node
+                            .child_nodes
+                            .iter()
+                            .filter(|bld_node| bld_node.local_name() == "bld")
+                            .map(Build::from_xml_element)
+                            .collect::<Result<Vec<_>>>()?;
 
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "tn")));
+                        instance.build_list = if !vec.is_empty() {
+                            Some(vec)
+                        } else {
+                            return Err(Box::<dyn Error>::from(MissingChildNodeError::new(child_node.name.clone(), "bld")));
+                        }
                     }
-
-                    instance.time_node_list = Some(vec);
+                    _ => (),
                 }
-                "bldLst" => {
-                    let mut vec = Vec::new();
-                    for build_node in &child_node.child_nodes {
-                        vec.push(Build::from_xml_element(build_node)?);
-                    }
 
-                    if vec.is_empty() {
-                        return Err(Box::new(MissingChildNodeError::new(child_node.name.clone(), "bld")));
-                    }
-                }
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                Ok(instance)
+            })
     }
 }
 
@@ -2495,19 +2540,20 @@ pub struct HeaderFooter {
 
 impl HeaderFooter {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "sldNum" => instance.slide_number_enabled = Some(parse_xml_bool(value)?),
+                    "hdr" => instance.header_enabled = Some(parse_xml_bool(value)?),
+                    "ftr" => instance.footer_enabled = Some(parse_xml_bool(value)?),
+                    "dt" => instance.date_time_enabled = Some(parse_xml_bool(value)?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "sldNum" => instance.slide_number_enabled = Some(parse_xml_bool(value)?),
-                "hdr" => instance.header_enabled = Some(parse_xml_bool(value)?),
-                "ftr" => instance.footer_enabled = Some(parse_xml_bool(value)?),
-                "dt" => instance.date_time_enabled = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                Ok(instance)
+            })
     }
 }
 
@@ -2525,11 +2571,13 @@ impl Control {
             instance.ole_attributes.try_attribute_parse(attr, value)?;
         }
 
-        for child_node in &xml_node.child_nodes {
-            if child_node.local_name() == "pic" {
-                instance.picture = Some(Box::new(Picture::from_xml_element(child_node)?));
-            }
-        }
+        instance.picture = xml_node
+            .child_nodes
+            .iter()
+            .find(|child_node| child_node.local_name() == "pic")
+            .map(Picture::from_xml_element)
+            .transpose()?
+            .map(Box::new);
 
         Ok(instance)
     }
@@ -2554,9 +2602,7 @@ pub struct OleAttributes {
 }
 
 impl OleAttributes {
-    pub fn try_attribute_parse<T>(&mut self, attr: T, value: T) -> Result<()>
-    where
-        T: AsRef<str>,
+    pub fn try_attribute_parse<T: AsRef<str>>(&mut self, attr: T, value: T) -> Result<()>
     {
         match attr.as_ref() {
             "spid" => self.shape_id = Some(value.as_ref().parse()?),

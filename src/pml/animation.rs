@@ -11,9 +11,13 @@ use msoffice_shared::{
     xml::{parse_xml_bool, XmlNode},
     xsdtypes::{XsdChoice, XsdType},
 };
-use std::str::FromStr;
+use super::util::XmlNodeExt;
+use std::{
+    str::FromStr,
+    error::Error,
+};
 
-pub type Result<T> = ::std::result::Result<T, Box<dyn (::std::error::Error)>>;
+pub type Result<T> = ::std::result::Result<T, Box<dyn Error>>;
 
 /// This simple type defines the position of an object in an ordered list.
 pub type Index = u32;
@@ -1518,9 +1522,10 @@ impl TLGraphicalObjectBuild {
 
         let build_choice = xml_node
             .child_nodes
-            .first()
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLGraphicalObjectBuildChoice").into())
-            .and_then(TLGraphicalObjectBuildChoice::from_xml_element)?;
+            .iter()
+            .find_map(TLGraphicalObjectBuildChoice::try_from_xml_element)
+            .transpose()?
+            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "TLGraphicalObjectBuildChoice"))?;
 
         let shape_id = shape_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
         let group_id = group_id.ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "grpId"))?;
@@ -1571,18 +1576,8 @@ pub enum TLGraphicalObjectBuildChoice {
     BuildSubElements(AnimationGraphicalObjectBuildProperties),
 }
 
-impl TLGraphicalObjectBuildChoice {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "bldAsOne" | "bldSub" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for TLGraphicalObjectBuildChoice {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bldAsOne" => Ok(TLGraphicalObjectBuildChoice::BuildAsOne),
             "bldSub" => Ok(TLGraphicalObjectBuildChoice::BuildSubElements(
@@ -1592,6 +1587,18 @@ impl TLGraphicalObjectBuildChoice {
                 xml_node.name.clone(),
                 "TLGraphicalObjectBuildChoice",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TLGraphicalObjectBuildChoice {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "bldAsOne" | "bldSub" => true,
+            _ => false,
         }
     }
 }
@@ -1890,24 +1897,36 @@ impl TLAnimateColorBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "by" => {
-                    let by_node = child_node.child_nodes.get(0).ok_or_else(|| {
-                        MissingChildNodeError::new(child_node.name.clone(), "TLByAnimateColorTransform")
-                    })?;
-                    by = Some(TLByAnimateColorTransform::from_xml_element(by_node)?);
+                    by = Some(
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find_map(TLByAnimateColorTransform::try_from_xml_element)
+                            .transpose()?
+                            .ok_or_else(|| {
+                                MissingChildNodeError::new(child_node.name.clone(), "TLByAnimateColorTransform")
+                            })?
+                    )
                 }
                 "from" => {
-                    let color_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?;
-                    from = Some(Color::from_xml_element(color_node)?);
+                    from = Some(
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find_map(Color::try_from_xml_element)
+                            .transpose()?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?
+                    )
                 }
                 "to" => {
-                    let color_node = child_node
-                        .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?;
-                    to = Some(Color::from_xml_element(color_node)?);
+                    to = Some(
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find_map(Color::try_from_xml_element)
+                            .transpose()?
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "EG_Color"))?
+                    )
                 }
                 _ => (),
             }
@@ -2027,11 +2046,13 @@ impl TLAnimateEffectBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "progress" => {
-                    let progress_node = child_node
+                    progress = Some(child_node
                         .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?;
-                    progress = Some(TLAnimVariant::from_xml_element(progress_node)?);
+                        .iter()
+                        .find_map(TLAnimVariant::try_from_xml_element)
+                        .transpose()?
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?
+                    )
                 }
                 _ => (),
             }
@@ -2221,11 +2242,13 @@ impl TLAnimateRotationBehavior {
             }
         }
 
-        let common_behavior_data_node = xml_node
+        let common_behavior_data = xml_node
             .child_nodes
-            .get(0)
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cBhvr"))?;
-        let common_behavior_data = Box::new(TLCommonBehaviorData::from_xml_element(common_behavior_data_node)?);
+            .iter()
+            .find(|child_node| child_node.local_name() == "cBhvr")
+            .ok_or_else(|| Box::<dyn Error>::from(MissingChildNodeError::new(xml_node.name.clone(), "cBhvr")))
+            .and_then(TLCommonBehaviorData::from_xml_element)?
+            .into();
 
         Ok(Self {
             by,
@@ -2301,10 +2324,11 @@ pub struct TLAnimateScaleBehavior {
 
 impl TLAnimateScaleBehavior {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let zoom_contents = match xml_node.attribute("zoomContents") {
-            Some(value) => Some(parse_xml_bool(value)?),
-            None => None,
-        };
+        let zoom_contents = xml_node
+            .attributes
+            .get("zoomContents")
+            .map(parse_xml_bool)
+            .transpose()?;
 
         let mut common_behavior_data = None;
         let mut by = None;
@@ -2416,11 +2440,13 @@ impl TLCommandBehavior {
             }
         }
 
-        let common_behavior_data_node = xml_node
+        let common_behavior_data = xml_node
             .child_nodes
-            .get(0)
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cBhvr"))?;
-        let common_behavior_data = Box::new(TLCommonBehaviorData::from_xml_element(common_behavior_data_node)?);
+            .iter()
+            .find(|child_node| child_node.local_name() == "cBhvr")
+            .ok_or_else(|| Box::<dyn Error>::from(MissingChildNodeError::new(xml_node.name.clone(), "cBhvr")))
+            .and_then(TLCommonBehaviorData::from_xml_element)?
+            .into();
 
         Ok(Self {
             command_type,
@@ -2462,11 +2488,13 @@ impl TLSetBehavior {
             match child_node.local_name() {
                 "cBhvr" => common_behavior_data = Some(Box::new(TLCommonBehaviorData::from_xml_element(child_node)?)),
                 "to" => {
-                    let to_node = child_node
+                    to = Some(child_node
                         .child_nodes
-                        .get(0)
-                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?;
-                    to = Some(TLAnimVariant::from_xml_element(to_node)?);
+                        .iter()
+                        .find_map(TLAnimVariant::try_from_xml_element)
+                        .transpose()?
+                        .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "CT_TLAnimVariant"))?
+                    )
                 }
                 _ => (),
             }
@@ -2493,16 +2521,19 @@ pub struct TLMediaNodeAudio {
 
 impl TLMediaNodeAudio {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let is_narration = match xml_node.attribute("isNarration") {
-            Some(value) => Some(parse_xml_bool(value)?),
-            None => None,
-        };
+        let is_narration = xml_node
+            .attributes
+            .get("isNarration")
+            .map(parse_xml_bool)
+            .transpose()?;
 
-        let common_media_node_data_node = xml_node
+        let common_media_node_data = xml_node
             .child_nodes
-            .get(0)
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cMediaNode"))?;
-        let common_media_node_data = Box::new(TLCommonMediaNodeData::from_xml_element(common_media_node_data_node)?);
+            .iter()
+            .find(|child_node| child_node.local_name() == "cMediaNode")
+            .ok_or_else(|| Box::<dyn Error>::from(MissingChildNodeError::new(xml_node.name.clone(), "cMediaNode")))
+            .and_then(TLCommonMediaNodeData::from_xml_element)?
+            .into();
 
         Ok(Self {
             is_narration,
@@ -2522,16 +2553,19 @@ pub struct TLMediaNodeVideo {
 
 impl TLMediaNodeVideo {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let fullscreen = match xml_node.attribute("fullScrn") {
-            Some(value) => Some(parse_xml_bool(value)?),
-            None => None,
-        };
+        let fullscreen = xml_node
+            .attributes
+            .get("fullScrn")
+            .map(parse_xml_bool)
+            .transpose()?;
 
-        let common_media_node_data_node = xml_node
+        let common_media_node_data = xml_node
             .child_nodes
-            .get(0)
-            .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "cMediaNode"))?;
-        let common_media_node_data = Box::new(TLCommonMediaNodeData::from_xml_element(common_media_node_data_node)?);
+            .iter()
+            .find(|child_node| child_node.local_name() == "cMediaNode")
+            .ok_or_else(|| Box::<dyn Error>::from(MissingChildNodeError::new(xml_node.name.clone(), "cMediaNode")))
+            .and_then(TLCommonMediaNodeData::from_xml_element)?
+            .into();
 
         Ok(Self {
             fullscreen,
@@ -2751,30 +2785,35 @@ pub struct TLTimeAnimateValue {
 
 impl TLTimeAnimateValue {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
-
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "tm" => instance.time = Some(value.parse()?),
-                "fmla" => instance.formula = Some(value.clone()),
-                _ => (),
-            }
-        }
-
-        instance.value = xml_node
-            .child_nodes
+        xml_node
+            .attributes
             .iter()
-            .find(|child_node| child_node.local_name() == "val")
-            .map(|child_node| {
-                child_node
-                    .child_nodes
-                    .first()
-                    .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLAnimVariant").into())
-                    .and_then(TLAnimVariant::from_xml_element)
-            })
-            .transpose()?;
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "tm" => instance.time = Some(value.parse()?),
+                    "fmla" => instance.formula = Some(value.clone()),
+                    _ => (),
+                }
 
-        Ok(instance)
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                let value = xml_node
+                    .child_nodes
+                    .iter()
+                    .find(|child_node| child_node.local_name() == "val")
+                    .map(|child_node| {
+                        child_node
+                            .child_nodes
+                            .iter()
+                            .find(|val_node| TLAnimVariant::is_choice_member(val_node.local_name()))
+                            .ok_or_else(|| MissingChildNodeError::new(child_node.name.clone(), "TLAnimVariant").into())
+                            .and_then(TLAnimVariant::from_xml_element)
+                    })
+                    .transpose()?;
+
+                Ok(Self { value, ..instance })
+            })
     }
 }
 
@@ -2851,51 +2890,35 @@ pub enum TLAnimVariant {
     Color(Color),
 }
 
-impl TLAnimVariant {
-    pub fn is_choice_member<T>(name: T) -> bool
+impl XsdType for TLAnimVariant {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "boolVal" => Ok(TLAnimVariant::Bool(parse_xml_bool(xml_node.get_val_attribute()?)?)),
+            "intVal" => Ok(TLAnimVariant::Int(xml_node.get_val_attribute()?.parse()?)),
+            "fltVal" => Ok(TLAnimVariant::Float(xml_node.get_val_attribute()?.parse()?)),
+            "strVal" => Ok(TLAnimVariant::String(xml_node.get_val_attribute()?.clone())),
+            "clrVal" => {
+                let color = xml_node
+                    .child_nodes
+                    .iter()
+                    .find_map(Color::try_from_xml_element)
+                    .transpose()?
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Color"))?;
+                Ok(TLAnimVariant::Color(color))
+            }
+            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TLAnimVariant").into()),
+        }
+    }
+}
+
+impl XsdChoice for TLAnimVariant {
+    fn is_choice_member<T>(name: T) -> bool
     where
         T: AsRef<str>,
     {
         match name.as_ref() {
             "boolVal" | "intVal" | "fltVal" | "strVal" | "clrVal" => true,
             _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        match xml_node.local_name() {
-            "boolVal" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLAnimVariant::Bool(parse_xml_bool(val_attr)?))
-            }
-            "intVal" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLAnimVariant::Int(val_attr.parse()?))
-            }
-            "fltVal" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLAnimVariant::Float(val_attr.parse()?))
-            }
-            "strVal" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLAnimVariant::String(val_attr.clone()))
-            }
-            "clrVal" => {
-                let child_node = xml_node
-                    .child_nodes
-                    .get(0)
-                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "EG_Color"))?;
-                Ok(TLAnimVariant::Color(Color::from_xml_element(child_node)?))
-            }
-            _ => Err(NotGroupMemberError::new(xml_node.name.clone(), "EG_TLAnimVariant").into()),
         }
     }
 }
@@ -2943,44 +2966,43 @@ pub enum TLTimeConditionTriggerGroup {
     RuntimeNode(TLTriggerRuntimeNode),
 }
 
-impl TLTimeConditionTriggerGroup {
-    pub fn is_choice_member<T>(name: T) -> bool
+impl XsdType for TLTimeConditionTriggerGroup {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "tgtEl" => {
+                let target_element = xml_node
+                    .child_nodes
+                    .iter()
+                    .find_map(TLTimeTargetElement::try_from_xml_element)
+                    .transpose()?
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt"))?;
+
+                Ok(TLTimeConditionTriggerGroup::TargetElement(target_element))
+            }
+            "tn" => {
+                let val = xml_node.get_val_attribute()?.parse()?;
+                Ok(TLTimeConditionTriggerGroup::TimeNode(val))
+            }
+            "rtn" => {
+                let val = xml_node.get_val_attribute()?.parse()?;
+                Ok(TLTimeConditionTriggerGroup::RuntimeNode(val))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "EG_TLTimeConditionTriggerGroup",
+            ))),
+        }
+    }
+}
+
+impl XsdChoice for TLTimeConditionTriggerGroup {
+    fn is_choice_member<T>(name: T) -> bool
     where
         T: AsRef<str>,
     {
         match name.as_ref() {
             "tgtEl" | "tn" | "rtn" => true,
             _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        match xml_node.local_name() {
-            "tgtEl" => {
-                let target_element_node = xml_node
-                    .child_nodes
-                    .first()
-                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "sldTgt|sndTgt|spTgt|inkTgt"))?;
-                Ok(TLTimeConditionTriggerGroup::TargetElement(
-                    TLTimeTargetElement::from_xml_element(target_element_node)?,
-                ))
-            }
-            "tn" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLTimeConditionTriggerGroup::TimeNode(val_attr.parse()?))
-            }
-            "rtn" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLTimeConditionTriggerGroup::RuntimeNode(val_attr.parse()?))
-            }
-            _ => Err(Box::new(NotGroupMemberError::new(
-                xml_node.name.clone(),
-                "EG_TLTimeConditionTriggerGroup",
-            ))),
         }
     }
 }
@@ -3059,18 +3081,8 @@ pub enum TLTimeTargetElement {
     InkTarget(TLSubShapeId),
 }
 
-impl TLTimeTargetElement {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "sldTgt" | "sndTgt" | "spTgt" | "inkTgt" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for TLTimeTargetElement {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "sldTgt" => Ok(TLTimeTargetElement::SlideTarget),
             "sndTgt" => Ok(TLTimeTargetElement::SoundTarget(
@@ -3080,16 +3092,30 @@ impl TLTimeTargetElement {
                 TLShapeTargetElement::from_xml_element(xml_node)?,
             )),
             "inkTgt" => {
-                let spid_attr = xml_node
-                    .attribute("spid")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
+                let spid = xml_node
+                    .attributes
+                    .get("spid")
+                    .ok_or_else(|| Box::<dyn Error>::from(MissingAttributeError::new(xml_node.name.clone(), "spid")))
+                    .and_then(|value| value.parse().map_err(Into::into))?;
 
-                Ok(TLTimeTargetElement::InkTarget(spid_attr.parse()?))
+                Ok(TLTimeTargetElement::InkTarget(spid))
             }
             _ => Err(Box::new(NotGroupMemberError::new(
                 xml_node.name.clone(),
                 "CT_TLTimeTargetElement",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TLTimeTargetElement {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "sldTgt" | "sndTgt" | "spTgt" | "inkTgt" => true,
+            _ => false,
         }
     }
 }
@@ -3107,15 +3133,17 @@ impl TLShapeTargetElement {
     }
 
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let shape_id_attr = xml_node
-            .attribute("spid")
-            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
-        let shape_id = shape_id_attr.parse()?;
+        let shape_id = xml_node
+            .attributes
+            .get("spid")
+            .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?
+            .parse()?;
 
-        let target = match xml_node.child_nodes.get(0) {
-            Some(child_node) => Some(TLShapeTargetElementGroup::from_xml_element(child_node)?),
-            None => None,
-        };
+        let target = xml_node
+            .child_nodes
+            .iter()
+            .find_map(TLShapeTargetElementGroup::try_from_xml_element)
+            .transpose()?;
 
         Ok(Self { shape_id, target })
     }
@@ -3212,50 +3240,57 @@ pub enum TLShapeTargetElementGroup {
     GraphicElement(AnimationElementChoice),
 }
 
-impl TLShapeTargetElementGroup {
-    pub fn is_choice_member<T>(name: T) -> bool
+impl XsdType for TLShapeTargetElementGroup {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "bg" => Ok(TLShapeTargetElementGroup::Background),
+            "subSp" => {
+                let spid = xml_node
+                    .attributes
+                    .get("spid")
+                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?
+                    .parse()?;
+
+                Ok(TLShapeTargetElementGroup::SubShape(spid))
+            }
+            "oleChartEl" => Ok(TLShapeTargetElementGroup::OleChartElement(
+                TLOleChartTargetElement::from_xml_element(xml_node)?,
+            )),
+            "txEl" => {
+                let text_element = xml_node
+                    .child_nodes
+                    .iter()
+                    .find_map(TLTextTargetElement::try_from_xml_element)
+                    .transpose()?;
+
+                Ok(TLShapeTargetElementGroup::TextElement(text_element))
+            }
+            "graphicEl" => {
+                let animation_element = xml_node
+                    .child_nodes
+                    .iter()
+                    .find_map(AnimationElementChoice::try_from_xml_element)
+                    .transpose()?
+                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
+
+                Ok(TLShapeTargetElementGroup::GraphicElement(animation_element))
+            }
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLShapeTargetElementGroup",
+            ))),
+        }
+    }
+}
+
+impl XsdChoice for TLShapeTargetElementGroup {
+    fn is_choice_member<T>(name: T) -> bool
     where
         T: AsRef<str>,
     {
         match name.as_ref() {
             "bg" | "subSp" | "oleChartEl" | "txEl" | "graphicEl" => true,
             _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        match xml_node.local_name() {
-            "bg" => Ok(TLShapeTargetElementGroup::Background),
-            "subSp" => {
-                let spid_attr = xml_node
-                    .attribute("spid")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "spid"))?;
-
-                Ok(TLShapeTargetElementGroup::SubShape(spid_attr.parse()?))
-            }
-            "oleChartEl" => Ok(TLShapeTargetElementGroup::OleChartElement(
-                TLOleChartTargetElement::from_xml_element(xml_node)?,
-            )),
-            "txEl" => Ok(TLShapeTargetElementGroup::TextElement(
-                match xml_node.child_nodes.get(0) {
-                    Some(child_node) => Some(TLTextTargetElement::from_xml_element(child_node)?),
-                    None => None,
-                },
-            )),
-            "graphicEl" => {
-                let child_node = xml_node
-                    .child_nodes
-                    .get(0)
-                    .ok_or_else(|| MissingChildNodeError::new(xml_node.name.clone(), "CT_AnimationElementChoice"))?;
-
-                Ok(TLShapeTargetElementGroup::GraphicElement(
-                    AnimationElementChoice::from_xml_element(child_node)?,
-                ))
-            }
-            _ => Err(Box::new(NotGroupMemberError::new(
-                xml_node.name.clone(),
-                "TLShapeTargetElementGroup",
-            ))),
         }
     }
 }
@@ -3337,18 +3372,8 @@ pub enum TLTextTargetElement {
     ParagraphRange(IndexRange),
 }
 
-impl TLTextTargetElement {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "charRg" | "pRg" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for TLTextTargetElement {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "charRg" => Ok(TLTextTargetElement::CharRange(IndexRange::from_xml_element(xml_node)?)),
             "pRg" => Ok(TLTextTargetElement::ParagraphRange(IndexRange::from_xml_element(
@@ -3358,6 +3383,18 @@ impl TLTextTargetElement {
                 xml_node.name.clone(),
                 "TLTextTargetElement",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TLTextTargetElement {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "charRg" | "pRg" => true,
+            _ => false,
         }
     }
 }
@@ -3396,21 +3433,27 @@ pub struct TLTimeCondition {
 
 impl TLTimeCondition {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_str() {
+                    "evt" => instance.trigger_event = Some(value.parse()?),
+                    "delay" => instance.delay = Some(value.parse()?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "evt" => instance.trigger_event = Some(value.parse()?),
-                "delay" => instance.delay = Some(value.parse()?),
-                _ => (),
-            }
-        }
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                let trigger = xml_node
+                    .child_nodes
+                    .iter()
+                    .find_map(TLTimeConditionTriggerGroup::try_from_xml_element)
+                    .transpose()?;
 
-        if let Some(child_node) = xml_node.child_nodes.get(0) {
-            instance.trigger = Some(TLTimeConditionTriggerGroup::from_xml_element(child_node)?);
-        }
-
-        Ok(instance)
+                Ok(Self { trigger, ..instance })
+            })
     }
 }
 
@@ -3628,50 +3671,57 @@ pub struct TLCommonTimeNodeData {
 
 impl TLCommonTimeNodeData {
     pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        let mut instance: Self = Default::default();
+        xml_node
+            .attributes
+            .iter()
+            .try_fold(Default::default(), |mut instance: Self, (attr, value)| {
+                match attr.as_ref() {
+                    "id" => instance.id = Some(value.parse()?),
+                    "presetID" => instance.preset_id = Some(value.parse()?),
+                    "presetClass" => instance.preset_class = Some(value.parse()?),
+                    "presetSubtype" => instance.preset_subtype = Some(value.parse()?),
+                    "dur" => instance.duration = Some(value.parse()?),
+                    "repeatCount" => instance.repeat_count = Some(value.parse()?),
+                    "repeatDur" => instance.repeat_duration = Some(value.parse()?),
+                    "spd" => instance.speed = Some(value.parse()?),
+                    "accel" => instance.acceleration = Some(value.parse()?),
+                    "decel" => instance.deceleration = Some(value.parse()?),
+                    "autoRev" => instance.auto_reverse = Some(parse_xml_bool(value)?),
+                    "restart" => instance.restart_type = Some(value.parse()?),
+                    "fill" => instance.fill_type = Some(value.parse()?),
+                    "syncBehavior" => instance.sync_behavior = Some(value.parse()?),
+                    "tmFilter" => instance.time_filter = Some(value.clone()),
+                    "evtFilter" => instance.event_filter = Some(value.clone()),
+                    "display" => instance.display = Some(parse_xml_bool(value)?),
+                    "masterRel" => instance.master_relationship = Some(value.parse()?),
+                    "bldLvl" => instance.build_level = Some(value.parse()?),
+                    "grpId" => instance.group_id = Some(value.parse()?),
+                    "afterEffect" => instance.after_effect = Some(parse_xml_bool(value)?),
+                    "nodeType" => instance.node_type = Some(value.parse()?),
+                    "nodePh" => instance.node_placeholder = Some(parse_xml_bool(value)?),
+                    _ => (),
+                }
 
-        for (attr, value) in &xml_node.attributes {
-            match attr.as_str() {
-                "id" => instance.id = Some(value.parse()?),
-                "presetID" => instance.preset_id = Some(value.parse()?),
-                "presetClass" => instance.preset_class = Some(value.parse()?),
-                "presetSubtype" => instance.preset_subtype = Some(value.parse()?),
-                "dur" => instance.duration = Some(value.parse()?),
-                "repeatCount" => instance.repeat_count = Some(value.parse()?),
-                "repeatDur" => instance.repeat_duration = Some(value.parse()?),
-                "spd" => instance.speed = Some(value.parse()?),
-                "accel" => instance.acceleration = Some(value.parse()?),
-                "decel" => instance.deceleration = Some(value.parse()?),
-                "autoRev" => instance.auto_reverse = Some(parse_xml_bool(value)?),
-                "restart" => instance.restart_type = Some(value.parse()?),
-                "fill" => instance.fill_type = Some(value.parse()?),
-                "syncBehavior" => instance.sync_behavior = Some(value.parse()?),
-                "tmFilter" => instance.time_filter = Some(value.clone()),
-                "evtFilter" => instance.event_filter = Some(value.clone()),
-                "display" => instance.display = Some(parse_xml_bool(value)?),
-                "masterRel" => instance.master_relationship = Some(value.parse()?),
-                "bldLvl" => instance.build_level = Some(value.parse()?),
-                "grpId" => instance.group_id = Some(value.parse()?),
-                "afterEffect" => instance.after_effect = Some(parse_xml_bool(value)?),
-                "nodeType" => instance.node_type = Some(value.parse()?),
-                "nodePh" => instance.node_placeholder = Some(parse_xml_bool(value)?),
-                _ => (),
-            }
-        }
+                Ok(instance)
+            })
+            .and_then(|instance| {
+                xml_node
+                    .child_nodes
+                    .iter()
+                    .try_fold(instance, |mut instance, child_node| {
+                        match child_node.local_name() {
+                            "stCondLst" => instance.start_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
+                            "endCondLst" => instance.end_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
+                            "endSync" => instance.end_sync = Some(TLTimeCondition::from_xml_element(child_node)?),
+                            "iterate" => instance.iterate = Some(TLIterateData::from_xml_element(child_node)?),
+                            "childTnLst" => instance.child_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
+                            "subTnLst" => instance.sub_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
+                            _ => (),
+                        }
 
-        for child_node in &xml_node.child_nodes {
-            match child_node.local_name() {
-                "stCondLst" => instance.start_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
-                "endCondLst" => instance.end_condition_list = Some(TLTimeConditionList::from_xml_element(child_node)?),
-                "endSync" => instance.end_sync = Some(TLTimeCondition::from_xml_element(child_node)?),
-                "iterate" => instance.iterate = Some(TLIterateData::from_xml_element(child_node)?),
-                "childTnLst" => instance.child_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
-                "subTnLst" => instance.sub_time_node_list = Some(TLTimeNodeList::from_xml_element(child_node)?),
-                _ => (),
-            }
-        }
-
-        Ok(instance)
+                        Ok(instance)
+                    })
+            })
     }
 }
 
@@ -3715,35 +3765,27 @@ pub enum TLIterateDataChoice {
     Percent(PositivePercentage),
 }
 
-impl TLIterateDataChoice {
-    pub fn is_choice_member<T>(name: T) -> bool
+impl XsdType for TLIterateDataChoice {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+        match xml_node.local_name() {
+            "tmAbs" => Ok(TLIterateDataChoice::Absolute(xml_node.get_val_attribute()?.parse()?)),
+            "tmPct" => Ok(TLIterateDataChoice::Percent(xml_node.get_val_attribute()?.parse()?)),
+            _ => Err(Box::new(NotGroupMemberError::new(
+                xml_node.name.clone(),
+                "TLIterateDataChoice",
+            ))),
+        }
+    }
+}
+
+impl XsdChoice for TLIterateDataChoice {
+    fn is_choice_member<T>(name: T) -> bool
     where
         T: AsRef<str>,
     {
         match name.as_ref() {
             "tmAbs" | "tmPct" => true,
             _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
-        match xml_node.local_name() {
-            "tmAbs" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLIterateDataChoice::Absolute(val_attr.parse()?))
-            }
-            "tmPct" => {
-                let val_attr = xml_node
-                    .attribute("val")
-                    .ok_or_else(|| MissingAttributeError::new(xml_node.name.clone(), "val"))?;
-                Ok(TLIterateDataChoice::Percent(val_attr.parse()?))
-            }
-            _ => Err(Box::new(NotGroupMemberError::new(
-                xml_node.name.clone(),
-                "TLIterateDataChoice",
-            ))),
         }
     }
 }
@@ -3839,18 +3881,8 @@ pub enum TLByAnimateColorTransform {
     Hsl(TLByHslColorTransform),
 }
 
-impl TLByAnimateColorTransform {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "rgb" | "hsl" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for TLByAnimateColorTransform {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "rgb" => Ok(TLByAnimateColorTransform::Rgb(TLByRgbColorTransform::from_xml_element(
                 xml_node,
@@ -3862,6 +3894,18 @@ impl TLByAnimateColorTransform {
                 xml_node.name.clone(),
                 "TLByAnimateColorTransform",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for TLByAnimateColorTransform {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "rgb" | "hsl" => true,
+            _ => false,
         }
     }
 }
@@ -3996,18 +4040,8 @@ pub enum Build {
     Graphic(Box<TLGraphicalObjectBuild>),
 }
 
-impl Build {
-    pub fn is_choice_member<T>(name: T) -> bool
-    where
-        T: AsRef<str>,
-    {
-        match name.as_ref() {
-            "bldP" | "bldDgm" | "bldOleChart" | "bldGraphic" => true,
-            _ => false,
-        }
-    }
-
-    pub fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
+impl XsdType for Build {
+    fn from_xml_element(xml_node: &XmlNode) -> Result<Self> {
         match xml_node.local_name() {
             "bldP" => Ok(Build::Paragraph(Box::new(TLBuildParagraph::from_xml_element(
                 xml_node,
@@ -4021,6 +4055,18 @@ impl Build {
                 xml_node.name.clone(),
                 "CT_BuildList",
             ))),
+        }
+    }
+}
+
+impl XsdChoice for Build {
+    fn is_choice_member<T>(name: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        match name.as_ref() {
+            "bldP" | "bldDgm" | "bldOleChart" | "bldGraphic" => true,
+            _ => false,
         }
     }
 }

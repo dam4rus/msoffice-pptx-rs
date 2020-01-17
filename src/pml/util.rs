@@ -10,7 +10,7 @@ pub(crate) trait XmlNodeExt {
 impl XmlNodeExt for XmlNode {
     fn get_val_attribute(&self) -> std::result::Result<&String, MissingAttributeError> {
         self.attributes
-            .get("w:val")
+            .get("val")
             .ok_or_else(|| MissingAttributeError::new(self.name.clone(), "val"))
     }
 }
